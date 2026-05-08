@@ -53,10 +53,13 @@ export default function GenerateReport() {
     text: seg.text.trim(),
   })) || [];
 
+  const [audioUrl, setAudioUrl] = useState(null);
+
   const handleTranscribe = async () => {
     if (!audioFile) return;
     setTranscribing(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
+    setAudioUrl(file_url);
     const res = await base44.functions.invoke('transcribeAudio', { file_url });
     setTranscription(res.data);
     setTranscribing(false);
@@ -89,6 +92,7 @@ export default function GenerateReport() {
       timestamped_transcript: reportData.timestampedTranscript || [],
       other_role: otherRole,
       staff_channel: staffChannel,
+      audio_url: audioUrl,
     });
     setGeneratingReport(false);
     navigate(`/reports/${saved.id}`);

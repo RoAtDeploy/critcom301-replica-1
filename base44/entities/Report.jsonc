@@ -43,6 +43,10 @@
       "type": "string",
       "description": "Context provided for the call"
     },
+    "audio_url": {
+      "type": "string",
+      "description": "URL of the uploaded audio file"
+    },
     "transcription_text": {
       "type": "string",
       "description": "Full transcription text"
