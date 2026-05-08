@@ -5,13 +5,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
+
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { mockStaff } from "@/lib/mockData";
 
 export default function GenerateReport() {
+  const navigate = useNavigate();
   const [dragOver, setDragOver] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -22,7 +24,6 @@ export default function GenerateReport() {
   const [transcribing, setTranscribing] = useState(false);
   const [transcription, setTranscription] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
-  const [report, setReport] = useState(null);
 
   const selectedStaff = mockStaff.find((s) => s.id === selectedStaffId);
 
@@ -30,7 +31,6 @@ export default function GenerateReport() {
     if (file && /\.(mp3|wav|m4a|webm|mp4|mpeg|mpga|oga|ogg|flac)$/i.test(file.name)) {
       setAudioFile(file);
       setTranscription(null);
-      setReport(null);
     }
   };
 
@@ -54,8 +54,21 @@ export default function GenerateReport() {
       callDate,
       context: callContext,
     });
-    setReport(res.data.report);
+    const reportData = res.data.report;
+    const saved = await base44.entities.Report.create({
+      staff_id: selectedStaffId,
+      staff_name: selectedStaff?.name,
+      role: selectedRole,
+      call_date: callDate,
+      call_type: callType,
+      call_context: callContext,
+      transcription_text: transcription.text,
+      transcription_duration: transcription.duration,
+      transcription_language: transcription.language,
+      timestamped_transcript: reportData.timestampedTranscript || [],
+    });
     setGeneratingReport(false);
+    navigate(`/reports/${saved.id}`);
   };
 
   return (
@@ -152,7 +165,7 @@ export default function GenerateReport() {
                       <p className="text-xs text-muted-foreground">{(audioFile.size / (1024 * 1024)).toFixed(1)} MB</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); setReport(null); }}>
+                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); }}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -218,41 +231,7 @@ export default function GenerateReport() {
         </CardContent>
       </Card>
 
-      {report && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-accent" />
-                Call Report
-              </CardTitle>
-              <CardDescription>
-                {report.staffName} • {report.role} • {report.callDate} • {report.callType}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>Duration: {Math.round(report.duration)}s</span>
-                <span>Language: {report.language}</span>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold mb-3">Timestamped Transcript</h3>
-                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                  {report.timestampedTranscript.map((line, idx) => (
-                    <div key={idx} className="flex gap-3 text-sm">
-                      <span className="flex items-center gap-1 text-xs font-mono text-primary bg-primary/10 rounded px-2 py-0.5 h-fit whitespace-nowrap">
-                        <Clock className="w-3 h-3" />
-                        {line.timestamp}
-                      </span>
-                      <p className="text-foreground leading-relaxed">{line.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+
     </motion.div>
   );
 }

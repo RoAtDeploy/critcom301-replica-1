@@ -1,0 +1,52 @@
+{
+  "name": "Report",
+  "type": "object",
+  "properties": {
+    "staff_id": {
+      "type": "string",
+      "description": "ID of the staff member"
+    },
+    "staff_name": {
+      "type": "string",
+      "description": "Name of the staff member"
+    },
+    "role": {
+      "type": "string",
+      "description": "Role of the staff member on site"
+    },
+    "call_date": {
+      "type": "string",
+      "description": "Date of the call"
+    },
+    "call_type": {
+      "type": "string",
+      "description": "Type of call"
+    },
+    "call_context": {
+      "type": "string",
+      "description": "Context provided for the call"
+    },
+    "transcription_text": {
+      "type": "string",
+      "description": "Full transcription text"
+    },
+    "transcription_duration": {
+      "type": "number",
+      "description": "Duration of the call in seconds"
+    },
+    "transcription_language": {
+      "type": "string",
+      "description": "Detected language of the transcription"
+    },
+    "timestamped_transcript": {
+      "type": "array",
+      "description": "Array of timestamped transcript segments",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "staff_name"
+  ]
+}
