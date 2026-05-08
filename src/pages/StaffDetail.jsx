@@ -53,10 +53,10 @@ export default function StaffDetail() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const updated = { ...form, name: `${form.firstName} ${form.lastName}` };
     setMember(updated);
-    updateStaff(id, updated);
+    await updateStaff(id, updated);
     setEditing(false);
   };
 

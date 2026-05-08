@@ -1,0 +1,56 @@
+{
+  "name": "StaffMember",
+  "type": "object",
+  "properties": {
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Full name"
+    },
+    "sentinelId": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "department": {
+      "type": "string"
+    },
+    "lineManager": {
+      "type": "string"
+    },
+    "calls": {
+      "type": "number",
+      "default": 0
+    },
+    "avgScore": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "review"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

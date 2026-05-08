@@ -1,5 +1,5 @@
-import { createContext, useContext, useState } from "react";
-import { mockStaff } from "@/lib/mockData";
+import { createContext, useContext, useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 
 const defaultDepartments = ["Sales", "Customer Support", "Retention", "Onboarding", "Operations"];
 const defaultLineManagers = ["Alice Thompson", "Bob Harris", "Carol Davies", "David Singh"];
@@ -11,22 +11,30 @@ export function AdminProvider({ children }) {
   const [departments, setDepartments] = useState(defaultDepartments);
   const [lineManagers, setLineManagers] = useState(defaultLineManagers);
   const [roles, setRoles] = useState(defaultRoles);
-  const [staffList, setStaffList] = useState(mockStaff);
+  const [staffList, setStaffList] = useState([]);
+  const [staffLoading, setStaffLoading] = useState(true);
 
-  const addStaff = (member) => {
-    const newMember = {
+  useEffect(() => {
+    base44.entities.StaffMember.list("-created_date").then((list) => {
+      setStaffList(list);
+      setStaffLoading(false);
+    });
+  }, []);
+
+  const addStaff = async (member) => {
+    const newMember = await base44.entities.StaffMember.create({
       ...member,
-      id: Date.now().toString(),
       calls: 0,
       avgScore: 0,
       status: "active",
-    };
+    });
     setStaffList((prev) => [...prev, newMember]);
     return newMember;
   };
 
-  const updateStaff = (id, updates) => {
-    setStaffList((prev) => prev.map((s) => s.id === id ? { ...s, ...updates } : s));
+  const updateStaff = async (id, updates) => {
+    const updated = await base44.entities.StaffMember.update(id, updates);
+    setStaffList((prev) => prev.map((s) => s.id === id ? { ...s, ...updated } : s));
   };
 
   const addItem = (type, value) => {
@@ -61,7 +69,7 @@ export function AdminProvider({ children }) {
   };
 
   return (
-    <AdminContext.Provider value={{ departments, lineManagers, roles, staffList, addStaff, updateStaff, addItem, removeItem, editItem }}>
+    <AdminContext.Provider value={{ departments, lineManagers, roles, staffList, staffLoading, addStaff, updateStaff, addItem, removeItem, editItem }}>
       {children}
     </AdminContext.Provider>
   );

@@ -34,9 +34,9 @@ export default function AddStaff() {
     setSelectedRoles((prev) => prev.filter((r) => r !== value));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!firstName.trim() || !lastName.trim()) return;
-    const newMember = addStaff({
+    const newMember = await addStaff({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       name: `${firstName.trim()} ${lastName.trim()}`,
