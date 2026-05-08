@@ -9,19 +9,38 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const audioFile = formData.get('file');
+    let audioBlob;
+    let fileName = 'audio.mp3';
+    const contentType = req.headers.get('content-type') || '';
 
-    if (!audioFile) {
-      return Response.json({ error: 'No audio file provided' }, { status: 400 });
+    if (contentType.includes('multipart/form-data')) {
+      // Direct file upload
+      const formData = await req.formData();
+      const audioFile = formData.get('file');
+      if (!audioFile) {
+        return Response.json({ error: 'No audio file provided' }, { status: 400 });
+      }
+      audioBlob = audioFile;
+      fileName = audioFile.name || fileName;
+    } else {
+      // JSON body with file_url
+      const body = await req.json();
+      const fileUrl = body.file_url;
+      if (!fileUrl) {
+        return Response.json({ error: 'No file_url provided' }, { status: 400 });
+      }
+      const fetchRes = await fetch(fileUrl);
+      audioBlob = await fetchRes.blob();
+      // Extract filename from URL
+      const urlParts = fileUrl.split('/');
+      fileName = urlParts[urlParts.length - 1] || fileName;
     }
 
     // Build FormData for OpenAI Whisper API
     const whisperForm = new FormData();
-    whisperForm.append('file', audioFile, audioFile.name || 'audio.mp3');
+    whisperForm.append('file', audioBlob, fileName);
     whisperForm.append('model', 'whisper-1');
     whisperForm.append('response_format', 'verbose_json');
-    whisperForm.append('timestamp_granularities[]', 'segment');
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
