@@ -69,26 +69,26 @@ export default function GenerateReport() {
     if (!transcription) return;
     setGeneratingReport(true);
 
-    // Run report formatting and quality assessment in parallel
-    const [reportRes, assessRes] = await Promise.all([
-      base44.functions.invoke('generateReport', {
-        transcription,
-        staffName: selectedStaff?.name,
-        role: selectedRole,
-        callType,
-        callDate,
-        context: callContext,
-        staffChannel,
-        otherRole,
-      }),
-      base44.functions.invoke('assessTranscript', {
-        transcript: transcription.segments,
-        staffChannel,
-        staffName: selectedStaff?.name,
-      }),
-    ]);
+    // First generate the report (which assigns channels to segments)
+    const reportRes = await base44.functions.invoke('generateReport', {
+      transcription,
+      staffName: selectedStaff?.name,
+      role: selectedRole,
+      callType,
+      callDate,
+      context: callContext,
+      staffChannel,
+      otherRole,
+    });
 
     const reportData = reportRes.data.report;
+
+    // Then assess using the channel-labelled transcript
+    const assessRes = await base44.functions.invoke('assessTranscript', {
+      transcript: reportData.timestampedTranscript,
+      staffChannel,
+      staffName: selectedStaff?.name,
+    });
     const saved = await base44.entities.Report.create({
       staff_id: selectedStaffId,
       staff_name: selectedStaff?.name,
