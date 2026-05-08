@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { transcript, reportId } = await req.json();
+    const { transcript, reportId, staffChannel, staffName } = await req.json();
 
     if (!transcript) {
       return Response.json({ error: 'No transcript provided' }, { status: 400 });
@@ -93,12 +93,20 @@ Deno.serve(async (req) => {
     const transcriptText = typeof transcript === 'string'
       ? transcript
       : Array.isArray(transcript)
-        ? transcript.map(seg => `[${seg.timestamp || ''}] ${seg.channel ? `(${seg.channel}) ` : ''}${seg.text}`).join('\n')
+        ? transcript.map(seg => {
+            const isStaff = staffChannel ? seg.channel === staffChannel : seg.is_staff;
+            const label = isStaff ? `[STAFF${staffName ? ` - ${staffName}` : ''}]` : `[OTHER]`;
+            return `[${seg.timestamp || ''}] ${label} ${seg.text}`;
+          }).join('\n')
         : JSON.stringify(transcript);
+
+    const staffContext = staffName
+      ? `The staff member being assessed is ${staffName}${staffChannel ? ` (channel: ${staffChannel})` : ''}. Lines labelled [STAFF] are their contributions. Lines labelled [OTHER] are the other party — do NOT assess these.`
+      : '';
 
     const assessment = await base44.integrations.Core.InvokeLLM({
       model: 'claude_sonnet_4_6',
-      prompt: `${RULES_PROMPT}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
+      prompt: `${RULES_PROMPT}\n\n${staffContext}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
       response_json_schema: {
         type: 'object',
         properties: {

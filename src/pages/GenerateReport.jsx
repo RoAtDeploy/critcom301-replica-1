@@ -82,7 +82,9 @@ export default function GenerateReport() {
         otherRole,
       }),
       base44.functions.invoke('assessTranscript', {
-        transcript: transcription.text,
+        transcript: transcription.segments,
+        staffChannel,
+        staffName: selectedStaff?.name,
       }),
     ]);
 
