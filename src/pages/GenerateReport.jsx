@@ -14,7 +14,7 @@ import { useAdmin } from "@/context/AdminContext";
 
 export default function GenerateReport() {
   const navigate = useNavigate();
-  const { staffList } = useAdmin();
+
   const prefilledStaffId = new URLSearchParams(window.location.search).get("staffId");
   const [dragOver, setDragOver] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState(prefilledStaffId);
@@ -26,8 +26,10 @@ export default function GenerateReport() {
   const [transcribing, setTranscribing] = useState(false);
   const [transcription, setTranscription] = useState(null);
   const [staffChannel, setStaffChannel] = useState(null); // 'LC' or 'RC'
+  const [otherRole, setOtherRole] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
 
+  const { staffList, roles: adminRoles } = useAdmin();
   const selectedStaff = staffList.find((s) => s.id === selectedStaffId);
 
   const handleFileSelect = (file) => {
@@ -71,6 +73,7 @@ export default function GenerateReport() {
       callDate,
       context: callContext,
       staffChannel,
+      otherRole,
     });
     const reportData = res.data.report;
     const saved = await base44.entities.Report.create({
@@ -183,7 +186,7 @@ export default function GenerateReport() {
                       <p className="text-xs text-muted-foreground">{(audioFile.size / (1024 * 1024)).toFixed(1)} MB</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); }}>
+                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); setStaffChannel(null); setOtherRole(null); }}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -203,9 +206,9 @@ export default function GenerateReport() {
                     <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-primary" />
-                        <p className="text-sm font-semibold">Which channel is the staff member?</p>
+                        <p className="text-sm font-semibold">Identify each channel</p>
                       </div>
-                      <p className="text-xs text-muted-foreground">Review the conversation below and select which channel belongs to the staff member.</p>
+                      <p className="text-xs text-muted-foreground">Review the transcript and assign the staff member to their channel. Select the role of the other person on the call.</p>
 
                       {/* Preview transcript */}
                       <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -224,32 +227,68 @@ export default function GenerateReport() {
                         ))}
                       </div>
 
-                      {/* Channel selection buttons */}
-                      <div className="flex gap-3 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setStaffChannel('LC')}
-                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-semibold transition-all ${
-                            staffChannel === 'LC'
-                              ? 'border-blue-500 bg-blue-50 text-blue-700'
-                              : 'border-border hover:border-blue-300 text-muted-foreground'
-                          }`}
-                        >
-                          <span className="bg-blue-100 text-blue-700 text-xs font-bold px-1.5 py-0.5 rounded">LC</span>
-                          Left Channel is staff
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setStaffChannel('RC')}
-                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-semibold transition-all ${
-                            staffChannel === 'RC'
-                              ? 'border-orange-500 bg-orange-50 text-orange-700'
-                              : 'border-border hover:border-orange-300 text-muted-foreground'
-                          }`}
-                        >
-                          <span className="bg-orange-100 text-orange-700 text-xs font-bold px-1.5 py-0.5 rounded">RC</span>
-                          Right Channel is staff
-                        </button>
+                      {/* Two channel cards */}
+                      <div className="grid grid-cols-2 gap-3 pt-1">
+                        {['LC', 'RC'].map((ch) => {
+                          const isStaffChannel = staffChannel === ch;
+                          const isOtherChannel = staffChannel && staffChannel !== ch;
+                          const isBlue = ch === 'LC';
+                          return (
+                            <div
+                              key={ch}
+                              className={`rounded-lg border-2 p-3 space-y-2 transition-all ${
+                                isStaffChannel
+                                  ? isBlue ? 'border-blue-500 bg-blue-50' : 'border-orange-500 bg-orange-50'
+                                  : 'border-border bg-background'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                                  isBlue ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
+                                }`}>
+                                  {ch === 'LC' ? 'Left Channel' : 'Right Channel'}
+                                </span>
+                              </div>
+
+                              {isStaffChannel ? (
+                                /* Staff member label */
+                                <div className="flex items-center gap-1.5 py-1">
+                                  <User className="w-3.5 h-3.5 text-primary shrink-0" />
+                                  <span className="text-sm font-semibold text-foreground truncate">
+                                    {selectedStaff?.name || 'Staff Member'}
+                                  </span>
+                                </div>
+                              ) : isOtherChannel ? (
+                                /* Role selector for the other channel */
+                                <Select value={otherRole} onValueChange={setOtherRole}>
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="Select their role…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {adminRoles.map((r) => (
+                                      <SelectItem key={r} value={r}>{r}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                /* Prompt to assign */
+                                <p className="text-xs text-muted-foreground py-1">Assign below</p>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => { setStaffChannel(ch); setOtherRole(null); }}
+                                className={`w-full text-xs font-semibold py-1.5 rounded-md border transition-all ${
+                                  isStaffChannel
+                                    ? isBlue ? 'border-blue-400 bg-blue-100 text-blue-700' : 'border-orange-400 bg-orange-100 text-orange-700'
+                                    : 'border-border hover:bg-muted text-muted-foreground'
+                                }`}
+                              >
+                                {isStaffChannel ? '✓ Staff member' : 'Set as staff member'}
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -290,7 +329,7 @@ export default function GenerateReport() {
             </Link>
             <Button
               onClick={handleGenerateReport}
-              disabled={!transcription || !staffChannel || generatingReport}
+              disabled={!transcription || !staffChannel || !otherRole || generatingReport}
               className="bg-primary hover:bg-primary/90"
             >
               {generatingReport
