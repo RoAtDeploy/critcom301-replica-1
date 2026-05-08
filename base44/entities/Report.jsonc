@@ -68,20 +68,8 @@
     },
     "quality_assessment": {
       "type": "object",
-      "description": "AI-generated quality assessment against R1-R8 rules",
+      "description": "AI-generated quality assessment against R1-R6 rules",
       "properties": {
-        "overall_score": {
-          "type": "number"
-        },
-        "overall_percentage": {
-          "type": "number"
-        },
-        "overall_grade": {
-          "type": "string"
-        },
-        "summary": {
-          "type": "string"
-        },
         "rules": {
           "type": "array",
           "items": {
