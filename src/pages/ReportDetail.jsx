@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, Save, CheckCircle2 } from "lucide-react";
+import QualityAssessment from "@/components/report/QualityAssessment";
 import { motion } from "framer-motion";
 
 export default function ReportDetail() {
@@ -125,6 +126,12 @@ export default function ReportDetail() {
           )}
         </div>
       )}
+
+      {/* Quality Assessment */}
+      <QualityAssessment
+        report={report}
+        onAssessmentSaved={(assessment) => setReport((r) => ({ ...r, quality_assessment: assessment }))}
+      />
 
       {/* Transcription */}
       <Card className="border-border/50">
