@@ -9,16 +9,19 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 
 const mockStaff = [
-  { id: "1", name: "Sarah Mitchell" },
-  { id: "2", name: "James Walker" },
-  { id: "3", name: "Emily Chen" },
-  { id: "4", name: "Marcus Johnson" },
-  { id: "5", name: "Olivia Brown" },
-  { id: "6", name: "Daniel Kim" },
+  { id: "1", name: "Sarah Mitchell", roles: ["Senior Sales Rep", "Team Lead"] },
+  { id: "2", name: "James Walker", roles: ["Sales Rep"] },
+  { id: "3", name: "Emily Chen", roles: ["Customer Support", "Team Lead"] },
+  { id: "4", name: "Marcus Johnson", roles: ["Sales Rep"] },
+  { id: "5", name: "Olivia Brown", roles: ["Senior Sales Rep"] },
+  { id: "6", name: "Daniel Kim", roles: ["Customer Support", "Manager"] },
 ];
 
 export default function GenerateReport() {
   const [dragOver, setDragOver] = useState(false);
+  const [selectedStaffId, setSelectedStaffId] = useState(null);
+
+  const selectedStaff = mockStaff.find((s) => s.id === selectedStaffId);
 
   return (
     <motion.div
@@ -47,13 +50,30 @@ export default function GenerateReport() {
         <CardContent className="space-y-5">
           <div className="space-y-2">
             <Label>Staff Member</Label>
-            <Select>
+            <Select onValueChange={(val) => setSelectedStaffId(val)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select staff member" />
               </SelectTrigger>
               <SelectContent>
                 {mockStaff.map((s) => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              Role on Site
+              {!selectedStaff && <span className="ml-2 text-xs text-muted-foreground font-normal">(select a staff member first)</span>}
+            </Label>
+            <Select disabled={!selectedStaff}>
+              <SelectTrigger>
+                <SelectValue placeholder={selectedStaff ? "Select role…" : "—"} />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedStaff?.roles.map((role) => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
