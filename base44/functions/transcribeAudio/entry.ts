@@ -17,13 +17,13 @@ function encodePcmToWav(samples, sampleRate) {
   view.setUint32(4, 36 + dataSize, true);
   writeStr(8, 'WAVE');
   writeStr(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
+  view.setUint32(16, 16, true);        // PCM chunk size
+  view.setUint16(20, 1, true);          // PCM format
+  view.setUint16(22, 1, true);          // 1 channel (mono)
   view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * bytesPerSample, true);
-  view.setUint16(32, bytesPerSample, true);
-  view.setUint16(34, 16, true);
+  view.setUint32(28, sampleRate * bytesPerSample, true); // byte rate
+  view.setUint16(32, bytesPerSample, true);              // block align
+  view.setUint16(34, 16, true);                          // bits per sample
   writeStr(36, 'data');
   view.setUint32(40, dataSize, true);
 
@@ -33,15 +33,6 @@ function encodePcmToWav(samples, sampleRate) {
   }
 
   return new Uint8Array(buffer);
-}
-
-// Mix two Float32Array channels into a single mono channel
-function mixToMono(ch0, ch1) {
-  const mono = new Float32Array(ch0.length);
-  for (let i = 0; i < ch0.length; i++) {
-    mono[i] = (ch0[i] + ch1[i]) / 2;
-  }
-  return mono;
 }
 
 async function whisperTranscribe(wavBytes, fileName, apiKey) {
@@ -63,13 +54,6 @@ async function whisperTranscribe(wavBytes, fileName, apiKey) {
   }
   return res.json();
 }
-
-// Calculate overlap in seconds between two time ranges
-function overlap(aStart, aEnd, bStart, bEnd) {
-  return Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart));
-}
-
-
 
 Deno.serve(async (req) => {
   try {
@@ -110,32 +94,41 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build WAVs for: full mix, left channel, right channel
-    const monoWav = encodePcmToWav(mixToMono(channelData[0], channelData[1]), sampleRate);
+    // Encode left (LC) and right (RC) channels as separate WAV files
     const lcWav = encodePcmToWav(channelData[0], sampleRate);
     const rcWav = encodePcmToWav(channelData[1], sampleRate);
 
-    // Transcribe all three in parallel
-    const [fullResult, lcResult, rcResult] = await Promise.all([
-      whisperTranscribe(monoWav, 'full-mix.wav', apiKey),
+    // Transcribe both channels in parallel
+    const [lcResult, rcResult] = await Promise.all([
       whisperTranscribe(lcWav, 'left-channel.wav', apiKey),
       whisperTranscribe(rcWav, 'right-channel.wav', apiKey),
     ]);
 
-    // Return all three transcriptions and segment data for the user to assign
+    // Tag each segment with its channel
+    const lcSegments = (lcResult.segments || []).map(seg => ({
+      timestamp: formatTime(seg.start),
+      start: seg.start,
+      end: seg.end,
+      channel: 'LC',
+      text: seg.text.trim(),
+    }));
+
+    const rcSegments = (rcResult.segments || []).map(seg => ({
+      timestamp: formatTime(seg.start),
+      start: seg.start,
+      end: seg.end,
+      channel: 'RC',
+      text: seg.text.trim(),
+    }));
+
+    // Merge and sort by start time to reconstruct the conversation chronologically
+    const merged = [...lcSegments, ...rcSegments].sort((a, b) => a.start - b.start);
+
     return Response.json({
-      text: fullResult.text,
-      language: fullResult.language,
-      duration: duration || fullResult.duration,
-      segments: (fullResult.segments || []).map(s => ({
-        timestamp: formatTime(s.start),
-        start: s.start,
-        end: s.end,
-        channel: null, // User will assign
-        text: s.text.trim(),
-      })),
-      lcText: lcResult.text || '',
-      rcText: rcResult.text || '',
+      text: lcResult.text + ' ' + rcResult.text,
+      language: lcResult.language || rcResult.language,
+      duration: duration || Math.max(lcResult.duration || 0, rcResult.duration || 0),
+      segments: merged,
       isStereo: true,
     });
   } catch (error) {
