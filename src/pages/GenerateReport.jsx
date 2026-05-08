@@ -68,17 +68,25 @@ export default function GenerateReport() {
   const handleGenerateReport = async () => {
     if (!transcription) return;
     setGeneratingReport(true);
-    const res = await base44.functions.invoke('generateReport', {
-      transcription,
-      staffName: selectedStaff?.name,
-      role: selectedRole,
-      callType,
-      callDate,
-      context: callContext,
-      staffChannel,
-      otherRole,
-    });
-    const reportData = res.data.report;
+
+    // Run report formatting and quality assessment in parallel
+    const [reportRes, assessRes] = await Promise.all([
+      base44.functions.invoke('generateReport', {
+        transcription,
+        staffName: selectedStaff?.name,
+        role: selectedRole,
+        callType,
+        callDate,
+        context: callContext,
+        staffChannel,
+        otherRole,
+      }),
+      base44.functions.invoke('assessTranscript', {
+        transcript: transcription.text,
+      }),
+    ]);
+
+    const reportData = reportRes.data.report;
     const saved = await base44.entities.Report.create({
       staff_id: selectedStaffId,
       staff_name: selectedStaff?.name,
@@ -93,7 +101,9 @@ export default function GenerateReport() {
       other_role: otherRole,
       staff_channel: staffChannel,
       audio_url: audioUrl,
+      quality_assessment: assessRes.data?.assessment || null,
     });
+
     setGeneratingReport(false);
     navigate(`/reports/${saved.id}`);
   };

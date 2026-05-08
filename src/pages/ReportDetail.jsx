@@ -128,10 +128,7 @@ export default function ReportDetail() {
       )}
 
       {/* Quality Assessment */}
-      <QualityAssessment
-        report={report}
-        onAssessmentSaved={(assessment) => setReport((r) => ({ ...r, quality_assessment: assessment }))}
-      />
+      <QualityAssessment report={report} />
 
       {/* Transcription */}
       <Card className="border-border/50">
