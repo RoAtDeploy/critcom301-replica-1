@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
-  UserPlus, 
   Users, 
   FileText, 
   ListChecks,
@@ -16,7 +15,6 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { label: "Staff Members", icon: Users, path: "/staff" },
-  { label: "Add Staff", icon: UserPlus, path: "/staff/new" },
   { label: "Generate Report", icon: FileText, path: "/reports/new" },
   { label: "Action Items", icon: ListChecks, path: "/actions" },
 ];
