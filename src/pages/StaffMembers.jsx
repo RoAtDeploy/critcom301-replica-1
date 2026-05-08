@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,10 @@ const scoreColor = (score) => {
 };
 
 export default function StaffMembers() {
-  const { staffList } = useAdmin();
+  const { staffList, refreshStaff } = useAdmin();
   const [search, setSearch] = useState("");
+
+  useEffect(() => { refreshStaff(); }, []);
 
   const filtered = staffList.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())

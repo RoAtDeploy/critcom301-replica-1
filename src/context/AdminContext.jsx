@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 
 const DEFAULTS = {
@@ -15,6 +15,13 @@ export function AdminProvider({ children }) {
   const [lineManagers, setLineManagers] = useState(DEFAULTS.lineManagers);
   const [staffList, setStaffList] = useState([]);
   const [staffLoading, setStaffLoading] = useState(true);
+
+  const refreshStaff = useCallback(async () => {
+    setStaffLoading(true);
+    const staff = await base44.entities.StaffMember.list("-created_date");
+    setStaffList(staff);
+    setStaffLoading(false);
+  }, []);
 
   // Load everything from DB on mount
   useEffect(() => {
@@ -124,7 +131,7 @@ export function AdminProvider({ children }) {
     <AdminContext.Provider value={{
       departments, lineManagers, roles,
       staffList, staffLoading,
-      addStaff, updateStaff,
+      addStaff, updateStaff, refreshStaff,
       addItem, removeItem, editItem,
     }}>
       {children}
