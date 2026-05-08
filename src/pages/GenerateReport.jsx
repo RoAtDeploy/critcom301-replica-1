@@ -10,12 +10,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { mockStaff } from "@/lib/mockData";
+import { useAdmin } from "@/context/AdminContext";
 
 export default function GenerateReport() {
   const navigate = useNavigate();
+  const { staffList } = useAdmin();
+  const prefilledStaffId = new URLSearchParams(window.location.search).get("staffId");
   const [dragOver, setDragOver] = useState(false);
-  const [selectedStaffId, setSelectedStaffId] = useState(null);
+  const [selectedStaffId, setSelectedStaffId] = useState(prefilledStaffId);
   const [selectedRole, setSelectedRole] = useState(null);
   const [callDate, setCallDate] = useState("");
   const [callType, setCallType] = useState(null);
@@ -26,7 +28,7 @@ export default function GenerateReport() {
   const [staffChannel, setStaffChannel] = useState(null); // 'LC' or 'RC'
   const [generatingReport, setGeneratingReport] = useState(false);
 
-  const selectedStaff = mockStaff.find((s) => s.id === selectedStaffId);
+  const selectedStaff = staffList.find((s) => s.id === selectedStaffId);
 
   const handleFileSelect = (file) => {
     if (file && /\.(mp3|wav|m4a|webm|mp4|mpeg|mpga|oga|ogg|flac)$/i.test(file.name)) {
@@ -114,12 +116,12 @@ export default function GenerateReport() {
         <CardContent className="space-y-5">
           <div className="space-y-2">
             <Label>Staff Member</Label>
-            <Select onValueChange={(val) => { setSelectedStaffId(val); setSelectedRole(null); }}>
+            <Select value={selectedStaffId} onValueChange={(val) => { setSelectedStaffId(val); setSelectedRole(null); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select staff member" />
               </SelectTrigger>
               <SelectContent>
-                {mockStaff.map((s) => (
+                {staffList.map((s) => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                 ))}
               </SelectContent>

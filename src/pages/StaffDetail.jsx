@@ -225,7 +225,7 @@ export default function StaffDetail() {
             <FileText className="w-4 h-4 text-muted-foreground" />
             Reports ({reports.length})
           </CardTitle>
-          <Link to="/reports/new">
+          <Link to={`/reports/new?staffId=${id}`}>
             <Button size="sm" className="bg-primary hover:bg-primary/90">
               <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Generate New
             </Button>
