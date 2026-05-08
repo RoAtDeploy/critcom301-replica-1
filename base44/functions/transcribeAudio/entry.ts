@@ -70,21 +70,20 @@ function overlap(aStart, aEnd, bStart, bEnd) {
 }
 
 // For each segment in the full transcript, find which channel (LC or RC)
-// has the most overlapping time coverage and assign that channel label.
+// has the best overlap and assign that channel label.
 function assignChannels(fullSegments, lcSegments, rcSegments) {
   return fullSegments.map(seg => {
-    let lcOverlap = 0;
-    let rcOverlap = 0;
+    let maxLcOverlap = 0;
+    let maxRcOverlap = 0;
 
     for (const lc of lcSegments) {
-      lcOverlap += overlap(seg.start, seg.end, lc.start, lc.end);
+      maxLcOverlap = Math.max(maxLcOverlap, overlap(seg.start, seg.end, lc.start, lc.end));
     }
     for (const rc of rcSegments) {
-      rcOverlap += overlap(seg.start, seg.end, rc.start, rc.end);
+      maxRcOverlap = Math.max(maxRcOverlap, overlap(seg.start, seg.end, rc.start, rc.end));
     }
 
-    // If no overlap at all, fall back to LC
-    const channel = rcOverlap > lcOverlap ? 'RC' : 'LC';
+    const channel = maxRcOverlap > maxLcOverlap ? 'RC' : 'LC';
 
     return {
       timestamp: formatTime(seg.start),
