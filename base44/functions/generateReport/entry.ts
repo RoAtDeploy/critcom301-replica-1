@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { transcription, staffName, role, callType, callDate, context } = await req.json();
+    const { transcription, staffName, role, callType, callDate, context, staffChannel } = await req.json();
 
     if (!transcription) {
       return Response.json({ error: 'No transcription provided' }, { status: 400 });
@@ -22,11 +22,16 @@ Deno.serve(async (req) => {
       return `${m}:${s}`;
     };
 
-    const timestampedLines = (transcription.segments || []).map((seg, idx) => ({
-      timestamp: formatTime(seg.start),
-      channel: idx % 2 === 0 ? 'LC' : 'RC',
-      text: seg.text.trim(),
-    }));
+    const timestampedLines = (transcription.segments || []).map((seg, idx) => {
+      const channel = idx % 2 === 0 ? 'LC' : 'RC';
+      const isStaff = staffChannel ? channel === staffChannel : false;
+      return {
+        timestamp: formatTime(seg.start),
+        channel,
+        isStaff,
+        text: seg.text.trim(),
+      };
+    });
 
     const report = {
       staffName: staffName || 'Unknown',

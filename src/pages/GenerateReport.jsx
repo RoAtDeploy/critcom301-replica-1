@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X, Clock } from "lucide-react";
+import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X, Clock, User } from "lucide-react";
 
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -23,6 +23,7 @@ export default function GenerateReport() {
   const [audioFile, setAudioFile] = useState(null);
   const [transcribing, setTranscribing] = useState(false);
   const [transcription, setTranscription] = useState(null);
+  const [staffChannel, setStaffChannel] = useState(null); // 'LC' or 'RC'
   const [generatingReport, setGeneratingReport] = useState(false);
 
   const selectedStaff = mockStaff.find((s) => s.id === selectedStaffId);
@@ -31,8 +32,22 @@ export default function GenerateReport() {
     if (file && /\.(mp3|wav|m4a|webm|mp4|mpeg|mpga|oga|ogg|flac)$/i.test(file.name)) {
       setAudioFile(file);
       setTranscription(null);
+      setStaffChannel(null);
     }
   };
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  // Build a preview of the first few alternating segments for channel identification
+  const channelPreview = transcription?.segments?.slice(0, 6).map((seg, idx) => ({
+    timestamp: formatTime(seg.start),
+    channel: idx % 2 === 0 ? 'LC' : 'RC',
+    text: seg.text.trim(),
+  })) || [];
 
   const handleTranscribe = async () => {
     if (!audioFile) return;
@@ -53,6 +68,7 @@ export default function GenerateReport() {
       callType,
       callDate,
       context: callContext,
+      staffChannel,
     });
     const reportData = res.data.report;
     const saved = await base44.entities.Report.create({
@@ -175,12 +191,65 @@ export default function GenerateReport() {
                   </Button>
                 )}
                 {transcription && (
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-2 text-sm text-accent font-medium">
                       <CheckCircle2 className="w-4 h-4" />
                       Transcription complete • {Math.round(transcription.duration)}s duration
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-3">{transcription.text}</p>
+
+                    {/* Channel identification step */}
+                    <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-primary" />
+                        <p className="text-sm font-semibold">Which channel is the staff member?</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Review the conversation below and select which channel belongs to the staff member.</p>
+
+                      {/* Preview transcript */}
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {channelPreview.map((line, idx) => (
+                          <div key={idx} className="flex gap-2 text-sm items-start">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 whitespace-nowrap">
+                              {line.timestamp}
+                            </span>
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
+                              line.channel === 'LC' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
+                            }`}>
+                              {line.channel}
+                            </span>
+                            <p className="text-muted-foreground leading-relaxed">{line.text}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Channel selection buttons */}
+                      <div className="flex gap-3 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setStaffChannel('LC')}
+                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-semibold transition-all ${
+                            staffChannel === 'LC'
+                              ? 'border-blue-500 bg-blue-50 text-blue-700'
+                              : 'border-border hover:border-blue-300 text-muted-foreground'
+                          }`}
+                        >
+                          <span className="bg-blue-100 text-blue-700 text-xs font-bold px-1.5 py-0.5 rounded">LC</span>
+                          Left Channel is staff
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStaffChannel('RC')}
+                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-semibold transition-all ${
+                            staffChannel === 'RC'
+                              ? 'border-orange-500 bg-orange-50 text-orange-700'
+                              : 'border-border hover:border-orange-300 text-muted-foreground'
+                          }`}
+                        >
+                          <span className="bg-orange-100 text-orange-700 text-xs font-bold px-1.5 py-0.5 rounded">RC</span>
+                          Right Channel is staff
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -219,7 +288,7 @@ export default function GenerateReport() {
             </Link>
             <Button
               onClick={handleGenerateReport}
-              disabled={!transcription || generatingReport}
+              disabled={!transcription || !staffChannel || generatingReport}
               className="bg-primary hover:bg-primary/90"
             >
               {generatingReport
