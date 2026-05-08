@@ -4,10 +4,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Upload, FileAudio, Sparkles } from "lucide-react";
+import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { base44 } from "@/api/base44Client";
 
 const mockStaff = [
   { id: "1", name: "Sarah Mitchell", roles: ["Senior Sales Rep", "Team Lead"] },
@@ -21,6 +22,26 @@ const mockStaff = [
 export default function GenerateReport() {
   const [dragOver, setDragOver] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState(null);
+  const [audioFile, setAudioFile] = useState(null);
+  const [transcribing, setTranscribing] = useState(false);
+  const [transcription, setTranscription] = useState(null);
+
+  const handleFileSelect = (file) => {
+    if (file && /\.(mp3|wav|m4a|webm|mp4|mpeg|mpga|oga|ogg|flac)$/i.test(file.name)) {
+      setAudioFile(file);
+      setTranscription(null);
+    }
+  };
+
+  const handleTranscribe = async () => {
+    if (!audioFile) return;
+    setTranscribing(true);
+    const formData = new FormData();
+    formData.append('file', audioFile);
+    const res = await base44.functions.invoke('transcribeAudio', formData);
+    setTranscription(res.data);
+    setTranscribing(false);
+  };
 
   const selectedStaff = mockStaff.find((s) => s.id === selectedStaffId);
 
@@ -87,26 +108,61 @@ export default function GenerateReport() {
 
           <div className="space-y-2">
             <Label>Upload Recording</Label>
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={(e) => { e.preventDefault(); setDragOver(false); }}
-              className={`
-                border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-200
-                ${dragOver
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/40 hover:bg-muted/30"
-                }
-              `}
-            >
-              <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-              <p className="text-sm font-medium">
-                Drag and drop your audio file here
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                or click to browse • MP3, WAV, M4A up to 100MB
-              </p>
-            </div>
+            {!audioFile ? (
+              <label>
+                <input
+                  type="file"
+                  accept=".mp3,.wav,.m4a,.webm,.mp4,.mpeg,.mpga,.oga,.ogg,.flac"
+                  className="hidden"
+                  onChange={(e) => handleFileSelect(e.target.files[0])}
+                />
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}
+                  className={`
+                    border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-200
+                    ${dragOver
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/40 hover:bg-muted/30"
+                    }
+                  `}
+                >
+                  <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm font-medium">Drag and drop your audio file here</p>
+                  <p className="text-xs text-muted-foreground mt-1">or click to browse • MP3, WAV, M4A up to 100MB</p>
+                </div>
+              </label>
+            ) : (
+              <div className="border rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileAudio className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">{audioFile.name}</p>
+                      <p className="text-xs text-muted-foreground">{(audioFile.size / (1024 * 1024)).toFixed(1)} MB</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); }}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                {!transcription && (
+                  <Button onClick={handleTranscribe} disabled={transcribing} variant="outline" className="w-full">
+                    {transcribing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : "Transcribe Audio"}
+                  </Button>
+                )}
+                {transcription && (
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-accent font-medium">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Transcription complete • {Math.round(transcription.duration)}s duration
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-3">{transcription.text}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
