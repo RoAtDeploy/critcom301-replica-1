@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { mockReports } from "@/lib/mockData";
+import { base44 } from "@/api/base44Client";
 import { useAdmin } from "@/context/AdminContext";
 
 const getInitials = (name) => name.split(" ").map((n) => n[0]).join("");
@@ -21,14 +21,24 @@ const scoreColor = (score) => {
 export default function StaffMembers() {
   const { staffList, refreshStaff } = useAdmin();
   const [search, setSearch] = useState("");
+  const [reportCounts, setReportCounts] = useState({});
 
   useEffect(() => { refreshStaff(); }, []);
+
+  useEffect(() => {
+    if (staffList.length === 0) return;
+    base44.entities.Report.filter({ status: "saved" }).then((reports) => {
+      const counts = {};
+      reports.forEach((r) => {
+        counts[r.staff_id] = (counts[r.staff_id] || 0) + 1;
+      });
+      setReportCounts(counts);
+    });
+  }, [staffList]);
 
   const filtered = staffList.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
-
-  const reportCount = (id) => mockReports.filter((r) => r.staffId === id).length;
 
   return (
     <motion.div
@@ -95,7 +105,7 @@ export default function StaffMembers() {
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <FileText className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{reportCount(member.id)}</span>
+                      <span className="font-medium">{reportCounts[member.id] || 0}</span>
                       <span className="text-muted-foreground">reports</span>
                     </div>
                     <Badge
