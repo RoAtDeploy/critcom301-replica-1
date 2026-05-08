@@ -69,39 +69,7 @@ function overlap(aStart, aEnd, bStart, bEnd) {
   return Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart));
 }
 
-// For each segment in the full transcript, match its text against
-// the LC and RC transcripts to assign the correct channel label.
-function assignChannels(fullSegments, lcText, rcText) {
-  const lcLower = lcText.toLowerCase();
-  const rcLower = rcText.toLowerCase();
 
-  return fullSegments.map(seg => {
-    const segLower = seg.text.toLowerCase().trim();
-    if (!segLower) return { timestamp: formatTime(seg.start), start: seg.start, end: seg.end, channel: 'LC', text: seg.text.trim() };
-
-    // Check if this segment's text appears in LC or RC transcripts
-    const inLC = lcLower.includes(segLower);
-    const inRC = rcLower.includes(segLower);
-
-    // If in both, lean toward the one with more overlap; if only one, use that
-    let channel = 'LC';
-    if (inRC && !inLC) channel = 'RC';
-    else if (inLC && inRC) {
-      // Both have the text; count occurrences to break ties
-      const lcCount = (lcLower.match(new RegExp(segLower, 'g')) || []).length;
-      const rcCount = (rcLower.match(new RegExp(segLower, 'g')) || []).length;
-      if (rcCount > lcCount) channel = 'RC';
-    }
-
-    return {
-      timestamp: formatTime(seg.start),
-      start: seg.start,
-      end: seg.end,
-      channel,
-      text: seg.text.trim(),
-    };
-  });
-}
 
 Deno.serve(async (req) => {
   try {
@@ -154,14 +122,20 @@ Deno.serve(async (req) => {
       whisperTranscribe(rcWav, 'right-channel.wav', apiKey),
     ]);
 
-    // Use the clean full-mix transcript as the base; label each segment by matching text
-    const segments = assignChannels(fullResult.segments || [], lcResult.text || '', rcResult.text || '');
-
+    // Return all three transcriptions and segment data for the user to assign
     return Response.json({
       text: fullResult.text,
       language: fullResult.language,
       duration: duration || fullResult.duration,
-      segments,
+      segments: (fullResult.segments || []).map(s => ({
+        timestamp: formatTime(s.start),
+        start: s.start,
+        end: s.end,
+        channel: null, // User will assign
+        text: s.text.trim(),
+      })),
+      lcText: lcResult.text || '',
+      rcText: rcResult.text || '',
       isStereo: true,
     });
   } catch (error) {

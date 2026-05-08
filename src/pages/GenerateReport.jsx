@@ -46,12 +46,7 @@ export default function GenerateReport() {
     return `${m}:${s}`;
   };
 
-  // Build a preview of the first few segments for channel identification
-  const channelPreview = transcription?.segments?.slice(0, 6).map((seg) => ({
-    timestamp: seg.timestamp || formatTime(seg.start),
-    channel: seg.channel || 'LC',
-    text: seg.text.trim(),
-  })) || [];
+  const [assignedChannels, setAssignedChannels] = useState({});
 
   const [audioUrl, setAudioUrl] = useState(null);
 
@@ -214,103 +209,80 @@ export default function GenerateReport() {
                   </Button>
                 )}
                 {transcription && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-accent font-medium">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Transcription complete • {Math.round(transcription.duration)}s duration
-                    </div>
+                   <div className="space-y-4">
+                     <div className="flex items-center gap-2 text-sm text-accent font-medium">
+                       <CheckCircle2 className="w-4 h-4" />
+                       Transcription complete • {Math.round(transcription.duration)}s duration
+                     </div>
 
-                    {/* Channel identification step */}
-                    <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-primary" />
-                        <p className="text-sm font-semibold">Identify each channel</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Review the transcript and assign the staff member to their channel. Select the role of the other person on the call.</p>
+                     {/* Three transcripts view */}
+                     <div className="space-y-3">
+                       {/* Full transcript */}
+                       <div className="border rounded-xl p-3 space-y-2 bg-muted/20">
+                         <p className="text-xs font-semibold">Full Transcript</p>
+                         <div className="max-h-24 overflow-y-auto text-xs text-muted-foreground bg-background rounded p-2">
+                           {transcription.text}
+                         </div>
+                       </div>
 
-                      {/* Preview transcript */}
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {channelPreview.map((line, idx) => (
-                          <div key={idx} className="flex gap-2 text-sm items-start">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 whitespace-nowrap">
-                              {line.timestamp}
-                            </span>
-                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
-                              line.channel === 'LC' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                            }`}>
-                              {line.channel}
-                            </span>
-                            <p className="text-muted-foreground leading-relaxed">{line.text}</p>
-                          </div>
-                        ))}
-                      </div>
+                       {/* LC and RC side by side */}
+                       <div className="grid grid-cols-2 gap-3">
+                         <div className="border-2 border-blue-200 rounded-xl p-3 space-y-2 bg-blue-50">
+                           <p className="text-xs font-semibold text-blue-700">Left Channel (LC)</p>
+                           <div className="max-h-32 overflow-y-auto text-xs text-blue-600 bg-white rounded p-2">
+                             {transcription.lcText}
+                           </div>
+                           <button
+                             type="button"
+                             onClick={() => { setStaffChannel('LC'); setOtherRole(null); }}
+                             className={`w-full text-xs font-semibold py-1.5 rounded-md border transition-all ${
+                               staffChannel === 'LC'
+                                 ? 'border-blue-400 bg-blue-100 text-blue-700'
+                                 : 'border-blue-200 hover:bg-blue-100 text-blue-600'
+                             }`}
+                           >
+                             {staffChannel === 'LC' ? '✓ Staff member' : 'Set as staff member'}
+                           </button>
+                         </div>
 
-                      {/* Two channel cards */}
-                      <div className="grid grid-cols-2 gap-3 pt-1">
-                        {['LC', 'RC'].map((ch) => {
-                          const isStaffChannel = staffChannel === ch;
-                          const isOtherChannel = staffChannel && staffChannel !== ch;
-                          const isBlue = ch === 'LC';
-                          return (
-                            <div
-                              key={ch}
-                              className={`rounded-lg border-2 p-3 space-y-2 transition-all ${
-                                isStaffChannel
-                                  ? isBlue ? 'border-blue-500 bg-blue-50' : 'border-orange-500 bg-orange-50'
-                                  : 'border-border bg-background'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
-                                  isBlue ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                                }`}>
-                                  {ch === 'LC' ? 'Left Channel' : 'Right Channel'}
-                                </span>
-                              </div>
+                         <div className="border-2 border-orange-200 rounded-xl p-3 space-y-2 bg-orange-50">
+                           <p className="text-xs font-semibold text-orange-700">Right Channel (RC)</p>
+                           <div className="max-h-32 overflow-y-auto text-xs text-orange-600 bg-white rounded p-2">
+                             {transcription.rcText}
+                           </div>
+                           <button
+                             type="button"
+                             onClick={() => { setStaffChannel('RC'); setOtherRole(null); }}
+                             className={`w-full text-xs font-semibold py-1.5 rounded-md border transition-all ${
+                               staffChannel === 'RC'
+                                 ? 'border-orange-400 bg-orange-100 text-orange-700'
+                                 : 'border-orange-200 hover:bg-orange-100 text-orange-600'
+                             }`}
+                           >
+                             {staffChannel === 'RC' ? '✓ Staff member' : 'Set as staff member'}
+                           </button>
+                         </div>
+                       </div>
 
-                              {isStaffChannel ? (
-                                /* Staff member label */
-                                <div className="flex items-center gap-1.5 py-1">
-                                  <User className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span className="text-sm font-semibold text-foreground truncate">
-                                    {selectedStaff?.name || 'Staff Member'}
-                                  </span>
-                                </div>
-                              ) : isOtherChannel ? (
-                                /* Role selector for the other channel */
-                                <Select value={otherRole} onValueChange={setOtherRole}>
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue placeholder="Select their role…" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {adminRoles.map((r) => (
-                                      <SelectItem key={r} value={r}>{r}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                /* Prompt to assign */
-                                <p className="text-xs text-muted-foreground py-1">Assign below</p>
-                              )}
-
-                              <button
-                                type="button"
-                                onClick={() => { setStaffChannel(ch); setOtherRole(null); }}
-                                className={`w-full text-xs font-semibold py-1.5 rounded-md border transition-all ${
-                                  isStaffChannel
-                                    ? isBlue ? 'border-blue-400 bg-blue-100 text-blue-700' : 'border-orange-400 bg-orange-100 text-orange-700'
-                                    : 'border-border hover:bg-muted text-muted-foreground'
-                                }`}
-                              >
-                                {isStaffChannel ? '✓ Staff member' : 'Set as staff member'}
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                       {/* Role selector for other channel */}
+                       {staffChannel && (
+                         <div className="border rounded-xl p-3 space-y-2 bg-muted/20">
+                           <p className="text-xs font-semibold">Role of the other person</p>
+                           <Select value={otherRole} onValueChange={setOtherRole}>
+                             <SelectTrigger className="h-8 text-xs">
+                               <SelectValue placeholder="Select their role…" />
+                             </SelectTrigger>
+                             <SelectContent>
+                               {adminRoles.map((r) => (
+                                 <SelectItem key={r} value={r}>{r}</SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 )}
               </div>
             )}
           </div>
