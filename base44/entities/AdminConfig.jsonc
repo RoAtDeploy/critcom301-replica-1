@@ -1,0 +1,19 @@
+{
+  "name": "AdminConfig",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Config key, e.g. 'roles', 'departments', 'lineManagers'"
+    },
+    "values": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "key"
+  ]
+}
