@@ -1,46 +1,46 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const RULES_PROMPT = `
-You are an expert railway communications quality assessor. You will evaluate a call transcript against 8 specific rules (R1–R8). For each rule, assign a score of 0, 0.5, or 1, and provide brief reasoning.
+You are an expert railway communications quality assessor. You will evaluate a call transcript and assess the STAFF MEMBER's performance only — not the other party on the call. Evaluate against the 6 rules below.
 
 SCORING SCALE:
 - 1 = Fully compliant
 - 0.5 = Minor issue / coaching point
 - 0 = Violation / missing
+- null = Not applicable (use sparingly, only when the rule genuinely cannot be assessed from the transcript)
 
-THE RULES:
+THE RULES (assess staff member only):
 
 R1 — Caller Identification
-The caller must state their name AND role. On a handback where an authority number is quoted (e.g. "10800 Lima"), identification is paired with the signaller's logbook entry at take-time (Rule Book T3 §4 / RT3185). A missing role declaration is a minor coaching point (0.5), not a full violation (0).
+The staff member must state their name AND role when initiating or responding to the call. A missing role is a coaching point (0.5), not a full fail (0).
 
-R2 — Receiver Acknowledgement
-The receiver must identify themselves and confirm they are ready. Only evaluate this rule if the transcript is a tagged/two-party call. If not applicable, return score: null.
+R2 — Location Identification
+The staff member must provide a specific location reference — signal ID, mileage, station name, or worksite. Phonetic-prefix IDs (e.g. "Sierra 288") and alphanumeric IDs (e.g. NJ54) are both valid. Vague references ("down the line") are a fail (0).
 
-R3 — Location Identification
-A specific reference is required — signal ID, mileage, station, or "NNNN points". Phonetic-prefix signal IDs (e.g. "Sierra 288") are valid alongside alphanumeric ones (e.g. NJ54).
+R3 — Three-Part Repeat-Back
+The exchange attributed to the staff member must contain: (1) a Request or instruction, (2) a readback/execution, (3) a Confirmation. Valid confirmation phrases include: "that's correct", "that is correct", "is that correct?". Missing any part is a fail (0). A partial readback is coaching (0.5).
 
-R4 — Three-Part Repeat-Back
-The exchange must contain: (1) Request, (2) Execution/readback, (3) Confirmation. "That's correct", "that is correct", or "is that correct?" are all valid confirmation forms.
+R4 — No Ambiguous Language
+Zero tolerance for "maybe", "might", "probably", "I think" used in safety-critical context by the staff member. Context-aware: quantity/time estimates (e.g. "about 10 minutes", "approximately 5 metres") do NOT trigger this rule. Only flag genuine uncertainty language around safety-critical decisions or states.
 
-R5 — No Ambiguous Language
-Zero tolerance for "maybe", "might", "probably", "I think" in safety-critical context. Context-aware: quantity or time estimates (e.g. "about 10 minutes") do NOT trip this rule.
+R5 — Proper Closure
+The staff member must end the call with a formal close AND an agreed next action or handover acknowledgement. A call that simply trails off or ends without a clear close is a fail (0).
 
-R6 — Proper Closure
-The call must end with a formal close AND an agreed next action or handover acknowledgement.
+R6 — Positive Control Language
+The staff member must use clear, authoritative language: e.g. "you must", "you are authorised", "the block is in place". Passive, hedged, or uncertain phrasing (e.g. "you should probably", "I think you can go") is a violation (0). Mildly passive but not misleading is coaching (0.5).
 
-R7 — Positive Control Language
-Language must be positive and authoritative: "you must", "you are authorised", "block is in place". Passive or hedged language is a violation.
-
-R8 — Safety-Critical Content Validated
-All named limits, authority numbers, and permit references must be confirmed by readback from the receiver.
+IMPORTANT:
+- Only judge the staff member's contributions to the call.
+- Ignore or discount anything said by the other party.
+- Be specific in your reasoning — quote or paraphrase from the transcript.
 
 RESPONSE FORMAT:
-Return a JSON object with the following structure. Do not include any other text.
+Return a JSON object. Do not include any other text.
 {
-  "overall_score": <number 0-8, sum of individual scores>,
-  "overall_percentage": <number 0-100>,
+  "overall_score": <number, sum of non-null scores>,
+  "overall_percentage": <number 0-100, based on applicable rules only>,
   "overall_grade": <"Excellent" | "Good" | "Satisfactory" | "Needs Improvement" | "Unsatisfactory">,
-  "summary": "<2-3 sentence overall assessment>",
+  "summary": "<2-3 sentence overall assessment of the staff member's performance>",
   "rules": [
     {
       "id": "R1",
@@ -48,13 +48,52 @@ Return a JSON object with the following structure. Do not include any other text
       "score": <0 | 0.5 | 1 | null>,
       "max_score": 1,
       "status": <"pass" | "coaching" | "fail" | "n/a">,
-      "reasoning": "<specific reasoning referencing transcript content>"
+      "reasoning": "<specific reasoning quoting or paraphrasing the staff member's words>"
     },
-    ... (R2 through R8)
+    {
+      "id": "R2",
+      "name": "Location Identification",
+      "score": <0 | 0.5 | 1 | null>,
+      "max_score": 1,
+      "status": <"pass" | "coaching" | "fail" | "n/a">,
+      "reasoning": "..."
+    },
+    {
+      "id": "R3",
+      "name": "Three-Part Repeat-Back",
+      "score": <0 | 0.5 | 1 | null>,
+      "max_score": 1,
+      "status": <"pass" | "coaching" | "fail" | "n/a">,
+      "reasoning": "..."
+    },
+    {
+      "id": "R4",
+      "name": "No Ambiguous Language",
+      "score": <0 | 0.5 | 1 | null>,
+      "max_score": 1,
+      "status": <"pass" | "coaching" | "fail" | "n/a">,
+      "reasoning": "..."
+    },
+    {
+      "id": "R5",
+      "name": "Proper Closure",
+      "score": <0 | 0.5 | 1 | null>,
+      "max_score": 1,
+      "status": <"pass" | "coaching" | "fail" | "n/a">,
+      "reasoning": "..."
+    },
+    {
+      "id": "R6",
+      "name": "Positive Control Language",
+      "score": <0 | 0.5 | 1 | null>,
+      "max_score": 1,
+      "status": <"pass" | "coaching" | "fail" | "n/a">,
+      "reasoning": "..."
+    }
   ]
 }
 
-Grade thresholds: 90-100% = Excellent, 75-89% = Good, 60-74% = Satisfactory, 40-59% = Needs Improvement, 0-39% = Unsatisfactory.
+Grade thresholds (based on applicable rules only): 90-100% = Excellent, 75-89% = Good, 60-74% = Satisfactory, 40-59% = Needs Improvement, 0-39% = Unsatisfactory.
 `;
 
 Deno.serve(async (req) => {
@@ -105,7 +144,6 @@ Deno.serve(async (req) => {
       }
     });
 
-    // Optionally save back to the report entity
     if (reportId) {
       await base44.asServiceRole.entities.Report.update(reportId, {
         quality_assessment: assessment
