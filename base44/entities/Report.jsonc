@@ -14,6 +14,14 @@
       "type": "string",
       "description": "Role of the staff member on site"
     },
+    "other_role": {
+      "type": "string",
+      "description": "Role of the other participant on the call"
+    },
+    "staff_channel": {
+      "type": "string",
+      "description": "Which audio channel the staff member was on (LC or RC)"
+    },
     "call_date": {
       "type": "string",
       "description": "Date of the call"

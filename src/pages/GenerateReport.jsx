@@ -87,6 +87,8 @@ export default function GenerateReport() {
       transcription_duration: transcription.duration,
       transcription_language: transcription.language,
       timestamped_transcript: reportData.timestampedTranscript || [],
+      other_role: otherRole,
+      staff_channel: staffChannel,
     });
     setGeneratingReport(false);
     navigate(`/reports/${saved.id}`);

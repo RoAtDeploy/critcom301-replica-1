@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone } from "lucide-react";
+import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ReportDetail() {
@@ -62,6 +62,9 @@ export default function ReportDetail() {
           <InfoRow icon={Phone} label="Call Type" value={report.call_type || "—"} />
           <InfoRow icon={Clock} label="Duration" value={report.transcription_duration ? `${Math.round(report.transcription_duration)}s` : "—"} />
           <InfoRow icon={FileAudio} label="Language" value={report.transcription_language || "—"} />
+          {report.other_role && (
+            <InfoRow icon={Users} label="Conversation With" value={report.other_role} />
+          )}
           {report.call_context && (
             <div className="sm:col-span-2">
               <InfoRow icon={AlignLeft} label="Context" value={report.call_context} />
@@ -81,24 +84,31 @@ export default function ReportDetail() {
         <CardContent className="space-y-4">
           {report.timestamped_transcript?.length > 0 ? (
             <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-              {report.timestamped_transcript.map((line, idx) => (
-                <div key={idx} className="flex gap-3 text-sm">
-                  <span className="flex items-center gap-1 text-xs font-mono text-primary bg-primary/10 rounded px-2 py-0.5 h-fit whitespace-nowrap">
-                    <Clock className="w-3 h-3" />
-                    {line.timestamp}
-                  </span>
-                  {line.channel && (
-                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded h-fit whitespace-nowrap ${
-                      line.channel === 'LC'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-orange-100 text-orange-700'
-                    }`}>
-                      {line.channel}
+              {report.timestamped_transcript.map((line, idx) => {
+                const staffInitials = report.staff_name
+                  ? report.staff_name.split(" ").map((n) => n[0]).join("").toUpperCase()
+                  : "ST";
+                const isStaff = report.staff_channel
+                  ? line.channel === report.staff_channel
+                  : line.is_staff;
+                const speakerLabel = isStaff ? staffInitials : (report.other_role || line.channel || "?");
+                return (
+                  <div key={idx} className="flex gap-3 text-sm">
+                    <span className="flex items-center gap-1 text-xs font-mono text-primary bg-primary/10 rounded px-2 py-0.5 h-fit whitespace-nowrap">
+                      <Clock className="w-3 h-3" />
+                      {line.timestamp}
                     </span>
-                  )}
-                  <p className="text-foreground leading-relaxed">{line.text}</p>
-                </div>
-              ))}
+                    {line.channel && (
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded h-fit whitespace-nowrap ${
+                        isStaff ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {speakerLabel}
+                      </span>
+                    )}
+                    <p className="text-foreground leading-relaxed">{line.text}</p>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground leading-relaxed">{report.transcription_text || "No transcription available."}</p>
