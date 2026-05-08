@@ -22,6 +22,15 @@
       "type": "string",
       "description": "Which audio channel the staff member was on (LC or RC)"
     },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "saved"
+      ],
+      "default": "draft",
+      "description": "Whether the report has been saved/confirmed"
+    },
     "call_date": {
       "type": "string",
       "description": "Date of the call"

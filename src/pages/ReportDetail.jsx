@@ -3,13 +3,15 @@ import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, Save, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ReportDetail() {
   const { id } = useParams();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     base44.entities.Report.get(id).then((r) => {
@@ -17,6 +19,13 @@ export default function ReportDetail() {
       setLoading(false);
     });
   }, [id]);
+
+  const handleSaveReport = async () => {
+    setSaving(true);
+    const updated = await base44.entities.Report.update(id, { status: "saved" });
+    setReport(updated);
+    setSaving(false);
+  };
 
   if (loading) {
     return (
@@ -72,6 +81,33 @@ export default function ReportDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Save Report */}
+      {report.status !== "saved" ? (
+        <div className="flex items-center justify-between p-4 rounded-xl border border-dashed border-border bg-muted/30">
+          <div>
+            <p className="text-sm font-medium">Save this report</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Save the report against this staff member's record to make it retrievable from their profile.</p>
+          </div>
+          <Button onClick={handleSaveReport} disabled={saving} className="bg-primary hover:bg-primary/90 shrink-0 ml-4">
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? "Saving…" : "Save Report"}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-accent/30 bg-accent/5">
+          <CheckCircle2 className="w-5 h-5 text-accent shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-accent">Report saved</p>
+            <p className="text-xs text-muted-foreground mt-0.5">This report is saved and accessible from the staff member's profile.</p>
+          </div>
+          {report.staff_id && (
+            <Link to={`/staff/${report.staff_id}`} className="ml-auto shrink-0">
+              <Button variant="outline" size="sm">View Profile</Button>
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Transcription */}
       <Card className="border-border/50">

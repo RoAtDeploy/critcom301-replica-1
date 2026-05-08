@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { mockReports } from "@/lib/mockData";
+import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,14 +36,15 @@ export default function StaffDetail() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(original ? { ...original } : {});
   const [rolesOpen, setRolesOpen] = useState(false);
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
+    base44.entities.Report.filter({ staff_id: id }, "-created_date").then(setReports);
+  }, [id]);
 
   if (!member) return (
     <div className="text-center py-20 text-muted-foreground">Staff member not found.</div>
   );
-
-  const reports = mockReports
-    .filter((r) => r.staffId === id)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const toggleRole = (role) => {
     setForm((f) => ({
@@ -223,7 +224,7 @@ export default function StaffDetail() {
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <FileText className="w-4 h-4 text-muted-foreground" />
-            Reports ({reports.length})
+            Reports ({reports.filter(r => r.status === "saved").length} saved, {reports.filter(r => r.status !== "saved").length} drafts)
           </CardTitle>
           <Link to={`/reports/new?staffId=${id}`}>
             <Button size="sm" className="bg-primary hover:bg-primary/90">
@@ -236,23 +237,29 @@ export default function StaffDetail() {
             <p className="text-sm text-muted-foreground text-center py-8">No reports yet for this staff member.</p>
           ) : (
             reports.map((report) => (
-              <div key={report.id} className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-primary" />
+              <Link key={report.id} to={`/reports/${report.id}`}>
+                <div className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{report.call_type || "Call Report"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {report.other_role ? `With ${report.other_role}` : report.role || "—"}
+                        {report.call_date ? ` · ${new Date(report.call_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{report.callType}</p>
-                    <p className="text-xs text-muted-foreground">{report.focus} · {new Date(report.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-sm font-bold ${scoreColor(report.score)}`}>{report.score}%</span>
-                  <Badge variant="secondary" className={scoreBg(report.score)}>
-                    {report.status === "completed" ? "Completed" : "Review"}
+                  <Badge variant="secondary" className={
+                    report.status === "saved"
+                      ? "bg-accent/10 text-accent border-accent/20"
+                      : "bg-muted text-muted-foreground border-border"
+                  }>
+                    {report.status === "saved" ? "Saved" : "Draft"}
                   </Badge>
                 </div>
-              </div>
+              </Link>
             ))
           )}
         </CardContent>
