@@ -4,32 +4,33 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X } from "lucide-react";
+import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-
-const mockStaff = [
-  { id: "1", name: "Sarah Mitchell", roles: ["Senior Sales Rep", "Team Lead"] },
-  { id: "2", name: "James Walker", roles: ["Sales Rep"] },
-  { id: "3", name: "Emily Chen", roles: ["Customer Support", "Team Lead"] },
-  { id: "4", name: "Marcus Johnson", roles: ["Sales Rep"] },
-  { id: "5", name: "Olivia Brown", roles: ["Senior Sales Rep"] },
-  { id: "6", name: "Daniel Kim", roles: ["Customer Support", "Manager"] },
-];
+import { mockStaff } from "@/lib/mockData";
 
 export default function GenerateReport() {
   const [dragOver, setDragOver] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState(null);
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [callDate, setCallDate] = useState("");
+  const [callType, setCallType] = useState(null);
+  const [callContext, setCallContext] = useState("");
   const [audioFile, setAudioFile] = useState(null);
   const [transcribing, setTranscribing] = useState(false);
   const [transcription, setTranscription] = useState(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [report, setReport] = useState(null);
+
+  const selectedStaff = mockStaff.find((s) => s.id === selectedStaffId);
 
   const handleFileSelect = (file) => {
     if (file && /\.(mp3|wav|m4a|webm|mp4|mpeg|mpga|oga|ogg|flac)$/i.test(file.name)) {
       setAudioFile(file);
       setTranscription(null);
+      setReport(null);
     }
   };
 
@@ -43,7 +44,20 @@ export default function GenerateReport() {
     setTranscribing(false);
   };
 
-  const selectedStaff = mockStaff.find((s) => s.id === selectedStaffId);
+  const handleGenerateReport = async () => {
+    if (!transcription) return;
+    setGeneratingReport(true);
+    const res = await base44.functions.invoke('generateReport', {
+      transcription,
+      staffName: selectedStaff?.name,
+      role: selectedRole,
+      callType,
+      callDate,
+      context: callContext,
+    });
+    setReport(res.data.report);
+    setGeneratingReport(false);
+  };
 
   return (
     <motion.div
@@ -72,7 +86,7 @@ export default function GenerateReport() {
         <CardContent className="space-y-5">
           <div className="space-y-2">
             <Label>Staff Member</Label>
-            <Select onValueChange={(val) => setSelectedStaffId(val)}>
+            <Select onValueChange={(val) => { setSelectedStaffId(val); setSelectedRole(null); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select staff member" />
               </SelectTrigger>
@@ -89,7 +103,7 @@ export default function GenerateReport() {
               Role on Site
               {!selectedStaff && <span className="ml-2 text-xs text-muted-foreground font-normal">(select a staff member first)</span>}
             </Label>
-            <Select disabled={!selectedStaff}>
+            <Select disabled={!selectedStaff} onValueChange={setSelectedRole}>
               <SelectTrigger>
                 <SelectValue placeholder={selectedStaff ? "Select role…" : "—"} />
               </SelectTrigger>
@@ -103,7 +117,7 @@ export default function GenerateReport() {
 
           <div className="space-y-2">
             <Label>Date of Call</Label>
-            <Input type="date" />
+            <Input type="date" value={callDate} onChange={(e) => setCallDate(e.target.value)} />
           </div>
 
           <div className="space-y-2">
@@ -120,13 +134,9 @@ export default function GenerateReport() {
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}
-                  className={`
-                    border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-200
-                    ${dragOver
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/40 hover:bg-muted/30"
-                    }
-                  `}
+                  className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-200 ${
+                    dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-muted/30"
+                  }`}
                 >
                   <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
                   <p className="text-sm font-medium">Drag and drop your audio file here</p>
@@ -143,7 +153,7 @@ export default function GenerateReport() {
                       <p className="text-xs text-muted-foreground">{(audioFile.size / (1024 * 1024)).toFixed(1)} MB</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); }}>
+                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); setReport(null); }}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -168,55 +178,82 @@ export default function GenerateReport() {
           <div className="space-y-2">
             <Label>Call Context (Optional)</Label>
             <Textarea
-              placeholder="Add any context about this call, e.g. 'Initial sales call with new enterprise lead' or 'Customer complaint follow-up'…"
+              placeholder="Add any context about this call…"
               className="h-24 resize-none"
+              value={callContext}
+              onChange={(e) => setCallContext(e.target.value)}
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Call Type</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sales">Sales Call</SelectItem>
-                  <SelectItem value="support">Support Call</SelectItem>
-                  <SelectItem value="follow_up">Follow-up</SelectItem>
-                  <SelectItem value="demo">Product Demo</SelectItem>
-                  <SelectItem value="complaint">Complaint</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Evaluation Focus</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select focus" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="overall">Overall Performance</SelectItem>
-                  <SelectItem value="communication">Communication</SelectItem>
-                  <SelectItem value="product_knowledge">Product Knowledge</SelectItem>
-                  <SelectItem value="objection_handling">Objection Handling</SelectItem>
-                  <SelectItem value="closing">Closing Technique</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>Call Type</Label>
+            <Select onValueChange={setCallType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Sales Call">Sales Call</SelectItem>
+                <SelectItem value="Support Call">Support Call</SelectItem>
+                <SelectItem value="Follow-up">Follow-up</SelectItem>
+                <SelectItem value="Product Demo">Product Demo</SelectItem>
+                <SelectItem value="Complaint">Complaint</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <Link to="/">
               <Button variant="outline">Cancel</Button>
             </Link>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Generate Report
+            <Button
+              onClick={handleGenerateReport}
+              disabled={!transcription || generatingReport}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {generatingReport
+                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</>
+                : <><Sparkles className="w-4 h-4 mr-2" />Generate Report</>
+              }
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {report && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-accent" />
+                Call Report
+              </CardTitle>
+              <CardDescription>
+                {report.staffName} • {report.role} • {report.callDate} • {report.callType}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>Duration: {Math.round(report.duration)}s</span>
+                <span>Language: {report.language}</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold mb-3">Timestamped Transcript</h3>
+                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                  {report.timestampedTranscript.map((line, idx) => (
+                    <div key={idx} className="flex gap-3 text-sm">
+                      <span className="flex items-center gap-1 text-xs font-mono text-primary bg-primary/10 rounded px-2 py-0.5 h-fit whitespace-nowrap">
+                        <Clock className="w-3 h-3" />
+                        {line.timestamp}
+                      </span>
+                      <p className="text-foreground leading-relaxed">{line.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

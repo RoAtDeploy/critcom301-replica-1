@@ -10,7 +10,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
 import StaffMembers from '@/pages/StaffMembers';
 import AddStaff from '@/pages/AddStaff';
-import GenerateReport from '@/pages/GenerateReport';
+import GenerateReport from '@/pages/GenerateReport.jsx';
 import ActionItems from '@/pages/ActionItems';
 import Admin from '@/pages/Admin';
 import StaffDetail from '@/pages/StaffDetail';
