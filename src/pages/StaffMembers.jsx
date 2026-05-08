@@ -7,15 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-
-const mockStaff = [
-  { id: 1, name: "Sarah Mitchell", role: "Senior Sales Rep", calls: 142, avgScore: 92, reports: 12, status: "active" },
-  { id: 2, name: "James Walker", role: "Sales Rep", calls: 98, avgScore: 78, reports: 8, status: "active" },
-  { id: 3, name: "Emily Chen", role: "Customer Support", calls: 210, avgScore: 85, reports: 15, status: "active" },
-  { id: 4, name: "Marcus Johnson", role: "Sales Rep", calls: 76, avgScore: 64, reports: 6, status: "review" },
-  { id: 5, name: "Olivia Brown", role: "Senior Sales Rep", calls: 185, avgScore: 91, reports: 14, status: "active" },
-  { id: 6, name: "Daniel Kim", role: "Customer Support", calls: 162, avgScore: 88, reports: 11, status: "active" },
-];
+import { mockStaff, mockReports } from "@/lib/mockData";
 
 const getInitials = (name) => name.split(" ").map((n) => n[0]).join("");
 
@@ -31,6 +23,8 @@ export default function StaffMembers() {
   const filtered = mockStaff.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const reportCount = (id) => mockReports.filter((r) => r.staffId === id).length;
 
   return (
     <motion.div
@@ -68,53 +62,55 @@ export default function StaffMembers() {
 
       <div className="grid gap-4">
         {filtered.map((member) => (
-          <Card key={member.id} className="border-border/50 hover:shadow-md transition-shadow duration-200 cursor-pointer">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-12 h-12">
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                      {getInitials(member.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold">{member.name}</p>
-                    <p className="text-sm text-muted-foreground">{member.role}</p>
+          <Link key={member.id} to={`/staff/${member.id}`}>
+            <Card className="border-border/50 hover:shadow-md transition-shadow duration-200 cursor-pointer">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-12 h-12">
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {getInitials(member.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold">{member.name}</p>
+                      <p className="text-sm text-muted-foreground">{member.roles.join(", ")}</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="hidden md:flex items-center gap-8">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{member.calls}</span>
-                    <span className="text-muted-foreground">calls</span>
+                  <div className="hidden md:flex items-center gap-8">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium">{member.calls}</span>
+                      <span className="text-muted-foreground">calls</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                      <span className={`font-bold ${scoreColor(member.avgScore)}`}>{member.avgScore}%</span>
+                      <span className="text-muted-foreground">avg</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <FileText className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium">{reportCount(member.id)}</span>
+                      <span className="text-muted-foreground">reports</span>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className={
+                        member.status === "active"
+                          ? "bg-accent/10 text-accent border-accent/20"
+                          : "bg-chart-3/10 text-chart-3 border-chart-3/20"
+                      }
+                    >
+                      {member.status === "active" ? "Active" : "Review"}
+                    </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                    <span className={`font-bold ${scoreColor(member.avgScore)}`}>{member.avgScore}%</span>
-                    <span className="text-muted-foreground">avg</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <FileText className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{member.reports}</span>
-                    <span className="text-muted-foreground">reports</span>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={
-                      member.status === "active"
-                        ? "bg-accent/10 text-accent border-accent/20"
-                        : "bg-chart-3/10 text-chart-3 border-chart-3/20"
-                    }
-                  >
-                    {member.status === "active" ? "Active" : "Review"}
-                  </Badge>
-                </div>
 
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </motion.div>

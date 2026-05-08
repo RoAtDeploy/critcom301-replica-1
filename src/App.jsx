@@ -13,6 +13,7 @@ import AddStaff from '@/pages/AddStaff';
 import GenerateReport from '@/pages/GenerateReport';
 import ActionItems from '@/pages/ActionItems';
 import Admin from '@/pages/Admin';
+import StaffDetail from '@/pages/StaffDetail';
 import { AdminProvider } from '@/context/AdminContext';
 
 const AuthenticatedApp = () => {
@@ -41,6 +42,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/staff" element={<StaffMembers />} />
         <Route path="/staff/new" element={<AddStaff />} />
+        <Route path="/staff/:id" element={<StaffDetail />} />
         <Route path="/reports/new" element={<GenerateReport />} />
         <Route path="/actions" element={<ActionItems />} />
         <Route path="/admin" element={<Admin />} />
