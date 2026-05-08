@@ -37,9 +37,8 @@ export default function GenerateReport() {
   const handleTranscribe = async () => {
     if (!audioFile) return;
     setTranscribing(true);
-    const formData = new FormData();
-    formData.append('file', audioFile);
-    const res = await base44.functions.invoke('transcribeAudio', formData);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
+    const res = await base44.functions.invoke('transcribeAudio', { file_url });
     setTranscription(res.data);
     setTranscribing(false);
   };
