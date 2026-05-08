@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { mockStaff, mockReports } from "@/lib/mockData";
+import { mockReports } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,12 +29,12 @@ const scoreBg = (score) => {
 
 export default function StaffDetail() {
   const { id } = useParams();
-  const { roles: adminRoles, departments, lineManagers } = useAdmin();
+  const { roles: adminRoles, departments, lineManagers, staffList, updateStaff } = useAdmin();
 
-  const original = mockStaff.find((s) => s.id === id);
+  const original = staffList.find((s) => s.id === id);
   const [member, setMember] = useState(original);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ ...original });
+  const [form, setForm] = useState(original ? { ...original } : {});
   const [rolesOpen, setRolesOpen] = useState(false);
 
   if (!member) return (
@@ -53,7 +53,9 @@ export default function StaffDetail() {
   };
 
   const handleSave = () => {
-    setMember({ ...form, name: `${form.firstName} ${form.lastName}` });
+    const updated = { ...form, name: `${form.firstName} ${form.lastName}` };
+    setMember(updated);
+    updateStaff(id, updated);
     setEditing(false);
   };
 

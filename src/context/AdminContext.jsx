@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import { mockStaff } from "@/lib/mockData";
 
 const defaultDepartments = ["Sales", "Customer Support", "Retention", "Onboarding", "Operations"];
 const defaultLineManagers = ["Alice Thompson", "Bob Harris", "Carol Davies", "David Singh"];
@@ -10,6 +11,23 @@ export function AdminProvider({ children }) {
   const [departments, setDepartments] = useState(defaultDepartments);
   const [lineManagers, setLineManagers] = useState(defaultLineManagers);
   const [roles, setRoles] = useState(defaultRoles);
+  const [staffList, setStaffList] = useState(mockStaff);
+
+  const addStaff = (member) => {
+    const newMember = {
+      ...member,
+      id: Date.now().toString(),
+      calls: 0,
+      avgScore: 0,
+      status: "active",
+    };
+    setStaffList((prev) => [...prev, newMember]);
+    return newMember;
+  };
+
+  const updateStaff = (id, updates) => {
+    setStaffList((prev) => prev.map((s) => s.id === id ? { ...s, ...updates } : s));
+  };
 
   const addItem = (type, value) => {
     const trimmed = value.trim();
@@ -43,7 +61,7 @@ export function AdminProvider({ children }) {
   };
 
   return (
-    <AdminContext.Provider value={{ departments, lineManagers, roles, addItem, removeItem, editItem }}>
+    <AdminContext.Provider value={{ departments, lineManagers, roles, staffList, addStaff, updateStaff, addItem, removeItem, editItem }}>
       {children}
     </AdminContext.Provider>
   );

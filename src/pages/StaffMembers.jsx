@@ -7,7 +7,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { mockStaff, mockReports } from "@/lib/mockData";
+import { mockReports } from "@/lib/mockData";
+import { useAdmin } from "@/context/AdminContext";
 
 const getInitials = (name) => name.split(" ").map((n) => n[0]).join("");
 
@@ -18,9 +19,10 @@ const scoreColor = (score) => {
 };
 
 export default function StaffMembers() {
+  const { staffList } = useAdmin();
   const [search, setSearch] = useState("");
 
-  const filtered = mockStaff.filter((s) =>
+  const filtered = staffList.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 

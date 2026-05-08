@@ -6,13 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserPlus, ArrowLeft, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAdmin } from "@/context/AdminContext";
 
 export default function AddStaff() {
-  const { roles, departments, lineManagers } = useAdmin();
+  const { roles, departments, lineManagers, addStaff } = useAdmin();
+  const navigate = useNavigate();
 
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [sentinelId, setSentinelId] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [department, setDepartment] = useState("");
+  const [lineManager, setLineManager] = useState("");
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [rolesOpen, setRolesOpen] = useState(false);
 
@@ -24,6 +32,22 @@ export default function AddStaff() {
 
   const removeRole = (value) => {
     setSelectedRoles((prev) => prev.filter((r) => r !== value));
+  };
+
+  const handleSubmit = () => {
+    if (!firstName.trim() || !lastName.trim()) return;
+    const newMember = addStaff({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      name: `${firstName.trim()} ${lastName.trim()}`,
+      sentinelId,
+      email,
+      phone,
+      roles: selectedRoles,
+      department,
+      lineManager,
+    });
+    navigate(`/staff/${newMember.id}`);
   };
 
   return (
@@ -56,11 +80,11 @@ export default function AddStaff() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name <span className="text-destructive">*</span></Label>
-              <Input id="firstName" placeholder="e.g. Sarah" />
+              <Input id="firstName" placeholder="e.g. Sarah" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name <span className="text-destructive">*</span></Label>
-              <Input id="lastName" placeholder="e.g. Mitchell" />
+              <Input id="lastName" placeholder="e.g. Mitchell" value={lastName} onChange={(e) => setLastName(e.target.value)} />
             </div>
           </div>
 
@@ -70,7 +94,7 @@ export default function AddStaff() {
               Sentinel / ID Number
               <span className="ml-2 text-xs text-muted-foreground font-normal">(optional)</span>
             </Label>
-            <Input id="sentinelId" placeholder="e.g. SNT-00142" />
+            <Input id="sentinelId" placeholder="e.g. SNT-00142" value={sentinelId} onChange={(e) => setSentinelId(e.target.value)} />
           </div>
 
           {/* Email */}
@@ -79,7 +103,7 @@ export default function AddStaff() {
               Email Address
               <span className="ml-2 text-xs text-muted-foreground font-normal">(optional)</span>
             </Label>
-            <Input id="email" type="email" placeholder="sarah.mitchell@company.com" />
+            <Input id="email" type="email" placeholder="sarah.mitchell@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
 
           {/* Phone with +44 prefix */}
@@ -97,6 +121,8 @@ export default function AddStaff() {
                 type="tel"
                 placeholder="7700 900 000"
                 className="rounded-l-none"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
               />
             </div>
           </div>
@@ -165,7 +191,7 @@ export default function AddStaff() {
               Department
               <span className="ml-2 text-xs text-muted-foreground font-normal">(optional)</span>
             </Label>
-            <Select>
+            <Select value={department} onValueChange={setDepartment}>
               <SelectTrigger>
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
@@ -183,7 +209,7 @@ export default function AddStaff() {
               Line Manager
               <span className="ml-2 text-xs text-muted-foreground font-normal">(optional)</span>
             </Label>
-            <Select>
+            <Select value={lineManager} onValueChange={setLineManager}>
               <SelectTrigger>
                 <SelectValue placeholder="Select line manager" />
               </SelectTrigger>
@@ -199,7 +225,11 @@ export default function AddStaff() {
             <Link to="/staff">
               <Button variant="outline">Cancel</Button>
             </Link>
-            <Button className="bg-primary hover:bg-primary/90">
+            <Button
+              className="bg-primary hover:bg-primary/90"
+              disabled={!firstName.trim() || !lastName.trim()}
+              onClick={handleSubmit}
+            >
               <UserPlus className="w-4 h-4 mr-2" />
               Add Staff Member
             </Button>
