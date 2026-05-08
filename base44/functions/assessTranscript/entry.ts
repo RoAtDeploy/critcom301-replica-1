@@ -118,13 +118,16 @@ Deno.serve(async (req) => {
       }
     });
 
+    // Unwrap extra 'response' key if the LLM wraps its output
+    const normalized = assessment?.response ?? assessment;
+
     if (reportId) {
       await base44.asServiceRole.entities.Report.update(reportId, {
-        quality_assessment: assessment
+        quality_assessment: normalized
       });
     }
 
-    return Response.json({ assessment });
+    return Response.json({ assessment: normalized });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

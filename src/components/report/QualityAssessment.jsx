@@ -40,7 +40,8 @@ function RuleRow({ rule }) {
 }
 
 export default function QualityAssessment({ report }) {
-  const assessment = report.quality_assessment;
+  const raw = report.quality_assessment;
+  const assessment = raw?.response ?? raw;
   if (!assessment?.rules?.length) return null;
 
   const applicable = assessment.rules.filter(r => r.status !== "n/a");
