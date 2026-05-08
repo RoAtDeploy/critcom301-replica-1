@@ -69,21 +69,29 @@ function overlap(aStart, aEnd, bStart, bEnd) {
   return Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart));
 }
 
-// For each segment in the full transcript, find which channel (LC or RC)
-// has the best overlap and assign that channel label.
-function assignChannels(fullSegments, lcSegments, rcSegments) {
+// For each segment in the full transcript, match its text against
+// the LC and RC transcripts to assign the correct channel label.
+function assignChannels(fullSegments, lcText, rcText) {
+  const lcLower = lcText.toLowerCase();
+  const rcLower = rcText.toLowerCase();
+
   return fullSegments.map(seg => {
-    let maxLcOverlap = 0;
-    let maxRcOverlap = 0;
+    const segLower = seg.text.toLowerCase().trim();
+    if (!segLower) return { timestamp: formatTime(seg.start), start: seg.start, end: seg.end, channel: 'LC', text: seg.text.trim() };
 
-    for (const lc of lcSegments) {
-      maxLcOverlap = Math.max(maxLcOverlap, overlap(seg.start, seg.end, lc.start, lc.end));
-    }
-    for (const rc of rcSegments) {
-      maxRcOverlap = Math.max(maxRcOverlap, overlap(seg.start, seg.end, rc.start, rc.end));
-    }
+    // Check if this segment's text appears in LC or RC transcripts
+    const inLC = lcLower.includes(segLower);
+    const inRC = rcLower.includes(segLower);
 
-    const channel = maxRcOverlap > maxLcOverlap ? 'RC' : 'LC';
+    // If in both, lean toward the one with more overlap; if only one, use that
+    let channel = 'LC';
+    if (inRC && !inLC) channel = 'RC';
+    else if (inLC && inRC) {
+      // Both have the text; count occurrences to break ties
+      const lcCount = (lcLower.match(new RegExp(segLower, 'g')) || []).length;
+      const rcCount = (rcLower.match(new RegExp(segLower, 'g')) || []).length;
+      if (rcCount > lcCount) channel = 'RC';
+    }
 
     return {
       timestamp: formatTime(seg.start),
@@ -146,11 +154,8 @@ Deno.serve(async (req) => {
       whisperTranscribe(rcWav, 'right-channel.wav', apiKey),
     ]);
 
-    const lcSegs = (lcResult.segments || []).map(s => ({ start: s.start, end: s.end }));
-    const rcSegs = (rcResult.segments || []).map(s => ({ start: s.start, end: s.end }));
-
-    // Use the clean full-mix transcript as the base; label each segment via channel overlap
-    const segments = assignChannels(fullResult.segments || [], lcSegs, rcSegs);
+    // Use the clean full-mix transcript as the base; label each segment by matching text
+    const segments = assignChannels(fullResult.segments || [], lcResult.text || '', rcResult.text || '');
 
     return Response.json({
       text: fullResult.text,
