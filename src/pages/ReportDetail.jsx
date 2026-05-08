@@ -87,6 +87,15 @@ export default function ReportDetail() {
                     <Clock className="w-3 h-3" />
                     {line.timestamp}
                   </span>
+                  {line.channel && (
+                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded h-fit whitespace-nowrap ${
+                      line.channel === 'LC'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-orange-100 text-orange-700'
+                    }`}>
+                      {line.channel}
+                    </span>
+                  )}
                   <p className="text-foreground leading-relaxed">{line.text}</p>
                 </div>
               ))}

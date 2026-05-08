@@ -22,8 +22,9 @@ Deno.serve(async (req) => {
       return `${m}:${s}`;
     };
 
-    const timestampedLines = (transcription.segments || []).map((seg) => ({
+    const timestampedLines = (transcription.segments || []).map((seg, idx) => ({
       timestamp: formatTime(seg.start),
+      channel: idx % 2 === 0 ? 'LC' : 'RC',
       text: seg.text.trim(),
     }));
 
