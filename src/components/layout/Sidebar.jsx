@@ -7,7 +7,8 @@ import {
   ListChecks,
   Headphones,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings2
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,24 @@ const navItems = [
 export default function Sidebar() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+
+  const isActive = (path) =>
+    location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
+
+  const NavLink = ({ item }) => (
+    <Link
+      to={item.path}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+        isActive(item.path)
+          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20"
+          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      )}
+    >
+      <item.icon className="w-5 h-5 shrink-0" />
+      {!collapsed && <span>{item.label}</span>}
+    </Link>
+  );
 
   return (
     <aside
@@ -43,31 +62,28 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Navigation */}
+      {/* Main Navigation */}
       <nav className="flex-1 py-6 px-3 space-y-1">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path || 
-            (item.path !== "/" && location.pathname.startsWith(item.path));
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-            >
-              <item.icon className="w-5 h-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
+        {!collapsed && (
+          <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3 mb-3">
+            Main
+          </p>
+        )}
+        {navItems.map((item) => <NavLink key={item.path} item={item} />)}
       </nav>
 
+      {/* Admin Section */}
+      <div className="px-3 pb-3 border-t border-sidebar-border pt-4">
+        {!collapsed && (
+          <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3 mb-3">
+            Admin
+          </p>
+        )}
+        <NavLink item={{ label: "Admin", icon: Settings2, path: "/admin" }} />
+      </div>
+
       {/* Collapse Toggle */}
-      <div className="px-3 pb-5">
+      <div className="px-3 pb-5 pt-2">
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"

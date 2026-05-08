@@ -1,7 +1,8 @@
-import { Users, FileText, ListChecks, TrendingUp } from "lucide-react";
+import { Users, FileText, ListChecks, TrendingUp, Settings2, ArrowRight } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import RecentReports from "@/components/dashboard/RecentReports";
 import RecentActions from "@/components/dashboard/RecentActions";
+import AdminSummary from "@/components/dashboard/AdminSummary";
 import { motion } from "framer-motion";
 
 const stats = [
@@ -46,6 +47,10 @@ export default function Dashboard() {
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentReports />
         <RecentActions />
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <AdminSummary />
       </motion.div>
     </motion.div>
   );

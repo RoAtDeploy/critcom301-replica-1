@@ -12,6 +12,8 @@ import StaffMembers from '@/pages/StaffMembers';
 import AddStaff from '@/pages/AddStaff';
 import GenerateReport from '@/pages/GenerateReport';
 import ActionItems from '@/pages/ActionItems';
+import Admin from '@/pages/Admin';
+import { AdminProvider } from '@/context/AdminContext';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -41,6 +43,7 @@ const AuthenticatedApp = () => {
         <Route path="/staff/new" element={<AddStaff />} />
         <Route path="/reports/new" element={<GenerateReport />} />
         <Route path="/actions" element={<ActionItems />} />
+        <Route path="/admin" element={<Admin />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -50,12 +53,14 @@ const AuthenticatedApp = () => {
 function App() {
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
+      <AdminProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </AdminProvider>
     </AuthProvider>
   )
 }

@@ -4,19 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserPlus, ArrowLeft, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-
-const ROLE_OPTIONS = [
-  { value: "sales_rep", label: "Sales Rep" },
-  { value: "senior_sales", label: "Senior Sales Rep" },
-  { value: "support", label: "Customer Support" },
-  { value: "team_lead", label: "Team Lead" },
-  { value: "manager", label: "Manager" },
-];
+import { useAdmin } from "@/context/AdminContext";
 
 export default function AddStaff() {
+  const { roles, departments, lineManagers } = useAdmin();
+
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [rolesOpen, setRolesOpen] = useState(false);
 
@@ -105,32 +101,23 @@ export default function AddStaff() {
             </div>
           </div>
 
-          {/* Roles — multi-select */}
+          {/* Roles — multi-select from admin context */}
           <div className="space-y-2">
             <Label>Role <span className="text-destructive">*</span></Label>
 
-            {/* Selected badges */}
             {selectedRoles.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
-                {selectedRoles.map((r) => {
-                  const label = ROLE_OPTIONS.find((o) => o.value === r)?.label;
-                  return (
-                    <Badge key={r} variant="secondary" className="bg-primary/10 text-primary border-primary/20 gap-1 pr-1">
-                      {label}
-                      <button
-                        type="button"
-                        onClick={() => removeRole(r)}
-                        className="ml-1 hover:text-destructive transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  );
-                })}
+                {selectedRoles.map((r) => (
+                  <Badge key={r} variant="secondary" className="bg-primary/10 text-primary border-primary/20 gap-1 pr-1">
+                    {r}
+                    <button type="button" onClick={() => removeRole(r)} className="ml-1 hover:text-destructive transition-colors">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
               </div>
             )}
 
-            {/* Dropdown trigger */}
             <div className="relative">
               <button
                 type="button"
@@ -140,18 +127,20 @@ export default function AddStaff() {
                 <span className={selectedRoles.length === 0 ? "text-muted-foreground" : ""}>
                   {selectedRoles.length === 0 ? "Select roles…" : `${selectedRoles.length} selected`}
                 </span>
-                <svg className={`w-4 h-4 text-muted-foreground transition-transform ${rolesOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                <svg className={`w-4 h-4 text-muted-foreground transition-transform ${rolesOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
 
               {rolesOpen && (
                 <div className="absolute z-20 mt-1 w-full bg-popover border border-border rounded-md shadow-lg overflow-hidden">
-                  {ROLE_OPTIONS.map((option) => {
-                    const checked = selectedRoles.includes(option.value);
+                  {roles.map((role) => {
+                    const checked = selectedRoles.includes(role);
                     return (
                       <button
-                        key={option.value}
+                        key={role}
                         type="button"
-                        onClick={() => toggleRole(option.value)}
+                        onClick={() => toggleRole(role)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left hover:bg-muted transition-colors ${checked ? "bg-primary/5" : ""}`}
                       >
                         <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${checked ? "bg-primary border-primary" : "border-input"}`}>
@@ -161,13 +150,49 @@ export default function AddStaff() {
                             </svg>
                           )}
                         </div>
-                        {option.label}
+                        {role}
                       </button>
                     );
                   })}
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Department — from admin context */}
+          <div className="space-y-2">
+            <Label>
+              Department
+              <span className="ml-2 text-xs text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select department" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((d) => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Line Manager — from admin context */}
+          <div className="space-y-2">
+            <Label>
+              Line Manager
+              <span className="ml-2 text-xs text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select line manager" />
+              </SelectTrigger>
+              <SelectContent>
+                {lineManagers.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
