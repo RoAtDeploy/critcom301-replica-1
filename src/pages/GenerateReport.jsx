@@ -46,10 +46,10 @@ export default function GenerateReport() {
     return `${m}:${s}`;
   };
 
-  // Build a preview of the first few alternating segments for channel identification
-  const channelPreview = transcription?.segments?.slice(0, 6).map((seg, idx) => ({
-    timestamp: formatTime(seg.start),
-    channel: idx % 2 === 0 ? 'LC' : 'RC',
+  // Build a preview of the first few segments for channel identification
+  const channelPreview = transcription?.segments?.slice(0, 6).map((seg) => ({
+    timestamp: seg.timestamp || formatTime(seg.start),
+    channel: seg.channel || 'LC',
     text: seg.text.trim(),
   })) || [];
 

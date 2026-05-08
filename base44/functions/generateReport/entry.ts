@@ -22,11 +22,11 @@ Deno.serve(async (req) => {
       return `${m}:${s}`;
     };
 
-    const timestampedLines = (transcription.segments || []).map((seg, idx) => {
-      const channel = idx % 2 === 0 ? 'LC' : 'RC';
+    const timestampedLines = (transcription.segments || []).map((seg) => {
+      const channel = seg.channel || 'LC';
       const isStaff = staffChannel ? channel === staffChannel : false;
       return {
-        timestamp: formatTime(seg.start),
+        timestamp: seg.timestamp || formatTime(seg.start || 0),
         channel,
         isStaff,
         text: seg.text.trim(),
