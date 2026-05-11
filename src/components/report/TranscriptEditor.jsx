@@ -7,9 +7,11 @@ const SPEAKER_STYLES = {
 
 export default function TranscriptEditor({ segments, onSegmentsChange }) {
   const toggleSpeaker = (idx) => {
-    const updated = segments.map((seg, i) =>
-      i === idx ? { ...seg, speaker: seg.speaker === "S1" ? "S2" : "S1" } : seg
-    );
+    const updated = segments.map((seg, i) => {
+      if (i < idx) return seg;
+      // Flip every segment from idx onwards
+      return { ...seg, speaker: seg.speaker === "S1" ? "S2" : "S1" };
+    });
     onSegmentsChange(updated);
   };
 
