@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, Save, CheckCircle2, Sparkles } from "lucide-react";
+import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, Save, CheckCircle2, Sparkles, Send, Mail, ClipboardList, BadgeCheck } from "lucide-react";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import { motion } from "framer-motion";
 
@@ -134,6 +134,38 @@ export default function ReportDetail() {
           )}
         </div>
       )}
+
+      {/* Send to Staff — placeholder */}
+      <Card className="border-border/50 opacity-60">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="w-4 h-4 text-muted-foreground" />
+            Send Report to Staff Member
+            <span className="ml-auto text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Coming soon</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Once you have finalised the quality assessment and any learning actions, you can send this report directly to <span className="font-medium text-foreground">{report.staff_name || "the staff member"}</span>. They will receive an email with a link to review the report, acknowledge any actions, and mark them as completed.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { icon: ClipboardList, label: "Finalise actions & learning" },
+              { icon: Send,          label: "Send report via email" },
+              { icon: BadgeCheck,    label: "Staff sign-off & manager review" },
+            ].map(({ icon: Icon, label }, i) => (
+              <div key={i} className="flex items-center gap-2.5 rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2.5">
+                <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground">{label}</span>
+              </div>
+            ))}
+          </div>
+          <Button disabled className="w-full sm:w-auto" variant="outline">
+            <Send className="w-4 h-4 mr-2" />
+            Send to {report.staff_name || "Staff Member"}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Quality Assessment */}
       <QualityAssessment report={report} onReportUpdate={setReport} />
