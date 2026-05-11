@@ -55,7 +55,7 @@ export default function Sidebar() {
         </div>
         {!collapsed && (
           <span className="text-lg font-bold text-sidebar-accent-foreground tracking-tight">
-            CallInsight
+            CritCom<span className="text-orange-500">301</span>
           </span>
         )}
       </div>
