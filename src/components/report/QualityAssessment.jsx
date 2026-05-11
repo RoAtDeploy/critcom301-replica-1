@@ -2,15 +2,16 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ShieldCheck, ChevronDown, ChevronUp, Pencil, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const GRADE_CONFIG = {
-  A: { label: "A", color: "bg-emerald-100 text-emerald-700 border-emerald-300", dot: "bg-emerald-500", description: "Competent" },
-  B: { label: "B", color: "bg-yellow-100 text-yellow-700 border-yellow-300", dot: "bg-yellow-500", description: "Competent with Development" },
-  C: { label: "C", color: "bg-orange-100 text-orange-700 border-orange-300", dot: "bg-orange-500", description: "Medium Risk" },
-  D: { label: "D", color: "bg-red-100 text-red-700 border-red-300", dot: "bg-red-500", description: "High Risk" },
-  "n/a": { label: "N/A", color: "bg-slate-100 text-slate-500 border-slate-300", dot: "bg-slate-400", description: "Not Applicable" },
+  A: { label: "A", color: "bg-emerald-100 text-emerald-700 border-emerald-300", dot: "bg-emerald-500", description: "Competent", tooltip: "High standard of communications: communications protocols followed and evidence of effective non-technical skills such as planning the communication, being clear and concise, challenging where appropriate and actively listening to understand." },
+  B: { label: "B", color: "bg-yellow-100 text-yellow-700 border-yellow-300", dot: "bg-yellow-500", description: "Competent with Development", tooltip: "Competent with Development: satisfactory performance but could be improved. Most protocols followed. Satisfactory evidence of summarising, questioning, and repeating back to check understanding." },
+  C: { label: "C", color: "bg-orange-100 text-orange-700 border-orange-300", dot: "bg-orange-500", description: "Medium Risk", tooltip: "Medium Risk: performance gives rise to concerns. Some protocols followed but with significant variations and possibility of misunderstanding. Limited or poor non-technical skills such as clarity, listening, questioning and summarising." },
+  D: { label: "D", color: "bg-red-100 text-red-700 border-red-300", dot: "bg-red-500", description: "High Risk", tooltip: "High Risk: communications not acceptable. None or very limited attempt to follow communications protocols. Poor or absent non-technical skills resulting in safety being compromised." },
+  "n/a": { label: "N/A", color: "bg-slate-100 text-slate-500 border-slate-300", dot: "bg-slate-400", description: "Not Applicable", tooltip: "Not Applicable: this aspect cannot be assessed from this transcript." },
 };
 
 const GRADES = ["A", "B", "C", "D", "n/a"];
@@ -19,33 +20,50 @@ function GradeBadge({ grade, size = "sm" }) {
   const cfg = GRADE_CONFIG[grade] || GRADE_CONFIG["n/a"];
   const sizeClass = size === "lg" ? "w-8 h-8 text-sm font-bold" : "w-6 h-6 text-xs font-bold";
   return (
-    <span className={`inline-flex items-center justify-center rounded border ${cfg.color} ${sizeClass} shrink-0`}>
-      {cfg.label}
-    </span>
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={`inline-flex items-center justify-center rounded border ${cfg.color} ${sizeClass} shrink-0 cursor-default`}>
+            {cfg.label}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          <p>{cfg.tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
 function GradeSelector({ value, onChange }) {
   return (
-    <div className="flex items-center gap-1.5">
-      {GRADES.map((g) => {
-        const cfg = GRADE_CONFIG[g];
-        const isSelected = value === g;
-        return (
-          <button
-            key={g}
-            onClick={() => onChange(g)}
-            className={`w-8 h-8 text-xs font-bold rounded border-2 transition-all ${
-              isSelected
-                ? `${cfg.color} border-current ring-2 ring-offset-1 ring-current/30`
-                : "bg-background border-border text-muted-foreground hover:border-current/40"
-            }`}
-          >
-            {cfg.label}
-          </button>
-        );
-      })}
-    </div>
+    <TooltipProvider delayDuration={200}>
+      <div className="flex items-center gap-1.5">
+        {GRADES.map((g) => {
+          const cfg = GRADE_CONFIG[g];
+          const isSelected = value === g;
+          return (
+            <Tooltip key={g}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => onChange(g)}
+                  className={`w-8 h-8 text-xs font-bold rounded border-2 transition-all ${
+                    isSelected
+                      ? `${cfg.color} border-current ring-2 ring-offset-1 ring-current/30`
+                      : "bg-background border-border text-muted-foreground hover:border-current/40"
+                  }`}
+                >
+                  {cfg.label}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs">
+                <p>{cfg.tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 }
 
