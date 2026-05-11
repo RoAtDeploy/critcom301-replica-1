@@ -76,9 +76,27 @@ export default function ReportDetail() {
         Back to Staff
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Call Report</h1>
-        <p className="text-muted-foreground mt-1">Full report details for this recorded call.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Call Report</h1>
+          <p className="text-muted-foreground mt-1">Full report details for this recorded call.</p>
+        </div>
+        {report.status !== "saved" ? (
+          <Button onClick={handleSaveReport} disabled={saving} className="bg-primary hover:bg-primary/90 shrink-0">
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? "Saving…" : "Save Report"}
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2 shrink-0">
+            <CheckCircle2 className="w-4 h-4 text-accent" />
+            <span className="text-sm font-medium text-accent">Saved</span>
+            {report.staff_id && (
+              <Link to={`/staff/${report.staff_id}`} className="ml-1">
+                <Button variant="outline" size="sm">View Profile</Button>
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Summary */}
@@ -109,33 +127,6 @@ export default function ReportDetail() {
         <div className="flex gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5">
           <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <p className="text-sm text-foreground/80 leading-relaxed">{report.call_summary}</p>
-        </div>
-      )}
-
-      {/* Save Report */}
-      {report.status !== "saved" ? (
-        <div className="flex items-center justify-between p-4 rounded-xl border border-dashed border-border bg-muted/30">
-          <div>
-            <p className="text-sm font-medium">Save this report</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Save the report against this staff member's record to make it retrievable from their profile.</p>
-          </div>
-          <Button onClick={handleSaveReport} disabled={saving} className="bg-primary hover:bg-primary/90 shrink-0 ml-4">
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? "Saving…" : "Save Report"}
-          </Button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 p-4 rounded-xl border border-accent/30 bg-accent/5">
-          <CheckCircle2 className="w-5 h-5 text-accent shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-accent">Report saved</p>
-            <p className="text-xs text-muted-foreground mt-0.5">This report is saved and accessible from the staff member's profile.</p>
-          </div>
-          {report.staff_id && (
-            <Link to={`/staff/${report.staff_id}`} className="ml-auto shrink-0">
-              <Button variant="outline" size="sm">View Profile</Button>
-            </Link>
-          )}
         </div>
       )}
 
