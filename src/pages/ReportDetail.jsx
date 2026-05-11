@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, Save, CheckCircle2, Sparkles, Send, Mail, ClipboardList, BadgeCheck } from "lucide-react";
+import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, Save, CheckCircle2, Sparkles, Send, Mail, ClipboardList, BadgeCheck, RefreshCw } from "lucide-react";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import { motion } from "framer-motion";
 
@@ -13,6 +13,7 @@ export default function ReportDetail() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [assessing, setAssessing] = useState(false);
 
   useEffect(() => {
     base44.entities.Report.get(id).then((r) => {
@@ -20,6 +21,26 @@ export default function ReportDetail() {
       setLoading(false);
     });
   }, [id]);
+
+  const hasAssessment = () => {
+    const qa = report?.quality_assessment;
+    const raw = qa?.response ?? qa;
+    return raw?.aspects?.length > 0 || raw?.rules?.length > 0;
+  };
+
+  const handleRunAssessment = async () => {
+    setAssessing(true);
+    const res = await base44.functions.invoke("assessTranscript", {
+      transcript: report.timestamped_transcript || report.transcription_text,
+      reportId: report.id,
+      staffChannel: report.staff_channel,
+      staffName: report.staff_name,
+      otherRole: report.other_role,
+    });
+    const updated = await base44.entities.Report.get(report.id);
+    setReport(updated);
+    setAssessing(false);
+  };
 
   const handleSaveReport = async () => {
     setSaving(true);
@@ -171,7 +192,20 @@ export default function ReportDetail() {
       </Card>
 
       {/* Quality Assessment */}
-      <QualityAssessment report={report} onReportUpdate={setReport} />
+      {hasAssessment() ? (
+        <QualityAssessment report={report} onReportUpdate={setReport} />
+      ) : (
+        <div className="flex items-center justify-between p-4 rounded-xl border border-dashed border-border bg-muted/30">
+          <div>
+            <p className="text-sm font-medium">Communication Assessment</p>
+            <p className="text-xs text-muted-foreground mt-0.5">No assessment has been run for this report yet.</p>
+          </div>
+          <Button onClick={handleRunAssessment} disabled={assessing} className="bg-primary hover:bg-primary/90 shrink-0 ml-4">
+            <RefreshCw className={`w-4 h-4 mr-2 ${assessing ? "animate-spin" : ""}`} />
+            {assessing ? "Assessing…" : "Run Assessment"}
+          </Button>
+        </div>
+      )}
 
       {/* Transcription */}
       <Card className="border-border/50">
