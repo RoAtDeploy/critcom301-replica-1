@@ -4,11 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight } from "lucide-react";
+import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useAdmin } from "@/context/AdminContext";
+import CsvUploadDialog from "@/components/staff/CsvUploadDialog";
 
 const getInitials = (name) => name.split(" ").map((n) => n[0]).join("");
 
@@ -22,6 +23,7 @@ export default function StaffMembers() {
   const { staffList, refreshStaff } = useAdmin();
   const [search, setSearch] = useState("");
   const [reportCounts, setReportCounts] = useState({});
+  const [csvOpen, setCsvOpen] = useState(false);
 
   useEffect(() => { refreshStaff(); }, []);
 
@@ -52,11 +54,17 @@ export default function StaffMembers() {
           <h1 className="text-2xl font-bold tracking-tight">Staff Members</h1>
           <p className="text-muted-foreground mt-1">View and manage your team's performance.</p>
         </div>
-        <Link to="/staff/new">
-          <Button className="bg-primary hover:bg-primary/90">
-            + Add Staff Member
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setCsvOpen(true)}>
+            <Upload className="w-4 h-4 mr-2" />
+            Upload CSV
           </Button>
-        </Link>
+          <Link to="/staff/new">
+            <Button className="bg-primary hover:bg-primary/90">
+              + Add Staff Member
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
@@ -127,6 +135,7 @@ export default function StaffMembers() {
           </Link>
         ))}
       </div>
+      <CsvUploadDialog open={csvOpen} onClose={() => setCsvOpen(false)} onImported={refreshStaff} />
     </motion.div>
   );
 }
