@@ -20,50 +20,46 @@ function GradeBadge({ grade, size = "sm" }) {
   const cfg = GRADE_CONFIG[grade] || GRADE_CONFIG["n/a"];
   const sizeClass = size === "lg" ? "w-8 h-8 text-sm font-bold" : "w-6 h-6 text-xs font-bold";
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className={`inline-flex items-center justify-center rounded border ${cfg.color} ${sizeClass} shrink-0 cursor-default`}>
-            {cfg.label}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs">
-          <p>{cfg.tooltip}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={`inline-flex items-center justify-center rounded border ${cfg.color} ${sizeClass} shrink-0 cursor-default`}>
+          {cfg.label}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs text-xs">
+        <p>{cfg.tooltip}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
 function GradeSelector({ value, onChange }) {
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="flex items-center gap-1.5">
-        {GRADES.map((g) => {
-          const cfg = GRADE_CONFIG[g];
-          const isSelected = value === g;
-          return (
-            <Tooltip key={g}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => onChange(g)}
-                  className={`w-8 h-8 text-xs font-bold rounded border-2 transition-all ${
-                    isSelected
-                      ? `${cfg.color} border-current ring-2 ring-offset-1 ring-current/30`
-                      : "bg-background border-border text-muted-foreground hover:border-current/40"
-                  }`}
-                >
-                  {cfg.label}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs text-xs">
-                <p>{cfg.tooltip}</p>
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </div>
-    </TooltipProvider>
+    <div className="flex items-center gap-1.5">
+      {GRADES.map((g) => {
+        const cfg = GRADE_CONFIG[g];
+        const isSelected = value === g;
+        return (
+          <Tooltip key={g}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onChange(g)}
+                className={`w-8 h-8 text-xs font-bold rounded border-2 transition-all ${
+                  isSelected
+                    ? `${cfg.color} border-current ring-2 ring-offset-1 ring-current/30`
+                    : "bg-background border-border text-muted-foreground hover:border-current/40"
+                }`}
+              >
+                {cfg.label}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs">
+              <p>{cfg.tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </div>
   );
 }
 
@@ -286,6 +282,7 @@ export default function QualityAssessment({ report, onReportUpdate }) {
   });
 
   return (
+    <TooltipProvider delayDuration={200}>
     <Card className="border-border/50">
       <CardHeader>
         <CardTitle className="text-base flex items-center justify-between gap-2">
@@ -309,5 +306,6 @@ export default function QualityAssessment({ report, onReportUpdate }) {
         ))}
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }
