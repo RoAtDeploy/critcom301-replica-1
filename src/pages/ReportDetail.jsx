@@ -112,23 +112,6 @@ export default function ReportDetail() {
         </div>
       )}
 
-      {/* Audio Playback */}
-      {report.audio_url && (
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileAudio className="w-4 h-4 text-muted-foreground" />
-              Audio Recording
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <audio controls className="w-full" src={report.audio_url}>
-              Your browser does not support the audio element.
-            </audio>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Save Report */}
       {report.status !== "saved" ? (
         <div className="flex items-center justify-between p-4 rounded-xl border border-dashed border-border bg-muted/30">
@@ -205,6 +188,23 @@ export default function ReportDetail() {
             {assessing ? "Assessing…" : "Run Assessment"}
           </Button>
         </div>
+      )}
+
+      {/* Audio Playback */}
+      {report.audio_url && (
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileAudio className="w-4 h-4 text-muted-foreground" />
+              Audio Recording
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <audio controls className="w-full" src={report.audio_url}>
+              Your browser does not support the audio element.
+            </audio>
+          </CardContent>
+        </Card>
       )}
 
       {/* Transcription */}
