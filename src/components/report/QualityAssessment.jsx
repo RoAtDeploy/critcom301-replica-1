@@ -6,6 +6,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ShieldCheck, ChevronDown, ChevronUp, Pencil, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
+const ASPECT_TOOLTIPS = {
+  "1": "The conversation should start correctly as this sets the tone for the remainder of the communication. Starting the communications properly involves identifying who you are, confirmation about who you are talking to, and where they are calling from.\n\nCommon areas of weakness: over-familiarity (particularly where there have been repetitive communications) and not being specific enough about location.",
+  "2": "This includes being clear that they are taking a line blockage, reporting an event, making an emergency call, testing equipment, etc.\n\nThe purpose of the call should be stated clearly and immediately at the outset with no ambiguity.",
+  "3": "Look for evidence the individual has planned the communication and thought about what they are going to say (e.g. notes of key points). The message should have a clear structure: an opening, information exchange, agreement of actions, and confirmation of understanding.",
+  "4": "No superfluous chat. Information is relevant and structured logically. No over-explanation. Speaks in chunks of essential information.\n\nAvoids meaningless phrases like \"I just wanted to tell you\" or \"as I said before\".",
+  "5": "Speaks slowly and at a good volume. Uses the phonetic alphabet appropriately (train head-codes, signal numbers, difficult words). Avoids ambiguous language and regional words; keeps jargon to a minimum.\n\nUses single numbers (zero, one, two…) for all key information. Uses the 24-hour clock. Uses standard terms and phrases (e.g. \"this is an emergency call\").",
+  "6": "Uses acknowledgements (paraphrasing, use of \"uh huh\") to indicate they are listening. No interruptions. Reflects back information to confirm understanding.",
+  "7": "Uses open questions at the start. Uses closed questions to confirm specifics. Persists with questioning until confident they have all the relevant information — does not accept vague reports.",
+  "8": "Only concludes the communication when the next step has been agreed. Both parties should clearly understand and confirm the agreed actions before the call ends.",
+  "9": "Avoids monotonous and unnecessary repeat-back; thinks about what they are saying and what it means. Summarises focusing on key points. Uses active listening and neutral questions to confirm understanding.",
+  "10": "Prompts / challenges the other party if they do not repeat back. Identifies and corrects errors or inconsistencies in the other party's repeat back.",
+  "11": "Score this aspect based on your direct observation or knowledge of whether the staff member completed the required actions and paperwork following the call.",
+};
+
 const GRADE_CONFIG = {
   A: { label: "A", color: "bg-emerald-100 text-emerald-700 border-emerald-300", dot: "bg-emerald-500", description: "Competent", tooltip: "High standard of communications: communications protocols followed and evidence of effective non-technical skills such as planning the communication, being clear and concise, challenging where appropriate and actively listening to understand." },
   B: { label: "B", color: "bg-yellow-100 text-yellow-700 border-yellow-300", dot: "bg-yellow-500", description: "Competent with Development", tooltip: "Competent with Development: satisfactory performance but could be improved. Most protocols followed. Satisfactory evidence of summarising, questioning, and repeating back to check understanding." },
@@ -115,7 +129,20 @@ function AspectRow({ aspect, onOverride }) {
             <span className="w-6 h-6 inline-flex items-center justify-center rounded border border-dashed border-slate-300 text-slate-400 text-xs font-bold shrink-0">?</span>
           )}
           <span className="text-xs font-bold text-muted-foreground w-5 shrink-0">{aspect.id}.</span>
-          <span className="text-sm font-medium text-foreground flex-1 truncate">{aspect.name}</span>
+          {ASPECT_TOOLTIPS[aspect.id] ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-sm font-medium text-foreground flex-1 truncate underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 cursor-help">
+                  {aspect.name}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-sm text-xs whitespace-pre-line">
+                <p>{ASPECT_TOOLTIPS[aspect.id]}</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="text-sm font-medium text-foreground flex-1 truncate">{aspect.name}</span>
+          )}
         </button>
 
         <div className="flex items-center gap-2 shrink-0">
