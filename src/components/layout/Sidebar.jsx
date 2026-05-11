@@ -36,7 +36,7 @@ export default function Sidebar() {
           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
       )}
     >
-      <item.icon className="w-5 h-5 shrink-0" />
+      <item.icon className="w-5 h-5 shrink-0 text-orange-500" />
       {!collapsed && <span>{item.label}</span>}
     </Link>
   );
