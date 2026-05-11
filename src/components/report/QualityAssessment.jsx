@@ -223,9 +223,23 @@ export default function QualityAssessment({ report, onReportUpdate }) {
   const raw = report.quality_assessment;
   const assessment = raw?.response ?? raw;
 
-  if (!assessment?.aspects?.length) return null;
+  // Support both new format (aspects) and old format (rules → converted)
+  const aspects = assessment?.aspects?.length
+    ? assessment.aspects
+    : assessment?.rules?.length
+    ? assessment.rules.map((r) => ({
+        id: r.id,
+        name: r.name,
+        grade: r.status === 'pass' ? 'A' : r.status === 'fail' ? 'D' : 'n/a',
+        reasoning: r.reasoning,
+        override: r.override ? {
+          grade: r.override.status === 'pass' ? 'A' : r.override.status === 'fail' ? 'D' : 'n/a',
+          justification: r.override.justification,
+        } : undefined,
+      }))
+    : null;
 
-  const aspects = assessment.aspects;
+  if (!aspects?.length) return null;
 
   const handleOverride = async (aspectId, newGrade, justification, isUserScored = false) => {
     const updatedAspects = aspects.map((a) => {
