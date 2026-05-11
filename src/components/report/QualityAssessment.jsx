@@ -24,10 +24,10 @@ function RuleRow({ rule, reportId, onOverride }) {
   const oppositeStatus = effectiveStatus === "pass" ? "fail" : "pass";
   const oppositeLabel = oppositeStatus === "pass" ? "Pass" : "Fail";
 
-  const handleSaveOverride = async () => {
+  const handleSaveOverride = async (targetStatus) => {
     if (!justification.trim()) return;
     setSaving(true);
-    await onOverride(rule.id, oppositeStatus, justification.trim());
+    await onOverride(rule.id, targetStatus, justification.trim());
     setOverriding(false);
     setJustification("");
     setSaving(false);
@@ -93,7 +93,7 @@ function RuleRow({ rule, reportId, onOverride }) {
           {overriding && (
             <div className="space-y-2 pt-1">
               <p className="text-xs font-semibold text-foreground">
-                Override to <span className={oppositeStatus === "pass" ? "text-emerald-600" : "text-red-500"}>{oppositeLabel}</span> — provide a justification:
+                Select new outcome and provide a justification:
               </p>
               <Textarea
                 placeholder="Enter reason for override…"
@@ -102,15 +102,22 @@ function RuleRow({ rule, reportId, onOverride }) {
                 onChange={(e) => setJustification(e.target.value)}
                 autoFocus
               />
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleSaveOverride}
-                  disabled={!justification.trim() || saving}
-                  className="text-xs"
-                >
-                  {saving ? "Saving…" : `Set to ${oppositeLabel}`}
-                </Button>
+              <div className="flex flex-wrap gap-2">
+                {effectiveStatus !== "pass" && (
+                  <Button size="sm" onClick={() => handleSaveOverride("pass")} disabled={!justification.trim() || saving} className="text-xs bg-emerald-600 hover:bg-emerald-700">
+                    Set to Pass
+                  </Button>
+                )}
+                {effectiveStatus !== "fail" && (
+                  <Button size="sm" onClick={() => handleSaveOverride("fail")} disabled={!justification.trim() || saving} className="text-xs bg-red-500 hover:bg-red-600">
+                    Set to Fail
+                  </Button>
+                )}
+                {effectiveStatus !== "n/a" && (
+                  <Button size="sm" variant="outline" onClick={() => handleSaveOverride("n/a")} disabled={!justification.trim() || saving} className="text-xs">
+                    Set to N/A
+                  </Button>
+                )}
                 {rule.override && (
                   <Button size="sm" variant="outline" onClick={handleCancelOverride} disabled={saving} className="text-xs">
                     Remove override
