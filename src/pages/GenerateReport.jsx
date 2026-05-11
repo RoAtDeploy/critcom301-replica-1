@@ -176,6 +176,18 @@ export default function GenerateReport() {
             <Input type="date" value={callDate} onChange={(e) => setCallDate(e.target.value)} />
           </div>
 
+          {audioUrl && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <FileAudio className="w-4 h-4 text-muted-foreground" />
+                Audio Recording
+              </Label>
+              <audio controls className="w-full" src={audioUrl}>
+                Your browser does not support the audio element.
+              </audio>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Upload Recording</Label>
             {!audioFile ? (
