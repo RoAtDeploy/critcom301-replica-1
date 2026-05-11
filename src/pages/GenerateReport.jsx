@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X, User } from "lucide-react";
+import TranscriptEditor from "@/components/report/TranscriptEditor";
 
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -25,6 +26,7 @@ export default function GenerateReport() {
   const [audioFile, setAudioFile] = useState(null);
   const [transcribing, setTranscribing] = useState(false);
   const [transcription, setTranscription] = useState(null);
+  const [labelledSegments, setLabelledSegments] = useState([]);
   const [staffChannel, setStaffChannel] = useState(null);
   const [otherRole, setOtherRole] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
@@ -37,9 +39,22 @@ export default function GenerateReport() {
     if (file && /\.(mp3|wav|m4a|webm|mp4|mpeg|mpga|oga|ogg|flac)$/i.test(file.name)) {
       setAudioFile(file);
       setTranscription(null);
+      setLabelledSegments([]);
       setStaffChannel(null);
       setOtherRole(null);
     }
+  };
+
+  // Auto-label segments alternating S1/S2 whenever the speaker changes
+  const autoLabelSegments = (segments) => {
+    let currentSpeaker = "S1";
+    return segments.map((seg, idx) => {
+      // Toggle speaker when a new segment starts (simple alternating)
+      if (idx > 0) {
+        currentSpeaker = currentSpeaker === "S1" ? "S2" : "S1";
+      }
+      return { ...seg, speaker: currentSpeaker };
+    });
   };
 
   const formatTime = (seconds) => {
@@ -55,6 +70,7 @@ export default function GenerateReport() {
     setAudioUrl(file_url);
     const res = await base44.functions.invoke('transcribeAudio', { file_url });
     setTranscription(res.data);
+    setLabelledSegments(autoLabelSegments(res.data.segments || []));
     setTranscribing(false);
   };
 
@@ -62,21 +78,18 @@ export default function GenerateReport() {
     if (!transcription) return;
     setGeneratingReport(true);
 
-    const reportRes = await base44.functions.invoke('generateReport', {
-      transcription,
-      staffName: selectedStaff?.name,
-      role: selectedRole,
-      callType,
-      callDate,
-      context: callContext,
-      staffChannel,
-      otherRole,
-    });
-
-    const reportData = reportRes.data.report;
+    // Build timestamped transcript from the user-corrected labelled segments
+    const timestampedTranscript = labelledSegments.map((seg) => ({
+      timestamp: seg.timestamp,
+      start: seg.start,
+      end: seg.end,
+      speaker: seg.speaker,
+      is_staff: seg.speaker === staffChannel,
+      text: seg.text,
+    }));
 
     const assessRes = await base44.functions.invoke('assessTranscript', {
-      transcript: reportData.timestampedTranscript,
+      transcript: timestampedTranscript,
       staffChannel,
       staffName: selectedStaff?.name,
     });
@@ -91,7 +104,7 @@ export default function GenerateReport() {
       transcription_text: transcription.text,
       transcription_duration: transcription.duration,
       transcription_language: transcription.language,
-      timestamped_transcript: reportData.timestampedTranscript || [],
+      timestamped_transcript: timestampedTranscript,
       other_role: otherRole,
       staff_channel: staffChannel,
       audio_url: audioUrl,
@@ -101,12 +114,6 @@ export default function GenerateReport() {
     setGeneratingReport(false);
     navigate(`/reports/${saved.id}`);
   };
-
-  // Preview first 6 segments for channel identification
-  const transcriptPreview = transcription?.segments?.slice(0, 6).map((seg) => ({
-    timestamp: seg.timestamp || formatTime(seg.start),
-    text: seg.text.trim(),
-  })) || [];
 
   return (
     <motion.div
@@ -202,7 +209,7 @@ export default function GenerateReport() {
                       <p className="text-xs text-muted-foreground">{(audioFile.size / (1024 * 1024)).toFixed(1)} MB</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); setStaffChannel(null); setOtherRole(null); }}>
+                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); setLabelledSegments([]); setStaffChannel(null); setOtherRole(null); }}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -218,36 +225,30 @@ export default function GenerateReport() {
                       Transcription complete • {Math.round(transcription.duration)}s duration
                     </div>
 
-                    {/* Channel identification */}
+                    {/* Transcript editor */}
                     <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-primary" />
-                        <p className="text-sm font-semibold">Identify speakers</p>
+                        <p className="text-sm font-semibold">Review & correct transcript</p>
                       </div>
-                      <p className="text-xs text-muted-foreground">Review the transcript and select which speaker is the staff member. Select the role of the other person on the call.</p>
+                      <p className="text-xs text-muted-foreground">
+                        Segments alternate between <span className="font-semibold text-blue-600">S1</span> and <span className="font-semibold text-orange-600">S2</span>. Click any speaker label to toggle it if it's been misidentified.
+                      </p>
+                      <TranscriptEditor segments={labelledSegments} onSegmentsChange={setLabelledSegments} />
+                    </div>
 
-                      {/* Transcript preview */}
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {transcriptPreview.map((line, idx) => (
-                          <div key={idx} className="flex gap-2 text-sm items-start">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 whitespace-nowrap">
-                              {line.timestamp}
-                            </span>
-                            <p className="text-muted-foreground leading-relaxed">{line.text}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Speaker assignment */}
-                      <div className="grid grid-cols-2 gap-3 pt-1">
-                        {['Speaker 1', 'Speaker 2'].map((speaker, idx) => {
-                          const ch = idx === 0 ? 'LC' : 'RC';
-                          const isStaffChannel = staffChannel === ch;
-                          const isOtherChannel = staffChannel && staffChannel !== ch;
-                          const isBlue = ch === 'LC';
+                    {/* Speaker assignment */}
+                    <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
+                      <p className="text-sm font-semibold">Assign speakers</p>
+                      <p className="text-xs text-muted-foreground">Select which speaker is the staff member.</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {['S1', 'S2'].map((spk) => {
+                          const isStaffChannel = staffChannel === spk;
+                          const isOtherChannel = staffChannel && staffChannel !== spk;
+                          const isBlue = spk === 'S1';
                           return (
                             <div
-                              key={ch}
+                              key={spk}
                               className={`rounded-lg border-2 p-3 space-y-2 transition-all ${
                                 isStaffChannel
                                   ? isBlue ? 'border-blue-500 bg-blue-50' : 'border-orange-500 bg-orange-50'
@@ -257,7 +258,7 @@ export default function GenerateReport() {
                               <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
                                 isBlue ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
                               }`}>
-                                {speaker}
+                                Speaker {spk === 'S1' ? '1' : '2'}
                               </span>
 
                               {isStaffChannel ? (
@@ -284,7 +285,7 @@ export default function GenerateReport() {
 
                               <button
                                 type="button"
-                                onClick={() => { setStaffChannel(ch); setOtherRole(null); }}
+                                onClick={() => { setStaffChannel(spk); setOtherRole(null); }}
                                 className={`w-full text-xs font-semibold py-1.5 rounded-md border transition-all ${
                                   isStaffChannel
                                     ? isBlue ? 'border-blue-400 bg-blue-100 text-blue-700' : 'border-orange-400 bg-orange-100 text-orange-700'
