@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, CheckCircle2, XCircle, AlertTriangle, Loader2, X } from "lucide-react";
+import { Upload, FileText, CheckCircle2, XCircle, AlertTriangle, Loader2, X, Download } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 function parseCsv(text) {
@@ -154,9 +154,32 @@ export default function CsvUploadDialog({ open, onClose, onImported }) {
               </div>
             )}
 
-            <p className="text-xs text-muted-foreground">
-              Expected columns: <code className="bg-muted px-1 rounded">name</code>, <code className="bg-muted px-1 rounded">email</code>, <code className="bg-muted px-1 rounded">sentinelId</code>, <code className="bg-muted px-1 rounded">roles</code> (semicolon-separated), <code className="bg-muted px-1 rounded">department</code>, <code className="bg-muted px-1 rounded">lineManager</code>, <code className="bg-muted px-1 rounded">phone</code>
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Columns: name, email, sentinelId, roles, department, lineManager, phone
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-7 px-2 shrink-0"
+                onClick={() => {
+                  const csv = [
+                    "name,email,sentinelId,roles,department,lineManager,phone",
+                    "Jane Smith,jane.smith@example.com,SEN-001,Signaller;Controller,Operations,John Doe,07700900123"
+                  ].join("\n");
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "staff_template.csv";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                <Download className="w-3 h-3 mr-1" />
+                Template
+              </Button>
+            </div>
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={handleClose}>Cancel</Button>
