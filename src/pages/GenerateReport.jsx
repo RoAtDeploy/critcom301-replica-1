@@ -92,6 +92,7 @@ export default function GenerateReport() {
       transcript: timestampedTranscript,
       staffChannel,
       staffName: selectedStaff?.name,
+      otherRole,
     });
 
     const saved = await base44.entities.Report.create({
