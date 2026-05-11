@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight, Upload } from "lucide-react";
+import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight, Upload, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -55,6 +55,17 @@ export default function StaffMembers() {
           <p className="text-muted-foreground mt-1">View and manage your team's performance.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => {
+            const csv = ["name,email,sentinelId,roles,department,lineManager,phone", "Jane Smith,jane.smith@example.com,SEN-001,Signaller;Controller,Operations,John Doe,07700900123"].join("\n");
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = "staff_template.csv"; a.click();
+            URL.revokeObjectURL(url);
+          }}>
+            <Download className="w-4 h-4 mr-2" />
+            CSV Template
+          </Button>
           <Button variant="outline" onClick={() => setCsvOpen(true)}>
             <Upload className="w-4 h-4 mr-2" />
             Upload CSV
