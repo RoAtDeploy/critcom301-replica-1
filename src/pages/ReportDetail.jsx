@@ -136,34 +136,37 @@ export default function ReportDetail() {
       )}
 
       {/* Send to Staff — placeholder */}
-      <Card className="border-border/50 opacity-60">
+      <Card className="border-border/50">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Mail className="w-4 h-4 text-muted-foreground" />
-            Send Report to Staff Member
-            <span className="ml-auto text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Coming soon</span>
+            Report Workflow
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Once you have finalised the quality assessment and any learning actions, you can send this report directly to <span className="font-medium text-foreground">{report.staff_name || "the staff member"}</span>. They will receive an email with a link to review the report, acknowledge any actions, and mark them as completed.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <CardContent>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0 sm:gap-0">
             {[
-              { icon: ClipboardList, label: "Finalise actions & learning" },
-              { icon: Send,          label: "Send report via email" },
-              { icon: BadgeCheck,    label: "Staff sign-off & manager review" },
-            ].map(({ icon: Icon, label }, i) => (
-              <div key={i} className="flex items-center gap-2.5 rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2.5">
-                <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-xs text-muted-foreground">{label}</span>
+              { icon: ClipboardList, step: "1", label: "Finalise report & actions" },
+              { icon: Send,          step: "2", label: `Send report to ${report.staff_name || "staff member"}` },
+              { icon: Users,         step: "3", label: `Awaiting actions from ${report.staff_name || "staff member"}` },
+              { icon: BadgeCheck,    step: "4", label: "Line Manager sign-off" },
+            ].map(({ icon: Icon, step, label }, i, arr) => (
+              <div key={i} className="flex sm:flex-col items-center sm:items-center flex-1 w-full sm:w-auto">
+                <div className="flex sm:flex-col items-center gap-2 sm:gap-1 flex-1 sm:flex-none">
+                  <div className="w-8 h-8 rounded-full border-2 border-border bg-muted flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-muted-foreground">{step}</span>
+                  </div>
+                  <div className="sm:text-center sm:mt-2 flex-1 sm:flex-none">
+                    <Icon className="w-4 h-4 text-muted-foreground mb-0.5 hidden sm:block sm:mx-auto" />
+                    <p className="text-xs text-muted-foreground leading-tight">{label}</p>
+                  </div>
+                </div>
+                {i < arr.length - 1 && (
+                  <div className="w-px h-6 bg-border sm:w-full sm:h-px sm:flex-1 mx-auto my-1 sm:my-0 sm:mx-2 shrink-0" />
+                )}
               </div>
             ))}
           </div>
-          <Button disabled className="w-full sm:w-auto" variant="outline">
-            <Send className="w-4 h-4 mr-2" />
-            Send to {report.staff_name || "Staff Member"}
-          </Button>
         </CardContent>
       </Card>
 
