@@ -254,7 +254,7 @@ export default function QualityAssessment({ report, onReportUpdate }) {
       return { ...a, override: { grade: newGrade, justification } };
     });
 
-    const updatedAssessment = { ...assessment, aspects: updatedAspects };
+    const updatedAssessment = { aspects: updatedAspects };
     const saved = await base44.entities.Report.update(report.id, { quality_assessment: updatedAssessment });
     if (onReportUpdate) onReportUpdate(saved);
   };
