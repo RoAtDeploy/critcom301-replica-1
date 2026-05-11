@@ -115,6 +115,12 @@ Deno.serve(async (req) => {
 
     const { transcript, reportId, staffChannel, staffName, otherRole } = await req.json();
 
+    // Fetch industry definitions to include in the prompt
+    const definitions = await base44.asServiceRole.entities.IndustryDefinition.list();
+    const definitionsText = definitions.length > 0
+      ? `\n\nINDUSTRY-SPECIFIC TERMINOLOGY (use these exact definitions when interpreting the transcript):\n${definitions.map(d => `- ${d.term}: ${d.definition}`).join('\n')}`
+      : '';
+
     if (!transcript) {
       return Response.json({ error: 'No transcript provided' }, { status: 400 });
     }
@@ -147,7 +153,7 @@ ${transcriptText}`;
     const [assessment, summaryResult] = await Promise.all([
       base44.integrations.Core.InvokeLLM({
         model: 'claude_sonnet_4_6',
-        prompt: `${ASSESSMENT_PROMPT}\n\n${staffContext}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
+        prompt: `${ASSESSMENT_PROMPT}${definitionsText}\n\n${staffContext}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
         response_json_schema: {
           type: 'object',
           properties: {

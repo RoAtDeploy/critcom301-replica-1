@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Building2, Users, Briefcase, Settings2, Phone } from "lucide-react";
+import { Building2, Users, Briefcase, Settings2, Phone, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import OptionList from "@/components/admin/OptionList";
+import DefinitionsManager from "@/components/admin/DefinitionsManager";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -69,6 +70,24 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <OptionList type="callTypes" label="Call Type Options" icon={Phone} color="violet" />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Industry Definitions */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-muted-foreground" />
+              <CardTitle className="text-base">Industry Definitions</CardTitle>
+            </div>
+            <CardDescription>
+              Abbreviations and terms used by the AI when interpreting transcripts. Add, edit, or remove entries to ensure accurate assessment.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DefinitionsManager />
           </CardContent>
         </Card>
       </motion.div>
