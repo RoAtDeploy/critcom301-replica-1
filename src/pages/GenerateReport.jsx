@@ -32,7 +32,7 @@ export default function GenerateReport() {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
 
-  const { staffList, roles: adminRoles } = useAdmin();
+  const { staffList, roles: adminRoles, callTypes } = useAdmin();
   const selectedStaff = staffList.find((s) => s.id === selectedStaffId);
 
   const handleFileSelect = (file) => {
@@ -346,11 +346,9 @@ export default function GenerateReport() {
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Sales Call">Sales Call</SelectItem>
-                <SelectItem value="Support Call">Support Call</SelectItem>
-                <SelectItem value="Follow-up">Follow-up</SelectItem>
-                <SelectItem value="Product Demo">Product Demo</SelectItem>
-                <SelectItem value="Complaint">Complaint</SelectItem>
+                {callTypes.map((ct) => (
+                  <SelectItem key={ct} value={ct}>{ct}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

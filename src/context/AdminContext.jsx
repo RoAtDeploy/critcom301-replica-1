@@ -5,6 +5,7 @@ const DEFAULTS = {
   roles: ["Sales Rep", "Senior Sales Rep", "Customer Support", "Team Lead", "Manager"],
   departments: ["Sales", "Customer Support", "Retention", "Onboarding", "Operations"],
   lineManagers: ["Alice Thompson", "Bob Harris", "Carol Davies", "David Singh"],
+  callTypes: ["Sales Call", "Support Call", "Follow-up", "Product Demo", "Complaint"],
 };
 
 const AdminContext = createContext(null);
@@ -13,6 +14,7 @@ export function AdminProvider({ children }) {
   const [roles, setRoles] = useState(DEFAULTS.roles);
   const [departments, setDepartments] = useState(DEFAULTS.departments);
   const [lineManagers, setLineManagers] = useState(DEFAULTS.lineManagers);
+  const [callTypes, setCallTypes] = useState(DEFAULTS.callTypes);
   const [staffList, setStaffList] = useState([]);
   const [staffLoading, setStaffLoading] = useState(true);
 
@@ -34,10 +36,12 @@ export function AdminProvider({ children }) {
       const rolesConfig = configs.find((c) => c.key === "roles");
       const depsConfig = configs.find((c) => c.key === "departments");
       const lmConfig = configs.find((c) => c.key === "lineManagers");
+      const ctConfig = configs.find((c) => c.key === "callTypes");
 
       if (rolesConfig?.values?.length) setRoles(rolesConfig.values);
       if (depsConfig?.values?.length) setDepartments(depsConfig.values);
       if (lmConfig?.values?.length) setLineManagers(lmConfig.values);
+      if (ctConfig?.values?.length) setCallTypes(ctConfig.values);
 
       setStaffLoading(false);
     });
@@ -88,6 +92,10 @@ export function AdminProvider({ children }) {
       if (lineManagers.includes(trimmed)) return false;
       next = [...lineManagers, trimmed];
       setLineManagers(next);
+    } else if (type === "callTypes") {
+      if (callTypes.includes(trimmed)) return false;
+      next = [...callTypes, trimmed];
+      setCallTypes(next);
     }
     await saveConfig(type, next);
     return true;
@@ -104,6 +112,9 @@ export function AdminProvider({ children }) {
     } else if (type === "lineManagers") {
       next = lineManagers.filter((i) => i !== value);
       setLineManagers(next);
+    } else if (type === "callTypes") {
+      next = callTypes.filter((i) => i !== value);
+      setCallTypes(next);
     }
     await saveConfig(type, next);
   };
@@ -122,6 +133,9 @@ export function AdminProvider({ children }) {
     } else if (type === "lineManagers") {
       next = lineManagers.map((i) => (i === oldValue ? trimmed : i));
       setLineManagers(next);
+    } else if (type === "callTypes") {
+      next = callTypes.map((i) => (i === oldValue ? trimmed : i));
+      setCallTypes(next);
     }
     await saveConfig(type, next);
     return true;
@@ -129,7 +143,7 @@ export function AdminProvider({ children }) {
 
   return (
     <AdminContext.Provider value={{
-      departments, lineManagers, roles,
+      departments, lineManagers, roles, callTypes,
       staffList, staffLoading,
       addStaff, updateStaff, refreshStaff,
       addItem, removeItem, editItem,

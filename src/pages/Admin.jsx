@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Building2, Users, Briefcase, Settings2 } from "lucide-react";
+import { Building2, Users, Briefcase, Settings2, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import OptionList from "@/components/admin/OptionList";
 
@@ -27,7 +27,7 @@ export default function Admin() {
         </div>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Roles */}
         <Card className="border-border/50">
           <CardHeader className="pb-3">
@@ -58,6 +58,17 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <OptionList type="lineManagers" label="Line Manager Options" icon={Users} color="orange" />
+          </CardContent>
+        </Card>
+
+        {/* Call Types */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Call Type Options</CardTitle>
+            <CardDescription>Call types available when generating a report.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <OptionList type="callTypes" label="Call Type Options" icon={Phone} color="violet" />
           </CardContent>
         </Card>
       </motion.div>
