@@ -78,7 +78,7 @@ export default function ReportDetail() {
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Call Report</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Spoken Safety Critical Communications Monitoring Form</h1>
           <p className="text-muted-foreground mt-1">Full report details for this recorded call.</p>
         </div>
         {report.status !== "saved" ? (
