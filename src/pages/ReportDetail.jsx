@@ -128,7 +128,7 @@ export default function ReportDetail() {
       )}
 
       {/* Quality Assessment */}
-      <QualityAssessment report={report} />
+      <QualityAssessment report={report} onReportUpdate={setReport} />
 
       {/* Transcription */}
       <Card className="border-border/50">
