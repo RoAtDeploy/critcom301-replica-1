@@ -5,7 +5,7 @@ const SPEAKER_STYLES = {
   S2: { badge: "bg-orange-100 text-orange-700 border-orange-300", row: "border-orange-200" },
 };
 
-export default function TranscriptEditor({ segments, onSegmentsChange }) {
+export default function TranscriptEditor({ segments, onSegmentsChange, speakerLabels = {} }) {
   const toggleSpeaker = (idx) => {
     const updated = segments.map((seg, i) => {
       if (i < idx) return seg;
@@ -33,7 +33,7 @@ export default function TranscriptEditor({ segments, onSegmentsChange }) {
               title="Click to toggle speaker"
               className={`text-xs font-bold px-2 py-0.5 rounded border shrink-0 mt-0.5 transition-all hover:opacity-70 cursor-pointer ${style.badge}`}
             >
-              {seg.speaker}
+              {speakerLabels[seg.speaker] || seg.speaker}
             </button>
             <p className="text-sm text-foreground/80 leading-relaxed flex-1">{seg.text}</p>
           </div>

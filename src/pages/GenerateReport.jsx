@@ -234,7 +234,18 @@ export default function GenerateReport() {
                       <p className="text-xs text-muted-foreground">
                         Segments alternate between <span className="font-semibold text-blue-600">S1</span> and <span className="font-semibold text-orange-600">S2</span>. Click any speaker label to toggle it if it's been misidentified.
                       </p>
-                      <TranscriptEditor segments={labelledSegments} onSegmentsChange={setLabelledSegments} />
+                      <TranscriptEditor
+                        segments={labelledSegments}
+                        onSegmentsChange={setLabelledSegments}
+                        speakerLabels={{
+                          ...(staffChannel && selectedStaff ? {
+                            [staffChannel]: selectedStaff.name.split(' ').map(w => w[0]).join('').toUpperCase()
+                          } : {}),
+                          ...(staffChannel && otherRole ? {
+                            [staffChannel === 'S1' ? 'S2' : 'S1']: otherRole.toUpperCase()
+                          } : {}),
+                        }}
+                      />
                     </div>
 
                     {/* Speaker assignment */}
