@@ -146,22 +146,20 @@ export default function ReportDetail() {
                   ? report.staff_name.split(" ").map((n) => n[0]).join("").toUpperCase()
                   : "ST";
                 const isStaff = report.staff_channel
-                  ? line.channel === report.staff_channel
+                  ? (line.speaker === report.staff_channel || line.channel === report.staff_channel)
                   : line.is_staff;
-                const speakerLabel = isStaff ? staffInitials : (report.other_role || line.channel || "?");
+                const speakerLabel = isStaff ? staffInitials : (report.other_role?.toUpperCase() || "?");
                 return (
                   <div key={idx} className="flex gap-3 text-sm">
                     <span className="flex items-center gap-1 text-xs font-mono text-primary bg-primary/10 rounded px-2 py-0.5 h-fit whitespace-nowrap">
                       <Clock className="w-3 h-3" />
                       {line.timestamp}
                     </span>
-                    {line.channel && (
-                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded h-fit whitespace-nowrap ${
-                        isStaff ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {speakerLabel}
-                      </span>
-                    )}
+                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded h-fit whitespace-nowrap ${
+                      isStaff ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
+                    }`}>
+                      {speakerLabel}
+                    </span>
                     <p className="text-foreground leading-relaxed">{line.text}</p>
                   </div>
                 );
