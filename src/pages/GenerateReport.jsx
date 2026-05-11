@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X, Clock, User } from "lucide-react";
+import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X } from "lucide-react";
 
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -25,35 +25,18 @@ export default function GenerateReport() {
   const [audioFile, setAudioFile] = useState(null);
   const [transcribing, setTranscribing] = useState(false);
   const [transcription, setTranscription] = useState(null);
-  const [staffChannel, setStaffChannel] = useState(null); // 'LC' or 'RC'
-  const [otherRole, setOtherRole] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
 
-  const { staffList, roles: adminRoles } = useAdmin();
+  const { staffList } = useAdmin();
   const selectedStaff = staffList.find((s) => s.id === selectedStaffId);
 
   const handleFileSelect = (file) => {
     if (file && /\.(mp3|wav|m4a|webm|mp4|mpeg|mpga|oga|ogg|flac)$/i.test(file.name)) {
       setAudioFile(file);
       setTranscription(null);
-      setStaffChannel(null);
     }
   };
-
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
-  // Build a preview of the first few segments for channel identification
-  const channelPreview = transcription?.segments?.slice(0, 6).map((seg) => ({
-    timestamp: seg.timestamp || formatTime(seg.start),
-    channel: seg.channel || 'LC',
-    text: seg.text.trim(),
-  })) || [];
-
-  const [audioUrl, setAudioUrl] = useState(null);
 
   const handleTranscribe = async () => {
     if (!audioFile) return;
@@ -69,7 +52,7 @@ export default function GenerateReport() {
     if (!transcription) return;
     setGeneratingReport(true);
 
-    // First generate the report (which assigns channels to segments)
+    // generateReport now auto-identifies which channel is the staff member
     const reportRes = await base44.functions.invoke('generateReport', {
       transcription,
       staffName: selectedStaff?.name,
@@ -77,18 +60,18 @@ export default function GenerateReport() {
       callType,
       callDate,
       context: callContext,
-      staffChannel,
-      otherRole,
     });
 
     const reportData = reportRes.data.report;
+    const detectedStaffChannel = reportData.staffChannel;
 
-    // Then assess using the channel-labelled transcript
+    // Assess using the auto-labelled transcript
     const assessRes = await base44.functions.invoke('assessTranscript', {
       transcript: reportData.timestampedTranscript,
-      staffChannel,
+      staffChannel: detectedStaffChannel,
       staffName: selectedStaff?.name,
     });
+
     const saved = await base44.entities.Report.create({
       staff_id: selectedStaffId,
       staff_name: selectedStaff?.name,
@@ -100,8 +83,7 @@ export default function GenerateReport() {
       transcription_duration: transcription.duration,
       transcription_language: transcription.language,
       timestamped_transcript: reportData.timestampedTranscript || [],
-      other_role: otherRole,
-      staff_channel: staffChannel,
+      staff_channel: detectedStaffChannel,
       audio_url: audioUrl,
       quality_assessment: assessRes.data?.assessment || null,
     });
@@ -204,7 +186,7 @@ export default function GenerateReport() {
                       <p className="text-xs text-muted-foreground">{(audioFile.size / (1024 * 1024)).toFixed(1)} MB</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); setStaffChannel(null); setOtherRole(null); }}>
+                  <Button variant="ghost" size="icon" onClick={() => { setAudioFile(null); setTranscription(null); }}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -214,101 +196,9 @@ export default function GenerateReport() {
                   </Button>
                 )}
                 {transcription && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-accent font-medium">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Transcription complete • {Math.round(transcription.duration)}s duration
-                    </div>
-
-                    {/* Channel identification step */}
-                    <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-primary" />
-                        <p className="text-sm font-semibold">Identify each channel</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Review the transcript and assign the staff member to their channel. Select the role of the other person on the call.</p>
-
-                      {/* Preview transcript */}
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {channelPreview.map((line, idx) => (
-                          <div key={idx} className="flex gap-2 text-sm items-start">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 whitespace-nowrap">
-                              {line.timestamp}
-                            </span>
-                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
-                              line.channel === 'LC' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                            }`}>
-                              {line.channel}
-                            </span>
-                            <p className="text-muted-foreground leading-relaxed">{line.text}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Two channel cards */}
-                      <div className="grid grid-cols-2 gap-3 pt-1">
-                        {['LC', 'RC'].map((ch) => {
-                          const isStaffChannel = staffChannel === ch;
-                          const isOtherChannel = staffChannel && staffChannel !== ch;
-                          const isBlue = ch === 'LC';
-                          return (
-                            <div
-                              key={ch}
-                              className={`rounded-lg border-2 p-3 space-y-2 transition-all ${
-                                isStaffChannel
-                                  ? isBlue ? 'border-blue-500 bg-blue-50' : 'border-orange-500 bg-orange-50'
-                                  : 'border-border bg-background'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
-                                  isBlue ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                                }`}>
-                                  {ch === 'LC' ? 'Left Channel' : 'Right Channel'}
-                                </span>
-                              </div>
-
-                              {isStaffChannel ? (
-                                /* Staff member label */
-                                <div className="flex items-center gap-1.5 py-1">
-                                  <User className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span className="text-sm font-semibold text-foreground truncate">
-                                    {selectedStaff?.name || 'Staff Member'}
-                                  </span>
-                                </div>
-                              ) : isOtherChannel ? (
-                                /* Role selector for the other channel */
-                                <Select value={otherRole} onValueChange={setOtherRole}>
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue placeholder="Select their role…" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {adminRoles.map((r) => (
-                                      <SelectItem key={r} value={r}>{r}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                /* Prompt to assign */
-                                <p className="text-xs text-muted-foreground py-1">Assign below</p>
-                              )}
-
-                              <button
-                                type="button"
-                                onClick={() => { setStaffChannel(ch); setOtherRole(null); }}
-                                className={`w-full text-xs font-semibold py-1.5 rounded-md border transition-all ${
-                                  isStaffChannel
-                                    ? isBlue ? 'border-blue-400 bg-blue-100 text-blue-700' : 'border-orange-400 bg-orange-100 text-orange-700'
-                                    : 'border-border hover:bg-muted text-muted-foreground'
-                                }`}
-                              >
-                                {isStaffChannel ? '✓ Staff member' : 'Set as staff member'}
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2 text-sm text-accent font-medium">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Transcription complete • {Math.round(transcription.duration)}s • Speaker identification will happen automatically
                   </div>
                 )}
               </div>
@@ -347,7 +237,7 @@ export default function GenerateReport() {
             </Link>
             <Button
               onClick={handleGenerateReport}
-              disabled={!transcription || !staffChannel || !otherRole || generatingReport}
+              disabled={!transcription || generatingReport}
               className="bg-primary hover:bg-primary/90"
             >
               {generatingReport
@@ -358,8 +248,6 @@ export default function GenerateReport() {
           </div>
         </CardContent>
       </Card>
-
-
     </motion.div>
   );
 }
