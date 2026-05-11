@@ -13,69 +13,82 @@ GRADING SCALE:
 THE 10 ASPECTS TO ASSESS (assess staff member only, aspect 11 is user-scored):
 
 1. Opens the communication by identifying themselves, who they are talking to and from where?
-   A: Clearly states own name, role, and specific location. Confirms who they are speaking to.
-   B: Identifies themselves and location but missing one element (e.g. no role stated).
-   C: Partial identification only — vague or incomplete.
-   D: No attempt to identify themselves, who they are calling, or from where.
+   The conversation should start correctly as this sets the tone for the remainder of the communication. Starting the communications properly involves identifying who you are, confirmation about who you are talking to, and where they are calling from.
+   Watch for: over-familiarity (especially in repetitive communications) and not being specific enough about location.
+   A: Clearly states own name, role, and specific location. Confirms who they are speaking to. All three elements present.
+   B: Identifies themselves with most elements but missing one (e.g. location vague or role omitted).
+   C: Partial identification only — over-familiar, vague, or missing multiple elements.
+   D: No meaningful attempt to identify themselves, who they are calling, or from where.
 
 2. Makes it clear what the intention or purpose of the communication is?
-   A: Purpose stated clearly and immediately at the outset.
-   B: Purpose eventually stated but not upfront or slightly unclear.
+   This includes being clear that they are taking a line blockage, reporting an event, making an emergency call, testing equipment, etc.
+   A: Purpose stated clearly and immediately at the outset; no ambiguity.
+   B: Purpose eventually stated but not upfront, or slightly unclear.
    C: Purpose implied but never explicitly stated; listener may be confused.
    D: No clear purpose communicated throughout the call.
 
 3. Delivers the message in a structured and logical manner?
-   A: Message flows logically; information given in a clear sequence.
-   B: Mostly structured with minor digressions or repetition.
+   Look for evidence the individual has planned the communication and thought about what they are going to say (e.g. notes of key points). The message should have a clear structure: an opening, information exchange, agreement of actions, and confirmation of understanding.
+   A: Message flows logically with a clear opening, information exchange, action agreement, and close.
+   B: Mostly structured with minor digressions or elements out of sequence.
    C: Disorganised delivery; information given out of sequence causing potential confusion.
    D: Chaotic or incoherent delivery; no logical structure evident.
 
 4. Delivers the message accurately and concisely?
-   A: All information accurate and delivered without unnecessary padding.
+   No superfluous chat. Information is relevant and structured logically. No over-explanation. Speaks in chunks of essential information. Avoids meaningless phrases like "I just wanted to tell you" or "as I said before".
+   A: All information accurate and delivered without unnecessary padding or filler phrases.
    B: Mostly accurate and concise; minor inaccuracies or slight over-elaboration.
-   C: Some inaccuracies or significant verbosity that risks misunderstanding.
+   C: Some inaccuracies or significant verbosity / filler phrases that risk misunderstanding.
    D: Inaccurate information given, or delivery so poor accuracy cannot be confirmed.
 
-5. Uses the safety critical communications protocols?
-   A: Correct protocol used throughout (e.g. repeat-back, phonetic alphabet, signal IDs).
-   B: Protocols mostly followed with minor lapses.
+5. Uses the safety critical communications protocols as specified by Rule Book Section G1?
+   Speaks slowly and at a good volume. Uses the phonetic alphabet appropriately (train head-codes, signal numbers, difficult words). Avoids ambiguous language and regional words; keeps jargon to a minimum. Uses single numbers (zero, one, two...) for all key information. Uses the 24-hour clock. Uses standard terms and phrases (e.g. "this is an emergency call").
+   A: Correct protocols used throughout — phonetic alphabet where appropriate, single numbers, 24hr clock, standard phrases.
+   B: Protocols mostly followed with minor lapses (e.g. phonetic alphabet not used once when it should have been).
    C: Some protocol use but significant gaps or deviations from required procedure.
    D: No meaningful use of safety-critical communications protocols.
 
 6. Listens actively, patiently and demonstrates understanding when receiving information?
-   A: Clear evidence of active listening: no interruptions, acknowledges information, reflects back.
-   B: Generally listens well; one or two instances of interrupting or missing a point.
+   Uses acknowledgements (paraphrasing, use of "uh huh") to indicate they are listening.
+   A: Clear evidence of active listening: no interruptions, uses acknowledgements, reflects back information.
+   B: Generally listens well; minor instances of missing a point or insufficient acknowledgement.
    C: Listens passively; misses or ignores some information from the other party.
    D: Does not listen; talks over the other party or misses critical information entirely.
 
 7. Asks questions to clarify and check all the information has been exchanged?
-   A: Proactively asks clarifying questions; confirms all key information has been covered.
+   Uses open questions at the start. Uses closed questions to confirm specifics. Persists with questioning until confident they have all the relevant information — does not accept vague reports.
+   A: Proactively uses open then closed questions; persists until all key information is confirmed.
    B: Asks some questions but misses opportunities to clarify important points.
-   C: Rarely asks questions; relies on assumptions rather than verification.
-   D: No clarifying questions asked; information gaps left unresolved.
+   C: Rarely asks questions; relies on assumptions; accepts vague answers without follow-up.
+   D: No clarifying questions asked; information gaps left entirely unresolved.
 
 8. Agrees actions and next steps?
-   A: Clear agreement on actions and next steps before closing the call.
-   B: Next steps mentioned but not formally agreed or confirmed.
+   Only concludes the communication when the next step has been agreed.
+   A: Clear, explicit agreement on actions and next steps before closing the call.
+   B: Next steps mentioned but not formally agreed or confirmed by both parties.
    C: Vague reference to next steps without clear agreement.
-   D: No discussion or agreement on actions or next steps.
+   D: No discussion or agreement on actions or next steps; call ends without conclusion.
 
 9. Confirms understanding through repeating back or summarising the critical details?
-   A: Repeat-back or summary of critical details explicitly confirmed by both parties.
+   Avoids monotonous and unnecessary repeat-back; thinks about what they are saying and what it means. Summarises focusing on key points. Uses active listening and neutral questions to confirm understanding.
+   A: Meaningful repeat-back or summary of critical details; focussed on key points, not monotonous recitation.
    B: Partial repeat-back; key points summarised but not all critical details covered.
-   C: Attempted repeat-back but incomplete or inaccurate.
+   C: Attempted repeat-back but incomplete, inaccurate, or merely monotonous recitation without thought.
    D: No repeat-back or summary of critical details.
 
 10. Challenges lack of repeat back and mistakes in communications?
+    Prompts / challenges the other party if they do not repeat back. Identifies and corrects errors or inconsistencies in the other party's repeat back.
     A: Actively and confidently challenges any omissions or errors in the other party's communications.
     B: Challenges one issue but allows others to pass without comment.
     C: Rarely challenges; accepts incomplete or incorrect communications without query.
     D: Makes no attempt to challenge errors or omissions in the other party's communications.
 
 IMPORTANT:
-- Only judge the staff member's contributions.
-- Ignore or discount anything said by the other party EXCEPT when assessing aspects 6, 7, 10 where the interaction is relevant.
-- Be specific in your reasoning — quote or paraphrase from the transcript.
+- Only judge the STAFF MEMBER's contributions (lines labelled [STAFF]).
+- Do not assess or grade the other party's performance.
+- For aspects 6, 7, 9, 10 the interaction between parties is relevant context, but the grade still reflects the staff member's behaviour only.
+- Be specific in your reasoning — quote or paraphrase the staff member's actual words from the transcript.
+- If the transcript is too short or a specific aspect clearly cannot be assessed, use n/a.
 
 RESPONSE FORMAT:
 Return a JSON object only. No other text.
