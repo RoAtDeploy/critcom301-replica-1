@@ -88,13 +88,7 @@ export default function GenerateReport() {
       text: seg.text,
     }));
 
-    const assessRes = await base44.functions.invoke('assessTranscript', {
-      transcript: timestampedTranscript,
-      staffChannel,
-      staffName: selectedStaff?.name,
-      otherRole,
-    });
-
+    // First create the report so we have an ID
     const saved = await base44.entities.Report.create({
       staff_id: selectedStaffId,
       staff_name: selectedStaff?.name,
@@ -109,12 +103,19 @@ export default function GenerateReport() {
       other_role: otherRole,
       staff_channel: staffChannel,
       audio_url: audioUrl,
-      quality_assessment: assessRes.data?.assessment || null,
-      call_summary: assessRes.data?.call_summary || null,
+    });
+
+    // Then run the assessment — the function saves directly to the report
+    await base44.functions.invoke('assessTranscript', {
+      transcript: timestampedTranscript,
+      reportId: saved.id,
+      staffChannel,
+      staffName: selectedStaff?.name,
+      otherRole,
     });
 
     setGeneratingReport(false);
-    navigate(`/reports/${saved.id}`);
+    navigate(`/reports/${saved.id}?assessed=1`);
   };
 
   return (

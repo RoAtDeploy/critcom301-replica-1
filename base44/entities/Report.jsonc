@@ -72,15 +72,7 @@
     },
     "quality_assessment": {
       "type": "object",
-      "description": "AI-generated quality assessment against R1-R6 rules",
-      "properties": {
-        "rules": {
-          "type": "array",
-          "items": {
-            "type": "object"
-          }
-        }
-      }
+      "description": "AI-generated quality assessment"
     }
   },
   "required": [
