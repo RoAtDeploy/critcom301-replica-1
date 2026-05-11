@@ -106,38 +106,54 @@ Deno.serve(async (req) => {
       ? `The staff member being assessed is ${staffName}${staffChannel ? ` (speaker: ${staffChannel})` : ''}. Lines labelled [STAFF] are their contributions. Lines labelled [OTHER] are ${otherRole || 'the other party'} — do NOT assess these.`
       : '';
 
-    const assessment = await base44.integrations.Core.InvokeLLM({
-      model: 'claude_sonnet_4_6',
-      prompt: `${RULES_PROMPT}\n\n${staffContext}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          rules: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                name: { type: 'string' },
-                status: { type: 'string' },
-                reasoning: { type: 'string' }
+    const summaryPrompt = `You are reviewing a railway staff call. Write a single sentence (max 2 sentences) summarising the context of this call for a reviewer. Include who is speaking (staff member name and their role on site) and who they are speaking to (the other party's role). Do not evaluate quality — just describe the call context concisely.
+
+Staff member: ${staffName || 'Unknown'}
+Their role: (infer from transcript if possible)
+Other party role: ${otherRole || 'Unknown'}
+
+TRANSCRIPT:
+${transcriptText}`;
+
+    const [assessment, summaryResult] = await Promise.all([
+      base44.integrations.Core.InvokeLLM({
+        model: 'claude_sonnet_4_6',
+        prompt: `${RULES_PROMPT}\n\n${staffContext}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            rules: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  name: { type: 'string' },
+                  status: { type: 'string' },
+                  reasoning: { type: 'string' }
+                }
               }
             }
           }
         }
-      }
-    });
+      }),
+      base44.integrations.Core.InvokeLLM({
+        prompt: summaryPrompt,
+      })
+    ]);
 
     // Unwrap extra 'response' key if the LLM wraps its output
     const normalized = assessment?.response ?? assessment;
+    const callSummary = typeof summaryResult === 'string' ? summaryResult.trim() : '';
 
     if (reportId) {
       await base44.asServiceRole.entities.Report.update(reportId, {
-        quality_assessment: normalized
+        quality_assessment: normalized,
+        call_summary: callSummary,
       });
     }
 
-    return Response.json({ assessment: normalized });
+    return Response.json({ assessment: normalized, call_summary: callSummary });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, Save, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, Save, CheckCircle2, Sparkles } from "lucide-react";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import { motion } from "framer-motion";
 
@@ -82,6 +82,14 @@ export default function ReportDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* AI Call Summary */}
+      {report.call_summary && (
+        <div className="flex gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5">
+          <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-sm text-foreground/80 leading-relaxed">{report.call_summary}</p>
+        </div>
+      )}
 
       {/* Audio Playback */}
       {report.audio_url && (

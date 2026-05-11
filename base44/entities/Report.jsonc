@@ -43,6 +43,10 @@
       "type": "string",
       "description": "Context provided for the call"
     },
+    "call_summary": {
+      "type": "string",
+      "description": "AI-generated 1-2 sentence summary of the call context for reviewers"
+    },
     "audio_url": {
       "type": "string",
       "description": "URL of the uploaded audio file"

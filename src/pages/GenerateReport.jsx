@@ -110,6 +110,7 @@ export default function GenerateReport() {
       staff_channel: staffChannel,
       audio_url: audioUrl,
       quality_assessment: assessRes.data?.assessment || null,
+      call_summary: assessRes.data?.call_summary || null,
     });
 
     setGeneratingReport(false);
