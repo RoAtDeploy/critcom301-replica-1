@@ -5,7 +5,7 @@ const DEFAULTS = {
   roles: ["Sales Rep", "Senior Sales Rep", "Customer Support", "Team Lead", "Manager"],
   departments: ["Sales", "Customer Support", "Retention", "Onboarding", "Operations"],
   lineManagers: ["Alice Thompson", "Bob Harris", "Carol Davies", "David Singh"],
-  callTypes: ["Sales Call", "Support Call", "Follow-up", "Product Demo", "Complaint"],
+  callTypes: ["Closing Worksite", "Worksite Set-up", "Emergency Call"],
 };
 
 const AdminContext = createContext(null);
