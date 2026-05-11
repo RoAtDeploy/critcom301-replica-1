@@ -50,7 +50,7 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 h-[72px] border-b border-sidebar-border">
-        <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0">
           <Headphones className="w-5 h-5 text-orange-500" />
         </div>
         {!collapsed && (
