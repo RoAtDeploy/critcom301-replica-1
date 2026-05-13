@@ -102,10 +102,19 @@ const PLACEHOLDER_RECORDINGS = [
   },
 ];
 
+const GRADE_CONFIG = {
+  A: { label: "A", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+  B: { label: "B", color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
+  C: { label: "C", color: "bg-orange-100 text-orange-700 border-orange-300" },
+  D: { label: "D", color: "bg-red-100 text-red-700 border-red-300" },
+  "n/a": { label: "N/A", color: "bg-slate-100 text-slate-500 border-slate-300" },
+};
+
 export default function MonitoringOnMass() {
   const [recordings, setRecordings] = useState(PLACEHOLDER_RECORDINGS);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [filterGrade, setFilterGrade] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleFiles = async (incoming) => {
@@ -235,16 +244,59 @@ export default function MonitoringOnMass() {
       {/* Recordings List */}
       {recordings.length > 0 && (
         <div className="space-y-3">
+          {/* Grade summary / filter bar */}
+          {(() => {
+            const counts = {};
+            recordings.forEach((r) => {
+              const g = r.override?.grade ?? r.grade;
+              if (g) counts[g] = (counts[g] || 0) + 1;
+            });
+            return (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
+                {["A", "B", "C", "D", "n/a"].filter(g => counts[g]).map((g) => {
+                  const cfg = GRADE_CONFIG[g];
+                  const active = filterGrade === g;
+                  return (
+                    <button
+                      key={g}
+                      onClick={() => setFilterGrade(active ? null : g)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold transition-all ${
+                        active
+                          ? `${cfg.color} ring-2 ring-offset-1 ring-current/30`
+                          : `${cfg.color} opacity-60 hover:opacity-100`
+                      }`}
+                    >
+                      <span>{cfg.label}</span>
+                      <span className="opacity-70">×{counts[g]}</span>
+                    </button>
+                  );
+                })}
+                {filterGrade && (
+                  <button
+                    onClick={() => setFilterGrade(null)}
+                    className="text-xs text-muted-foreground hover:text-foreground underline ml-1"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               {recordings.length} Recording{recordings.length > 1 ? "s" : ""}
             </h2>
           </div>
 
-          {recordings.map((rec) => (
+          {recordings.filter((r) => {
+            if (!filterGrade) return true;
+            const g = r.override?.grade ?? r.grade;
+            return g === filterGrade;
+          }).map((rec) => (
             <div key={rec.id} className="relative group">
               <RecordingRow recording={rec} onGradeOverride={handleGradeOverride} />
-              {/* Remove button */}
               <button
                 onClick={() => removeRecording(rec.id)}
                 className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
