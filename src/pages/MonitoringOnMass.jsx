@@ -138,6 +138,7 @@ export default function MonitoringOnMass() {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filterGrade, setFilterGrade] = useState(null);
+  const [filterFlagged, setFilterFlagged] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFiles = async (incoming) => {
@@ -270,37 +271,50 @@ export default function MonitoringOnMass() {
           {/* Grade summary / filter bar */}
           {(() => {
             const counts = {};
-            const flaggedGrades = new Set();
+            let flaggedCount = 0;
             recordings.forEach((r) => {
-            const g = r.override?.grade ?? r.grade;
-            if (g) counts[g] = (counts[g] || 0) + 1;
-            if (r.flag && g) flaggedGrades.add(g);
+              const g = r.override?.grade ?? r.grade;
+              if (g) counts[g] = (counts[g] || 0) + 1;
+              if (r.flag) flaggedCount++;
             });
             return (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
-              {["A", "B", "C", "D", "n/a"].filter(g => counts[g]).map((g) => {
-                const cfg = GRADE_CONFIG[g];
-                const active = filterGrade === g;
-                return (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
+                {["A", "B", "C", "D", "n/a"].filter(g => counts[g]).map((g) => {
+                  const cfg = GRADE_CONFIG[g];
+                  const active = filterGrade === g;
+                  return (
+                    <button
+                      key={g}
+                      onClick={() => setFilterGrade(active ? null : g)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold transition-all ${
+                        active
+                          ? `${cfg.color} ring-2 ring-offset-1 ring-current/30`
+                          : `${cfg.color} opacity-60 hover:opacity-100`
+                      }`}
+                    >
+                      <span>{cfg.label}</span>
+                      <span className="opacity-70">×{counts[g]}</span>
+                    </button>
+                  );
+                })}
+                {flaggedCount > 0 && (
                   <button
-                    key={g}
-                    onClick={() => setFilterGrade(active ? null : g)}
+                    onClick={() => setFilterFlagged(f => !f)}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold transition-all ${
-                      active
-                        ? `${cfg.color} ring-2 ring-offset-1 ring-current/30`
-                        : `${cfg.color} opacity-60 hover:opacity-100`
+                      filterFlagged
+                        ? "bg-red-50 text-red-600 border-red-300 ring-2 ring-offset-1 ring-red-300/30"
+                        : "bg-red-50 text-red-600 border-red-300 opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <span>{cfg.label}</span>
-                    <span className="opacity-70">×{counts[g]}</span>
-                    {flaggedGrades.has(g) && <AlertTriangle className="w-3 h-3" />}
+                    <AlertTriangle className="w-3 h-3" />
+                    <span>Flagged</span>
+                    <span className="opacity-70">×{flaggedCount}</span>
                   </button>
-                );
-                })}
-                {filterGrade && (
+                )}
+                {(filterGrade || filterFlagged) && (
                   <button
-                    onClick={() => setFilterGrade(null)}
+                    onClick={() => { setFilterGrade(null); setFilterFlagged(false); }}
                     className="text-xs text-muted-foreground hover:text-foreground underline ml-1"
                   >
                     Clear
@@ -317,9 +331,12 @@ export default function MonitoringOnMass() {
           </div>
 
           {recordings.filter((r) => {
-            if (!filterGrade) return true;
-            const g = r.override?.grade ?? r.grade;
-            return g === filterGrade;
+            if (filterFlagged && !r.flag) return false;
+            if (filterGrade) {
+              const g = r.override?.grade ?? r.grade;
+              return g === filterGrade;
+            }
+            return true;
           }).map((rec) => (
             <div key={rec.id} className="relative group">
               <RecordingRow recording={rec} onGradeOverride={handleGradeOverride} />
