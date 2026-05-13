@@ -179,11 +179,20 @@ export default function RecordingRow({ recording, onGradeOverride }) {
             {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </button>
 
-          {/* Flag + Grade Badge — far right */}
+          {/* Grade Badge — far right */}
           <div className="flex items-center gap-1.5 shrink-0">
+            {effectiveGrade ? (
+              <GradeBadge grade={effectiveGrade} />
+            ) : recording.transcribing ? (
+              <span className="w-7 h-7 inline-flex items-center justify-center rounded border border-dashed border-slate-300">
+                <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
+              </span>
+            ) : (
+              <span className="w-7 h-7 inline-flex items-center justify-center rounded border border-dashed border-slate-300 text-slate-400 text-xs font-bold">?</span>
+            )}
             {recording.flag && (
               <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger>
                   <span className="w-7 h-7 inline-flex items-center justify-center rounded border bg-red-50 border-red-300 text-red-600">
                     <AlertTriangle className="w-4 h-4" />
                   </span>
@@ -193,15 +202,6 @@ export default function RecordingRow({ recording, onGradeOverride }) {
                   <p>{recording.flag}</p>
                 </TooltipContent>
               </Tooltip>
-            )}
-            {effectiveGrade ? (
-              <GradeBadge grade={effectiveGrade} />
-            ) : recording.transcribing ? (
-              <span className="w-7 h-7 inline-flex items-center justify-center rounded border border-dashed border-slate-300">
-                <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
-              </span>
-            ) : (
-              <span className="w-7 h-7 inline-flex items-center justify-center rounded border border-dashed border-slate-300 text-slate-400 text-xs font-bold">?</span>
             )}
           </div>
         </div>
