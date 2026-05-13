@@ -138,19 +138,6 @@ export default function RecordingRow({ recording, onGradeOverride }) {
       )}>
         {/* Collapsed Header */}
         <div className="flex items-center gap-3 px-4 py-3">
-          {/* Grade Badge */}
-          <div className="shrink-0">
-            {effectiveGrade ? (
-              <GradeBadge grade={effectiveGrade} />
-            ) : recording.transcribing ? (
-              <span className="w-7 h-7 inline-flex items-center justify-center rounded border border-dashed border-slate-300">
-                <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
-              </span>
-            ) : (
-              <span className="w-7 h-7 inline-flex items-center justify-center rounded border border-dashed border-slate-300 text-slate-400 text-xs font-bold">?</span>
-            )}
-          </div>
-
           {/* File name */}
           <button onClick={() => setOpen(o => !o)} className="flex-1 text-left min-w-0">
             <span className="text-sm font-medium text-foreground truncate block">{recording.name}</span>
@@ -191,6 +178,19 @@ export default function RecordingRow({ recording, onGradeOverride }) {
           <button onClick={() => setOpen(o => !o)}>
             {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </button>
+
+          {/* Grade Badge — far right */}
+          <div className="shrink-0">
+            {effectiveGrade ? (
+              <GradeBadge grade={effectiveGrade} />
+            ) : recording.transcribing ? (
+              <span className="w-7 h-7 inline-flex items-center justify-center rounded border border-dashed border-slate-300">
+                <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
+              </span>
+            ) : (
+              <span className="w-7 h-7 inline-flex items-center justify-center rounded border border-dashed border-slate-300 text-slate-400 text-xs font-bold">?</span>
+            )}
+          </div>
         </div>
 
         {/* Expanded Content */}
