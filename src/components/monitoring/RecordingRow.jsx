@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ChevronDown, ChevronUp, Play, Pause, Pencil, X, Loader2, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, Play, Pause, Pencil, X, Loader2, Clock, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -179,8 +179,21 @@ export default function RecordingRow({ recording, onGradeOverride }) {
             {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </button>
 
-          {/* Grade Badge — far right */}
-          <div className="shrink-0">
+          {/* Flag + Grade Badge — far right */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {recording.flag && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="w-7 h-7 inline-flex items-center justify-center rounded border bg-red-50 border-red-300 text-red-600">
+                    <TriangleAlert className="w-4 h-4" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs text-xs">
+                  <p className="font-semibold mb-0.5">Issue flagged</p>
+                  <p>{recording.flag}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
             {effectiveGrade ? (
               <GradeBadge grade={effectiveGrade} />
             ) : recording.transcribing ? (

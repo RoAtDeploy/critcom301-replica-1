@@ -62,6 +62,7 @@ const PLACEHOLDER_RECORDINGS = [
     objectUrl: null,
     transcribing: false,
     grade: "D",
+    flag: "Unprofessional language detected — driver used inappropriate phrasing during communication.",
     override: null,
     duration: 45,
     transcription: null,
