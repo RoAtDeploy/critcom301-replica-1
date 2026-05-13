@@ -16,6 +16,7 @@ import Admin from '@/pages/Admin';
 import StaffDetail from '@/pages/StaffDetail';
 import ReportDetail from '@/pages/ReportDetail';
 import { AdminProvider } from '@/context/AdminContext';
+import MonitoringOnMass from '@/pages/MonitoringOnMass';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -48,6 +49,7 @@ const AuthenticatedApp = () => {
         <Route path="/reports/:id" element={<ReportDetail />} />
         <Route path="/actions" element={<ActionItems />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/monitoring" element={<MonitoringOnMass />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

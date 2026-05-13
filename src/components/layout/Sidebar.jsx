@@ -7,7 +7,8 @@ import {
   Headphones,
   ChevronLeft,
   ChevronRight,
-  Settings2
+  Settings2,
+  Radio
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ const navItems = [
   { label: "Staff Members", icon: Users, path: "/staff" },
   { label: "Generate Report", icon: FileText, path: "/reports/new" },
   { label: "Action Items", icon: ListChecks, path: "/actions" },
+  { label: "Monitoring on Mass", icon: Radio, path: "/monitoring" },
 ];
 
 export default function Sidebar() {
