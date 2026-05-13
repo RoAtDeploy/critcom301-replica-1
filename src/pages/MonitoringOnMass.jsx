@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileAudio, X, Radio, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Upload, FileAudio, X, Radio, AlertTriangle, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import RecordingRow from "@/components/monitoring/RecordingRow";
@@ -139,7 +140,13 @@ export default function MonitoringOnMass() {
   const [uploading, setUploading] = useState(false);
   const [filterGrade, setFilterGrade] = useState(null);
   const [filterFlagged, setFilterFlagged] = useState(false);
+  const [staffMembers, setStaffMembers] = useState([]);
+  const [selectedStaff, setSelectedStaff] = useState("unknown");
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    base44.entities.StaffMember.list().then(setStaffMembers).catch(() => {});
+  }, []);
 
   const handleFiles = async (incoming) => {
     const audioFiles = Array.from(incoming).filter(
@@ -229,10 +236,26 @@ export default function MonitoringOnMass() {
       {/* Upload Zone */}
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Upload className="w-4 h-4 text-muted-foreground" />
-            Upload Recordings
-          </CardTitle>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Upload className="w-4 h-4 text-muted-foreground" />
+              Upload Recordings
+            </CardTitle>
+            <div className="flex items-center gap-2 shrink-0">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <Select value={selectedStaff} onValueChange={setSelectedStaff}>
+                <SelectTrigger className="h-8 text-xs w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unknown">Unknown</SelectItem>
+                  {staffMembers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div
@@ -308,7 +331,6 @@ export default function MonitoringOnMass() {
                     }`}
                   >
                     <AlertTriangle className="w-3 h-3" />
-                    <span>Flagged</span>
                     <span className="opacity-70">×{flaggedCount}</span>
                   </button>
                 )}
