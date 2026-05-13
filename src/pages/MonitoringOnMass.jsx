@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileAudio, X, Radio } from "lucide-react";
+import { Upload, FileAudio, X, Radio, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import RecordingRow from "@/components/monitoring/RecordingRow";
@@ -248,30 +248,33 @@ export default function MonitoringOnMass() {
           {/* Grade summary / filter bar */}
           {(() => {
             const counts = {};
+            const flaggedGrades = new Set();
             recordings.forEach((r) => {
-              const g = r.override?.grade ?? r.grade;
-              if (g) counts[g] = (counts[g] || 0) + 1;
+            const g = r.override?.grade ?? r.grade;
+            if (g) counts[g] = (counts[g] || 0) + 1;
+            if (r.flag && g) flaggedGrades.add(g);
             });
             return (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
-                {["A", "B", "C", "D", "n/a"].filter(g => counts[g]).map((g) => {
-                  const cfg = GRADE_CONFIG[g];
-                  const active = filterGrade === g;
-                  return (
-                    <button
-                      key={g}
-                      onClick={() => setFilterGrade(active ? null : g)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold transition-all ${
-                        active
-                          ? `${cfg.color} ring-2 ring-offset-1 ring-current/30`
-                          : `${cfg.color} opacity-60 hover:opacity-100`
-                      }`}
-                    >
-                      <span>{cfg.label}</span>
-                      <span className="opacity-70">×{counts[g]}</span>
-                    </button>
-                  );
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
+              {["A", "B", "C", "D", "n/a"].filter(g => counts[g]).map((g) => {
+                const cfg = GRADE_CONFIG[g];
+                const active = filterGrade === g;
+                return (
+                  <button
+                    key={g}
+                    onClick={() => setFilterGrade(active ? null : g)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold transition-all ${
+                      active
+                        ? `${cfg.color} ring-2 ring-offset-1 ring-current/30`
+                        : `${cfg.color} opacity-60 hover:opacity-100`
+                    }`}
+                  >
+                    <span>{cfg.label}</span>
+                    <span className="opacity-70">×{counts[g]}</span>
+                    {flaggedGrades.has(g) && <AlertTriangle className="w-3 h-3" />}
+                  </button>
+                );
                 })}
                 {filterGrade && (
                   <button
