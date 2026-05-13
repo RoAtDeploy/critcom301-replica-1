@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ChevronDown, ChevronUp, Play, Pause, Pencil, X, Loader2, Clock, TriangleAlert } from "lucide-react";
+import { ChevronDown, ChevronUp, Play, Pause, Pencil, X, Loader2, Clock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -185,7 +185,7 @@ export default function RecordingRow({ recording, onGradeOverride }) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="w-7 h-7 inline-flex items-center justify-center rounded border bg-red-50 border-red-300 text-red-600">
-                    <TriangleAlert className="w-4 h-4" />
+                    <AlertTriangle className="w-4 h-4" />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="max-w-xs text-xs">
