@@ -141,12 +141,17 @@ export default function RecordingRow({ recording, onGradeOverride, onGenerateRep
           {/* File name */}
           <button onClick={() => setOpen(o => !o)} className="flex-1 text-left min-w-0">
             <span className="text-sm font-medium text-foreground truncate block">{recording.name}</span>
-            {recording.transcribing && (
-              <span className="text-xs text-muted-foreground">Transcribing…</span>
-            )}
-            {!recording.transcribing && recording.duration && (
-              <span className="text-xs text-muted-foreground">{Math.round(recording.duration)}s</span>
-            )}
+            <span className="flex items-center gap-2">
+              {recording.transcribing && (
+                <span className="text-xs text-muted-foreground">Transcribing…</span>
+              )}
+              {!recording.transcribing && recording.duration && (
+                <span className="text-xs text-muted-foreground">{Math.round(recording.duration)}s</span>
+              )}
+              {recording.staffName && (
+                <span className="text-xs text-primary/70 font-medium">{recording.staffName}</span>
+              )}
+            </span>
           </button>
 
           {/* Audio player (collapsed) */}

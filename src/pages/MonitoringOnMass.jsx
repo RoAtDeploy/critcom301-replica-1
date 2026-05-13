@@ -175,7 +175,7 @@ export default function MonitoringOnMass() {
       // Add to list immediately as transcribing
       setRecordings((prev) => [
         ...prev,
-        { id, name: file.name, objectUrl, transcribing: true, grade: null, override: null, segments: null, transcription: null, duration: null },
+        { id, name: file.name, objectUrl, transcribing: true, grade: null, override: null, segments: null, transcription: null, duration: null, staffName: selectedStaff !== "unknown" ? (staffMembers.find(s => s.id === selectedStaff)?.name ?? null) : null },
       ]);
 
       // Upload then transcribe
