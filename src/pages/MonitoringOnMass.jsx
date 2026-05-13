@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, FileAudio, X, Radio, AlertTriangle, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import RecordingRow from "@/components/monitoring/RecordingRow";
@@ -143,6 +144,17 @@ export default function MonitoringOnMass() {
   const [staffMembers, setStaffMembers] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState("unknown");
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
+
+  const handleGenerateReport = (recording) => {
+    const staffId = selectedStaff !== "unknown" ? selectedStaff : null;
+    const staff = staffMembers.find(s => s.id === staffId);
+    const params = new URLSearchParams();
+    if (staffId) params.set("staffId", staffId);
+    if (staff) params.set("staffName", staff.name);
+    if (recording.audio_url) params.set("audioUrl", recording.audio_url);
+    navigate(`/reports/new?${params.toString()}`);
+  };
 
   useEffect(() => {
     base44.entities.StaffMember.list().then(setStaffMembers).catch(() => {});
@@ -361,7 +373,7 @@ export default function MonitoringOnMass() {
             return true;
           }).map((rec) => (
             <div key={rec.id} className="relative group">
-              <RecordingRow recording={rec} onGradeOverride={handleGradeOverride} />
+              <RecordingRow recording={rec} onGradeOverride={handleGradeOverride} onGenerateReport={handleGenerateReport} />
               <button
                 onClick={() => removeRecording(rec.id)}
                 className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"

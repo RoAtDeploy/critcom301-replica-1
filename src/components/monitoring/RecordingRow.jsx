@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ChevronDown, ChevronUp, Play, Pause, Pencil, X, Loader2, Clock, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, Play, Pause, Pencil, X, Loader2, Clock, AlertTriangle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -103,7 +103,7 @@ function AudioPlayer({ url, name }) {
   );
 }
 
-export default function RecordingRow({ recording, onGradeOverride }) {
+export default function RecordingRow({ recording, onGradeOverride, onGenerateReport }) {
   const [open, setOpen] = useState(false);
   const [overriding, setOverriding] = useState(false);
   const [selectedGrade, setSelectedGrade] = useState(null);
@@ -242,6 +242,21 @@ export default function RecordingRow({ recording, onGradeOverride }) {
               <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 space-y-1">
                 <p className="text-xs font-semibold text-amber-700">Override justification</p>
                 <p className="text-sm text-amber-800">{recording.override.justification}</p>
+              </div>
+            )}
+
+            {/* Generate Report button */}
+            {!recording.transcribing && (
+              <div className="pt-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs gap-1.5"
+                  onClick={(e) => { e.stopPropagation(); onGenerateReport?.(recording); }}
+                >
+                  <FileText className="w-3 h-3" />
+                  Generate Full Report
+                </Button>
               </div>
             )}
 
