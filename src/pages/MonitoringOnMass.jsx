@@ -3,18 +3,61 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, FileAudio, X, Radio } from "lucide-react";
 import { motion } from "framer-motion";
+import { base44 } from "@/api/base44Client";
+import RecordingRow from "@/components/monitoring/RecordingRow";
+
+// Placeholder grades cycling for demo
+const PLACEHOLDER_GRADES = ["A", "B", "C", "D", "n/a"];
+let gradeIndex = 0;
+const nextPlaceholderGrade = () => PLACEHOLDER_GRADES[gradeIndex++ % PLACEHOLDER_GRADES.length];
 
 export default function MonitoringOnMass() {
-  const [files, setFiles] = useState([]);
+  const [recordings, setRecordings] = useState([]);
   const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleFiles = (incoming) => {
-    const audioFiles = Array.from(incoming).filter((f) => f.type.startsWith("audio/") || f.name.match(/\.(mp3|wav|m4a|ogg|flac|aac)$/i));
-    setFiles((prev) => [
-      ...prev,
-      ...audioFiles.map((f) => ({ file: f, name: f.name, size: f.size, id: crypto.randomUUID() })),
-    ]);
+  const handleFiles = async (incoming) => {
+    const audioFiles = Array.from(incoming).filter(
+      (f) => f.type.startsWith("audio/") || f.name.match(/\.(mp3|wav|m4a|ogg|flac|aac)$/i)
+    );
+    if (!audioFiles.length) return;
+
+    setUploading(true);
+
+    for (const file of audioFiles) {
+      const id = crypto.randomUUID();
+      const objectUrl = URL.createObjectURL(file);
+
+      // Add to list immediately as transcribing
+      setRecordings((prev) => [
+        ...prev,
+        { id, name: file.name, objectUrl, transcribing: true, grade: null, override: null, segments: null, transcription: null, duration: null },
+      ]);
+
+      // Upload then transcribe
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const result = await base44.functions.invoke("transcribeAudio", { file_url });
+      const data = result.data;
+
+      setRecordings((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                transcribing: false,
+                transcription: data.text,
+                segments: data.segments,
+                duration: data.duration,
+                language: data.language,
+                grade: nextPlaceholderGrade(), // placeholder — will be configured later
+              }
+            : r
+        )
+      );
+    }
+
+    setUploading(false);
   };
 
   const handleDrop = (e) => {
@@ -23,11 +66,25 @@ export default function MonitoringOnMass() {
     handleFiles(e.dataTransfer.files);
   };
 
-  const removeFile = (id) => setFiles((prev) => prev.filter((f) => f.id !== id));
+  const handleGradeOverride = (id, grade, justification) => {
+    setRecordings((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        if (grade === null) {
+          const { override, ...rest } = r;
+          return rest;
+        }
+        return { ...r, override: { grade, justification } };
+      })
+    );
+  };
 
-  const formatSize = (bytes) => {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  const removeRecording = (id) => {
+    setRecordings((prev) => {
+      const rec = prev.find((r) => r.id === id);
+      if (rec?.objectUrl) URL.revokeObjectURL(rec.objectUrl);
+      return prev.filter((r) => r.id !== id);
+    });
   };
 
   return (
@@ -42,7 +99,7 @@ export default function MonitoringOnMass() {
           <Radio className="w-6 h-6 text-orange-500" />
           Monitoring on Mass
         </h1>
-        <p className="text-muted-foreground mt-1">Upload multiple recordings for bulk analysis.</p>
+        <p className="text-muted-foreground mt-1">Upload multiple recordings for bulk transcription and analysis.</p>
       </div>
 
       {/* Upload Zone */}
@@ -76,33 +133,46 @@ export default function MonitoringOnMass() {
             />
           </div>
 
-          {files.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {files.length} file{files.length > 1 ? "s" : ""} queued
-              </p>
-              {files.map((f) => (
-                <div key={f.id} className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-border bg-muted/30">
-                  <FileAudio className="w-4 h-4 text-orange-500 shrink-0" />
-                  <span className="text-sm flex-1 truncate">{f.name}</span>
-                  <span className="text-xs text-muted-foreground shrink-0">{formatSize(f.size)}</span>
-                  <button onClick={() => removeFile(f.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-
-              <div className="pt-2">
-                <Button disabled className="bg-primary hover:bg-primary/90 w-full sm:w-auto opacity-60 cursor-not-allowed">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Process Recordings
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2">Processing configuration coming soon.</p>
-              </div>
-            </div>
+          {uploading && (
+            <p className="text-xs text-muted-foreground mt-3 text-center animate-pulse">
+              Uploading and transcribing recordings…
+            </p>
           )}
         </CardContent>
       </Card>
+
+      {/* Recordings List */}
+      {recordings.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              {recordings.length} Recording{recordings.length > 1 ? "s" : ""}
+            </h2>
+          </div>
+
+          {recordings.map((rec) => (
+            <div key={rec.id} className="relative group">
+              <RecordingRow recording={rec} onGradeOverride={handleGradeOverride} />
+              {/* Remove button */}
+              <button
+                onClick={() => removeRecording(rec.id)}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state placeholder */}
+      {recordings.length === 0 && !uploading && (
+        <div className="text-center py-12 text-muted-foreground">
+          <FileAudio className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p className="text-sm">No recordings uploaded yet.</p>
+          <p className="text-xs mt-1">Upload audio files above to begin transcription.</p>
+        </div>
+      )}
     </motion.div>
   );
 }
