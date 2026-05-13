@@ -17,6 +17,7 @@ const PLACEHOLDER_RECORDINGS = [
   {
     id: "demo-1",
     name: "recording_001.mp3",
+    staffName: "J. Smith",
     objectUrl: null,
     transcribing: false,
     grade: "B",
@@ -40,6 +41,7 @@ const PLACEHOLDER_RECORDINGS = [
   {
     id: "demo-2",
     name: "recording_002.mp3",
+    staffName: "A. Patel",
     objectUrl: null,
     transcribing: false,
     grade: "A",
@@ -61,6 +63,7 @@ const PLACEHOLDER_RECORDINGS = [
   {
     id: "demo-3",
     name: "recording_003.mp3",
+    staffName: "T. Williams",
     objectUrl: null,
     transcribing: false,
     grade: "D",
@@ -83,6 +86,7 @@ const PLACEHOLDER_RECORDINGS = [
   {
     id: "demo-5",
     name: "recording_005.mp3",
+    staffName: "M. Clarke",
     objectUrl: null,
     transcribing: false,
     grade: "B",
@@ -105,6 +109,7 @@ const PLACEHOLDER_RECORDINGS = [
   {
     id: "demo-4",
     name: "recording_004.mp3",
+    staffName: "R. Johnson",
     objectUrl: null,
     transcribing: false,
     grade: "C",
