@@ -184,8 +184,8 @@ export default function RecordingRow({ recording, onGradeOverride, onGenerateRep
           </button>
 
           {/* Audio player (collapsed) */}
-          {recording.objectUrl && !open && (
-            <AudioPlayer url={recording.objectUrl} name={recording.name} />
+          {(recording.objectUrl || recording.audio_url) && !open && (
+            <AudioPlayer url={recording.objectUrl || recording.audio_url} name={recording.name} />
           )}
 
           {/* Grade description */}
@@ -247,9 +247,9 @@ export default function RecordingRow({ recording, onGradeOverride, onGenerateRep
         {open && (
           <div className="px-4 pb-4 pt-0 border-t border-border/30 space-y-3">
             {/* Audio player (expanded) */}
-            {recording.objectUrl && (
+            {(recording.objectUrl || recording.audio_url) && (
               <div className="pt-3">
-                <AudioPlayer url={recording.objectUrl} name={recording.name} />
+                <AudioPlayer url={recording.objectUrl || recording.audio_url} name={recording.name} />
               </div>
             )}
 
