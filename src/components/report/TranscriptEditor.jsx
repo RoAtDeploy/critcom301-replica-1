@@ -41,8 +41,9 @@ export default function TranscriptEditor({ segments, onSegmentsChange, speakerLa
               value={seg.text}
               onChange={(e) => updateText(idx, e.target.value)}
               rows={1}
-              className="text-sm text-foreground/80 leading-relaxed flex-1 bg-transparent resize-none border-0 outline-none focus:bg-white focus:ring-1 focus:ring-primary/30 rounded px-1 py-0 min-h-[1.5rem] overflow-hidden"
-              style={{ height: "auto" }}
+              className="text-sm text-foreground/80 leading-relaxed flex-1 bg-transparent resize-none border-0 outline-none focus:bg-white focus:ring-1 focus:ring-primary/30 rounded px-1 py-0 overflow-hidden"
+              style={{ height: "auto", minHeight: "1.5rem" }}
+              ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; } }}
               onInput={(e) => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}
             />
           </div>
