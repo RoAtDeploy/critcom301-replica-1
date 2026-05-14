@@ -148,9 +148,13 @@ export default function RecordingRow({ recording, onGradeOverride, onGenerateRep
               {!recording.transcribing && recording.duration && (
                 <span className="text-xs text-muted-foreground">{Math.round(recording.duration)}s</span>
               )}
-              {recording.staffName && (
-                <span className="text-xs text-primary/70 font-medium">{recording.staffName}</span>
-              )}
+              <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                (recording.staff_name || recording.staffName)
+                  ? "bg-primary/10 text-primary"
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                {recording.staff_name || recording.staffName || "Unknown"}
+              </span>
             </span>
           </button>
 
