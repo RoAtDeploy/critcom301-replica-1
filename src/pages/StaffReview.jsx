@@ -39,7 +39,8 @@ export default function StaffReview() {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    base44.entities.Report.get(id).then((r) => {
+    base44.functions.invoke("staffReviewReport", { reportId: id, action: "get" }).then((res) => {
+      const r = res.data.report;
       setReport(r);
       setItems((r.action_items || []).map(ai => ({ ...ai })));
       setLoading(false);
@@ -55,11 +56,7 @@ export default function StaffReview() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await base44.entities.Report.update(id, {
-      action_items: items,
-      status: "staff_reviewed",
-      staff_reviewed_at: new Date().toISOString(),
-    });
+    await base44.functions.invoke("staffReviewReport", { reportId: id, action: "submit", items });
     setSubmitted(true);
     setSubmitting(false);
   };
