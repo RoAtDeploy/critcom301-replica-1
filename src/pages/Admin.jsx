@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Building2, Users, Briefcase, Settings2, Phone, BookOpen } from "lucide-react";
+import { Building2, Users, Briefcase, Settings2, Phone, BookOpen, ListChecks } from "lucide-react";
 import { motion } from "framer-motion";
 import OptionList from "@/components/admin/OptionList";
 import DefinitionsManager from "@/components/admin/DefinitionsManager";
@@ -28,7 +28,7 @@ export default function Admin() {
         </div>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Roles */}
         <Card className="border-border/50">
           <CardHeader className="pb-3">
@@ -70,6 +70,24 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <OptionList type="callTypes" label="Call Type Options" icon={Phone} color="violet" />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Action Templates */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <ListChecks className="w-4 h-4 text-muted-foreground" />
+              <CardTitle className="text-base">Action Templates</CardTitle>
+            </div>
+            <CardDescription>
+              Predefined actions available when assigning remedial actions to C and D-graded assessment items in reports.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <OptionList type="actionTemplates" label="Action Templates" icon={ListChecks} color="orange" />
           </CardContent>
         </Card>
       </motion.div>

@@ -1,0 +1,175 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CheckCircle2, MessageSquare, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+
+const GRADE_CONFIG = {
+  A: { color: "bg-emerald-100 text-emerald-700 border-emerald-300", label: "A" },
+  B: { color: "bg-yellow-100 text-yellow-700 border-yellow-300", label: "B" },
+  C: { color: "bg-orange-100 text-orange-700 border-orange-300", label: "C" },
+  D: { color: "bg-red-100 text-red-700 border-red-300", label: "D" },
+  "n/a": { color: "bg-slate-100 text-slate-500 border-slate-300", label: "N/A" },
+};
+
+function AspectActionRow({ item, actionTemplates, onChange }) {
+  const [open, setOpen] = useState(false);
+  const grade = item.aspect_grade;
+  const isCritical = grade === "C" || grade === "D";
+  const cfg = GRADE_CONFIG[grade] || GRADE_CONFIG["n/a"];
+
+  return (
+    <div className={`rounded-lg border overflow-hidden`}>
+      <div className="flex items-center gap-3 px-4 py-3 cursor-pointer" onClick={() => setOpen(o => !o)}>
+        <span className={`inline-flex items-center justify-center rounded border w-6 h-6 text-xs font-bold shrink-0 ${cfg.color}`}>
+          {cfg.label}
+        </span>
+        <span className="text-sm font-medium flex-1 truncate">{item.aspect_name}</span>
+        {isCritical ? (
+          <span className="flex items-center gap-1 text-xs text-orange-600 shrink-0">
+            <AlertTriangle className="w-3 h-3" />
+            Action required
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+            <MessageSquare className="w-3 h-3" />
+            Feedback
+          </span>
+        )}
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+      </div>
+
+      {open && (
+        <div className="px-4 pb-4 border-t border-border/30 space-y-3 pt-3">
+          {isCritical ? (
+            <>
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-1.5">Assign Action (C/D grade)</p>
+                <Select
+                  value={item.action_type === "predefined" ? item.action : "__custom__"}
+                  onValueChange={(val) => {
+                    if (val === "__custom__") {
+                      onChange({ ...item, action_type: "custom", action: "" });
+                    } else {
+                      onChange({ ...item, action_type: "predefined", action: val });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select an action…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {actionTemplates.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                    <SelectItem value="__custom__">Custom action…</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {item.action_type === "custom" && (
+                <Textarea
+                  placeholder="Describe the required action…"
+                  className="h-20 resize-none text-sm"
+                  value={item.action || ""}
+                  onChange={(e) => onChange({ ...item, action: e.target.value })}
+                />
+              )}
+            </>
+          ) : null}
+
+          <div>
+            <p className="text-xs font-semibold text-foreground mb-1.5">
+              {isCritical ? "Reviewer Comment (optional)" : "Feedback for Staff Member"}
+            </p>
+            <Textarea
+              placeholder={isCritical ? "Add any additional context for the staff member…" : "Explain what was done well and how to maintain it…"}
+              className="h-20 resize-none text-sm"
+              value={item.reviewer_comment || ""}
+              onChange={(e) => onChange({ ...item, reviewer_comment: e.target.value })}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ActionItemsEditor({ report, onReportUpdate, actionTemplates = [] }) {
+  const [saving, setSaving] = useState(false);
+
+  const raw = report.quality_assessment;
+  const assessment = raw?.response ?? raw;
+  const aspects = assessment?.aspects ?? assessment?.rules?.map(r => ({
+    id: r.id,
+    name: r.name,
+    grade: r.status === 'pass' ? 'A' : r.status === 'fail' ? 'D' : 'n/a',
+  })) ?? [];
+
+  // Build current action_items indexed by aspect_id
+  const existingMap = {};
+  (report.action_items || []).forEach(ai => { existingMap[ai.aspect_id] = ai; });
+
+  // Only show aspects that have a real grade (not n/a)
+  const relevantAspects = aspects.filter(a => {
+    const g = a.override?.grade ?? a.grade;
+    return g && g !== "n/a" && !a.user_scored;
+  });
+
+  const [items, setItems] = useState(() =>
+    relevantAspects.map(a => {
+      const g = a.override?.grade ?? a.grade;
+      return existingMap[a.id] || {
+        aspect_id: a.id,
+        aspect_name: a.name,
+        aspect_grade: g,
+        action: "",
+        action_type: "predefined",
+        reviewer_comment: "",
+        completed: false,
+        staff_comment: "",
+      };
+    })
+  );
+
+  const handleChange = (index, updated) => {
+    setItems(prev => prev.map((it, i) => i === index ? updated : it));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const saved = await base44.entities.Report.update(report.id, { action_items: items });
+    onReportUpdate(saved);
+    setSaving(false);
+  };
+
+  if (!relevantAspects.length) {
+    return (
+      <div className="text-sm text-muted-foreground text-center py-4">
+        Run the assessment first to assign actions and feedback.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {items.map((item, i) => (
+        <AspectActionRow
+          key={item.aspect_id}
+          item={item}
+          actionTemplates={actionTemplates}
+          onChange={(updated) => handleChange(i, updated)}
+        />
+      ))}
+      <Button
+        onClick={handleSave}
+        disabled={saving}
+        size="sm"
+        className="w-full bg-primary hover:bg-primary/90 mt-2"
+      >
+        <CheckCircle2 className="w-4 h-4 mr-2" />
+        {saving ? "Saving…" : "Save Actions & Feedback"}
+      </Button>
+    </div>
+  );
+}

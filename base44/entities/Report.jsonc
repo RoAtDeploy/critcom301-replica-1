@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Name of the staff member"
     },
+    "staff_email": {
+      "type": "string",
+      "description": "Email of the staff member"
+    },
     "role": {
       "type": "string",
       "description": "Role of the staff member on site"
@@ -26,10 +30,13 @@
       "type": "string",
       "enum": [
         "draft",
-        "saved"
+        "saved",
+        "sent",
+        "staff_reviewed",
+        "signed_off"
       ],
       "default": "draft",
-      "description": "Whether the report has been saved/confirmed"
+      "description": "Workflow status of the report"
     },
     "call_date": {
       "type": "string",
@@ -73,6 +80,48 @@
     "quality_assessment": {
       "type": "object",
       "description": "AI-generated quality assessment"
+    },
+    "action_items": {
+      "type": "array",
+      "description": "Reviewer-assigned action items per assessment aspect",
+      "items": {
+        "type": "object",
+        "properties": {
+          "aspect_id": {
+            "type": "string"
+          },
+          "aspect_name": {
+            "type": "string"
+          },
+          "aspect_grade": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "action_type": {
+            "type": "string",
+            "enum": [
+              "predefined",
+              "custom"
+            ]
+          },
+          "reviewer_comment": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "boolean",
+            "default": false
+          },
+          "staff_comment": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "staff_reviewed_at": {
+      "type": "string",
+      "description": "ISO timestamp when staff submitted their review"
     }
   },
   "required": [
