@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft, Pencil, FileText, TrendingUp, Phone, Mail,
-  Building2, Users, BadgeCheck, X, Check, Sparkles, Radio, Clock
+  Building2, Users, BadgeCheck, X, Check, Sparkles, Radio, Clock, ChevronDown, ChevronUp
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAdmin } from "@/context/AdminContext";
@@ -38,6 +38,8 @@ export default function StaffDetail() {
   const [rolesOpen, setRolesOpen] = useState(false);
   const [reports, setReports] = useState([]);
   const [recordings, setRecordings] = useState([]);
+  const [reportsOpen, setReportsOpen] = useState(true);
+  const [callsOpen, setCallsOpen] = useState(true);
 
   useEffect(() => {
     base44.entities.Report.filter({ staff_id: id }, "-created_date").then(setReports);
@@ -223,18 +225,21 @@ export default function StaffDetail() {
 
       {/* Reports */}
       <Card className="border-border/50">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <CardHeader className="flex flex-row items-center justify-between pb-3 cursor-pointer" onClick={() => setReportsOpen(o => !o)}>
           <CardTitle className="text-base flex items-center gap-2">
             <FileText className="w-4 h-4 text-muted-foreground" />
             Reports ({reports.filter(r => r.status === "saved").length} saved, {reports.filter(r => r.status !== "saved").length} drafts)
           </CardTitle>
-          <Link to={`/reports/new?staffId=${id}`}>
-            <Button size="sm" className="bg-primary hover:bg-primary/90">
-              <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Generate New
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to={`/reports/new?staffId=${id}`} onClick={e => e.stopPropagation()}>
+              <Button size="sm" className="bg-primary hover:bg-primary/90">
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Generate New
+              </Button>
+            </Link>
+            {reportsOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </div>
         </CardHeader>
-        <CardContent className="space-y-2">
+        {reportsOpen && <CardContent className="space-y-2">
           {reports.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No reports yet for this staff member.</p>
           ) : (
@@ -264,17 +269,18 @@ export default function StaffDetail() {
               </Link>
             ))
           )}
-        </CardContent>
+        </CardContent>}
       </Card>
       {/* Calls from Monitoring on Mass */}
       <Card className="border-border/50">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between cursor-pointer" onClick={() => setCallsOpen(o => !o)}>
           <CardTitle className="text-base flex items-center gap-2">
             <Radio className="w-4 h-4 text-orange-500" />
             Monitoring Calls ({recordings.length})
           </CardTitle>
+          {callsOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </CardHeader>
-        <CardContent className="space-y-2">
+        {callsOpen && <CardContent className="space-y-2">
           {recordings.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No calls uploaded via Monitoring on Mass for this staff member.</p>
           ) : (
@@ -317,7 +323,7 @@ export default function StaffDetail() {
               );
             })
           )}
-        </CardContent>
+        </CardContent>}
       </Card>
 
     </motion.div>
