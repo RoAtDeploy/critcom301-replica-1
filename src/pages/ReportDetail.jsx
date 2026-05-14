@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, Save, CheckCircle2, Sparkles, Send, Mail, ClipboardList, BadgeCheck, RefreshCw, ListChecks, ExternalLink } from "lucide-react";
+import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, CheckCircle2, Sparkles, Send, RefreshCw, ExternalLink, Pencil } from "lucide-react";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import ActionItemsEditor from "@/components/report/ActionItemsEditor";
 import { useAdmin } from "@/context/AdminContext";
@@ -48,7 +48,7 @@ export default function ReportDetail() {
     setAssessing(false);
   };
 
-  const handleSaveReport = async () => {
+  const handleConfirmAssessment = async () => {
     setSaving(true);
     const updated = await base44.entities.Report.update(id, { status: "saved" });
     setReport(updated);
@@ -97,28 +97,37 @@ export default function ReportDetail() {
         Back to Staff
       </Link>
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Spoken Safety Critical Communications Monitoring Form</h1>
-          <p className="text-muted-foreground mt-1">Full report details for this recorded call.</p>
-        </div>
-        {report.status === "draft" ? (
-          <Button onClick={handleSaveReport} disabled={saving} className="bg-primary hover:bg-primary/90 shrink-0">
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? "Saving…" : "Save Report"}
-          </Button>
-        ) : (
-          <div className="flex items-center gap-2 shrink-0">
-            <CheckCircle2 className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-accent capitalize">{report.status?.replace("_", " ")}</span>
-            {report.staff_id && (
-              <Link to={`/staff/${report.staff_id}`} className="ml-1">
-                <Button variant="outline" size="sm">View Profile</Button>
-              </Link>
-            )}
-          </div>
-        )}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Spoken Safety Critical Communications Monitoring Form</h1>
+        <p className="text-muted-foreground mt-1">
+          {report.staff_name || "Unknown staff"} · {report.call_date ? new Date(report.call_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "No date"}
+          {report.staff_id && (
+            <Link to={`/staff/${report.staff_id}`} className="ml-2 text-primary hover:underline text-sm">View Profile →</Link>
+          )}
+        </p>
       </div>
+
+      {/* Stage Indicator */}
+      {hasAssessment() && (
+        <div className="flex items-center gap-0">
+          {[
+            { num: 1, label: "Review Assessment", done: report.status !== "draft", active: report.status === "draft" },
+            { num: 2, label: "Actions & Feedback", done: ["sent","staff_reviewed","signed_off"].includes(report.status), active: report.status === "saved" },
+          ].map(({ num, label, done, active }, i, arr) => (
+            <div key={num} className="flex items-center flex-1">
+              <div className="flex items-center gap-2 flex-1">
+                <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                  done ? "bg-accent border-accent text-white" : active ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground"
+                }`}>
+                  {done ? <CheckCircle2 className="w-3.5 h-3.5" /> : <span className="text-xs font-bold">{num}</span>}
+                </div>
+                <span className={`text-sm font-medium ${active ? "text-foreground" : done ? "text-accent" : "text-muted-foreground"}`}>{label}</span>
+              </div>
+              {i < arr.length - 1 && <div className="w-8 h-px bg-border mx-2 shrink-0" />}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Summary */}
       <Card className="border-border/50">
@@ -151,75 +160,92 @@ export default function ReportDetail() {
         </div>
       )}
 
-      {/* Workflow */}
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Mail className="w-4 h-4 text-muted-foreground" />
-            Report Workflow
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Steps */}
-          {(() => {
-            const statusOrder = ["draft", "saved", "sent", "staff_reviewed", "signed_off"];
-            const currentStep = statusOrder.indexOf(report.status ?? "draft");
-            const steps = [
-              { icon: ClipboardList, label: "Finalise report & actions" },
-              { icon: Send,          label: `Send to ${report.staff_name || "staff member"}` },
-              { icon: Users,         label: "Awaiting staff review" },
-              { icon: BadgeCheck,    label: "Line Manager sign-off" },
-            ];
-            return (
-              <div className="flex items-start gap-1">
-                {steps.map(({ icon: Icon, label }, i) => {
-                  const done = currentStep > i + 1;
-                  const active = currentStep === i + 1;
-                  return (
-                    <div key={i} className="flex items-center flex-1">
-                      <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors ${
-                          done ? "bg-accent border-accent text-accent-foreground" :
-                          active ? "bg-primary border-primary text-primary-foreground" :
-                          "bg-muted border-border text-muted-foreground"
-                        }`}>
-                          {done ? <CheckCircle2 className="w-4 h-4" /> : <span className="text-xs font-bold">{i + 1}</span>}
-                        </div>
-                        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground text-center leading-tight">{label}</p>
-                      </div>
-                      {i < steps.length - 1 && <div className="w-full h-px bg-border mx-1 mb-8 shrink-0" />}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+      {/* STAGE 1 — Communication Assessment */}
+      <div className={`rounded-xl border-2 transition-colors ${report.status === "draft" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+        <div className="flex items-center justify-between gap-4 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-bold ${report.status !== "draft" ? "bg-accent border-accent text-white" : "bg-primary border-primary text-white"}`}>
+              {report.status !== "draft" ? <CheckCircle2 className="w-3.5 h-3.5" /> : "1"}
+            </div>
+            <h2 className="font-semibold text-sm">Stage 1 — Review Communication Assessment</h2>
+          </div>
+          {report.status !== "draft" && (
+            <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7" onClick={() => base44.entities.Report.update(id, { status: "draft" }).then(setReport)}>
+              <Pencil className="w-3 h-3 mr-1" /> Re-open
+            </Button>
+          )}
+        </div>
 
-          {/* Send button */}
-          {(report.status === "saved" || report.status === "sent") && (
-            <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
+        <div className="px-5 pb-5 space-y-4">
+          {hasAssessment() ? (
+            <>
+              <QualityAssessment report={report} onReportUpdate={setReport} />
+              {report.status === "draft" && (
+                <Button onClick={handleConfirmAssessment} disabled={saving} className="w-full bg-primary hover:bg-primary/90 gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  {saving ? "Confirming…" : "Confirm Assessment & Proceed to Actions"}
+                </Button>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-between p-4 rounded-xl border border-dashed border-border bg-background">
+              <div>
+                <p className="text-sm font-medium">Communication Assessment</p>
+                <p className="text-xs text-muted-foreground mt-0.5">No assessment has been run for this report yet.</p>
+              </div>
+              <Button onClick={handleRunAssessment} disabled={assessing} className="bg-primary hover:bg-primary/90 shrink-0 ml-4">
+                <RefreshCw className={`w-4 h-4 mr-2 ${assessing ? "animate-spin" : ""}`} />
+                {assessing ? "Assessing…" : "Run Assessment"}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* STAGE 2 — Actions & Feedback */}
+      <div className={`rounded-xl border-2 transition-colors ${
+        report.status === "saved" ? "border-primary/40 bg-primary/5" :
+        ["sent","staff_reviewed","signed_off"].includes(report.status) ? "border-border" :
+        "border-border opacity-50 pointer-events-none"
+      }`}>
+        <div className="flex items-center gap-2 px-5 py-4">
+          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-bold ${
+            ["sent","staff_reviewed","signed_off"].includes(report.status) ? "bg-accent border-accent text-white" :
+            report.status === "saved" ? "bg-primary border-primary text-white" :
+            "bg-muted border-border text-muted-foreground"
+          }`}>
+            {["sent","staff_reviewed","signed_off"].includes(report.status) ? <CheckCircle2 className="w-3.5 h-3.5" /> : "2"}
+          </div>
+          <h2 className="font-semibold text-sm">Stage 2 — Assign Actions & Feedback</h2>
+          {report.status === "draft" && <span className="text-xs text-muted-foreground ml-auto">Complete Stage 1 first</span>}
+        </div>
+
+        {report.status !== "draft" && (
+          <div className="px-5 pb-5 space-y-4">
+            <p className="text-xs text-muted-foreground -mt-2">Assign required actions for C/D grades and feedback comments for A/B grades. These reflect any overrides made in Stage 1.</p>
+            <ActionItemsEditor report={report} onReportUpdate={setReport} actionTemplates={actionTemplates} />
+
+            {/* Send to staff */}
+            <div className="pt-2 border-t border-border/40 space-y-2">
               {report.status === "sent" && (
                 <div className="flex items-center gap-2 text-xs text-accent">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Sent to {report.staff_email}</span>
-                  <a href={`/staff-review/${report.id}`} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-foreground">
+                  <a href={`/staff-review/${report.id}`} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-foreground underline">
                     <ExternalLink className="w-3 h-3" /> Preview staff view
                   </a>
                 </div>
               )}
               {showEmailInput && (
-                <div className="flex gap-2">
-                  <input
-                    type="email"
-                    placeholder="Staff member email address…"
-                    className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                    value={staffEmailInput}
-                    onChange={e => setStaffEmailInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") handleSendToStaff(); }}
-                    autoFocus
-                  />
-                </div>
+                <input
+                  type="email"
+                  placeholder="Staff member email address…"
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  value={staffEmailInput}
+                  onChange={e => setStaffEmailInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") handleSendToStaff(); }}
+                  autoFocus
+                />
               )}
               <Button
                 onClick={handleSendToStaff}
@@ -232,41 +258,9 @@ export default function ReportDetail() {
                 {sendingEmail ? "Sending…" : report.status === "sent" ? "Resend to Staff" : "Send to Staff Member"}
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Actions & Feedback */}
-      {hasAssessment() && (
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ListChecks className="w-4 h-4 text-muted-foreground" />
-              Actions & Feedback
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Assign required actions for C/D grades and feedback comments for A/B grades before sending to staff.</p>
-          </CardHeader>
-          <CardContent>
-            <ActionItemsEditor report={report} onReportUpdate={setReport} actionTemplates={actionTemplates} />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Quality Assessment */}
-      {hasAssessment() ? (
-        <QualityAssessment report={report} onReportUpdate={setReport} />
-      ) : (
-        <div className="flex items-center justify-between p-4 rounded-xl border border-dashed border-border bg-muted/30">
-          <div>
-            <p className="text-sm font-medium">Communication Assessment</p>
-            <p className="text-xs text-muted-foreground mt-0.5">No assessment has been run for this report yet.</p>
           </div>
-          <Button onClick={handleRunAssessment} disabled={assessing} className="bg-primary hover:bg-primary/90 shrink-0 ml-4">
-            <RefreshCw className={`w-4 h-4 mr-2 ${assessing ? "animate-spin" : ""}`} />
-            {assessing ? "Assessing…" : "Run Assessment"}
-          </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Audio Playback */}
       {report.audio_url && (
