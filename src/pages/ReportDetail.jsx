@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, CheckCircle2, Sparkles, Send, RefreshCw, ExternalLink, Pencil } from "lucide-react";
+import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, CheckCircle2, Sparkles, Send, RefreshCw, ExternalLink, Pencil, ChevronDown, ChevronUp } from "lucide-react";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import ActionItemsEditor from "@/components/report/ActionItemsEditor";
 import { useAdmin } from "@/context/AdminContext";
@@ -20,6 +20,7 @@ export default function ReportDetail() {
   const [staffEmailInput, setStaffEmailInput] = useState("");
   const [showEmailInput, setShowEmailInput] = useState(false);
   const { actionTemplates } = useAdmin();
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
 
   useEffect(() => {
     base44.entities.Report.get(id).then((r) => {
@@ -160,6 +161,67 @@ export default function ReportDetail() {
         </div>
       )}
 
+      {/* Audio + Transcription */}
+      {(report.audio_url || report.transcription_text || report.timestamped_transcript?.length > 0) && (
+        <Card className="border-border/50">
+          <CardContent className="p-4 space-y-3">
+            {/* Compact audio player */}
+            {report.audio_url && (
+              <div className="flex items-center gap-3">
+                <FileAudio className="w-4 h-4 text-muted-foreground shrink-0" />
+                <audio controls className="flex-1 h-8" style={{ height: "32px" }} src={report.audio_url}>
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            )}
+
+            {/* Collapsible transcription */}
+            <button
+              onClick={() => setTranscriptOpen(o => !o)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+            >
+              {transcriptOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+              <span className="font-medium">Transcription</span>
+              {!transcriptOpen && report.timestamped_transcript?.length > 0 && (
+                <span className="text-xs text-muted-foreground">({report.timestamped_transcript.length} segments)</span>
+              )}
+            </button>
+
+            {transcriptOpen && (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 pt-1 border-t border-border/40">
+                {report.timestamped_transcript?.length > 0 ? (
+                  report.timestamped_transcript.map((line, idx) => {
+                    const staffInitials = report.staff_name
+                      ? report.staff_name.split(" ").map((n) => n[0]).join("").toUpperCase()
+                      : "ST";
+                    const isStaff = report.staff_channel
+                      ? (line.speaker === report.staff_channel || line.channel === report.staff_channel)
+                      : line.is_staff;
+                    const speakerLabel = isStaff ? staffInitials : (report.other_role?.toUpperCase() || "?");
+                    return (
+                      <div key={idx} className="flex gap-3 text-sm">
+                        <span className="flex items-center gap-1 text-xs font-mono text-primary bg-primary/10 rounded px-2 py-0.5 h-fit whitespace-nowrap">
+                          <Clock className="w-3 h-3" />
+                          {line.timestamp}
+                        </span>
+                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded h-fit whitespace-nowrap ${
+                          isStaff ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
+                        }`}>
+                          {speakerLabel}
+                        </span>
+                        <p className="text-foreground leading-relaxed">{line.text}</p>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-muted-foreground leading-relaxed">{report.transcription_text || "No transcription available."}</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* STAGE 1 — Communication Assessment */}
       <div className={`rounded-xl border-2 transition-colors ${report.status === "draft" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
         <div className="flex items-center justify-between gap-4 px-5 py-4">
@@ -262,63 +324,7 @@ export default function ReportDetail() {
         )}
       </div>
 
-      {/* Audio Playback */}
-      {report.audio_url && (
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileAudio className="w-4 h-4 text-muted-foreground" />
-              Audio Recording
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <audio controls className="w-full" src={report.audio_url}>
-              Your browser does not support the audio element.
-            </audio>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Transcription */}
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileAudio className="w-4 h-4 text-muted-foreground" />
-            Transcription
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {report.timestamped_transcript?.length > 0 ? (
-            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-              {report.timestamped_transcript.map((line, idx) => {
-                const staffInitials = report.staff_name
-                  ? report.staff_name.split(" ").map((n) => n[0]).join("").toUpperCase()
-                  : "ST";
-                const isStaff = report.staff_channel
-                  ? (line.speaker === report.staff_channel || line.channel === report.staff_channel)
-                  : line.is_staff;
-                const speakerLabel = isStaff ? staffInitials : (report.other_role?.toUpperCase() || "?");
-                return (
-                  <div key={idx} className="flex gap-3 text-sm">
-                    <span className="flex items-center gap-1 text-xs font-mono text-primary bg-primary/10 rounded px-2 py-0.5 h-fit whitespace-nowrap">
-                      <Clock className="w-3 h-3" />
-                      {line.timestamp}
-                    </span>
-                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded h-fit whitespace-nowrap ${
-                      isStaff ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                    }`}>
-                      {speakerLabel}
-                    </span>
-                    <p className="text-foreground leading-relaxed">{line.text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground leading-relaxed">{report.transcription_text || "No transcription available."}</p>
-          )}
-        </CardContent>
-      </Card>
     </motion.div>
   );
 }
