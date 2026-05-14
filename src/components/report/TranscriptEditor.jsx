@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-
 const SPEAKER_STYLES = {
   S1: { badge: "bg-blue-100 text-blue-700 border-blue-300", row: "border-blue-200" },
   S2: { badge: "bg-orange-100 text-orange-700 border-orange-300", row: "border-orange-200" },
@@ -9,9 +7,13 @@ export default function TranscriptEditor({ segments, onSegmentsChange, speakerLa
   const toggleSpeaker = (idx) => {
     const updated = segments.map((seg, i) => {
       if (i < idx) return seg;
-      // Flip every segment from idx onwards
       return { ...seg, speaker: seg.speaker === "S1" ? "S2" : "S1" };
     });
+    onSegmentsChange(updated);
+  };
+
+  const updateText = (idx, text) => {
+    const updated = segments.map((seg, i) => i === idx ? { ...seg, text } : seg);
     onSegmentsChange(updated);
   };
 
@@ -35,7 +37,14 @@ export default function TranscriptEditor({ segments, onSegmentsChange, speakerLa
             >
               {speakerLabels[seg.speaker] || seg.speaker}
             </button>
-            <p className="text-sm text-foreground/80 leading-relaxed flex-1">{seg.text}</p>
+            <textarea
+              value={seg.text}
+              onChange={(e) => updateText(idx, e.target.value)}
+              rows={1}
+              className="text-sm text-foreground/80 leading-relaxed flex-1 bg-transparent resize-none border-0 outline-none focus:bg-white focus:ring-1 focus:ring-primary/30 rounded px-1 py-0 min-h-[1.5rem] overflow-hidden"
+              style={{ height: "auto" }}
+              onInput={(e) => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}
+            />
           </div>
         );
       })}
