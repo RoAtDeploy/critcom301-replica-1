@@ -2,135 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileAudio, X, Radio, AlertTriangle, User } from "lucide-react";
+import { Upload, FileAudio, X, Radio, AlertTriangle, User, Loader2, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import RecordingRow from "@/components/monitoring/RecordingRow";
-
-// Placeholder grades cycling for demo
-const PLACEHOLDER_GRADES = ["A", "B", "C", "D", "n/a"];
-let gradeIndex = 0;
-const nextPlaceholderGrade = () => PLACEHOLDER_GRADES[gradeIndex++ % PLACEHOLDER_GRADES.length];
-
-const PLACEHOLDER_RECORDINGS = [
-  {
-    id: "demo-1",
-    name: "recording_001.mp3",
-    staffName: "J. Smith",
-    objectUrl: null,
-    transcribing: false,
-    grade: "B",
-    override: null,
-    duration: 87,
-    transcription: null,
-    segments: [
-      { timestamp: "00:00", text: "L1: Signaller, this is Driver reporting a SPAD at signal SN147, I am now stopped." },
-      { timestamp: "00:06", text: "L2: Received. Can you confirm your train number and location?" },
-      { timestamp: "00:11", text: "L1: Train 2B44, I am stopped at approximately three car lengths past signal SN147 on the up fast line." },
-      { timestamp: "00:19", text: "L2: Understood. Are you able to confirm the signal was at danger when you passed it?" },
-      { timestamp: "00:24", text: "L1: Affirmative, the signal was showing a red aspect as I passed." },
-      { timestamp: "00:29", text: "L2: Received. I am now blocking the line. Do not move the train until you receive further instructions from me." },
-      { timestamp: "00:35", text: "L1: Confirmed, train is stopped and will not move without instruction." },
-      { timestamp: "00:40", text: "L2: Can you confirm all staff and passengers are safe and there is no damage to your train?" },
-      { timestamp: "00:46", text: "L1: All passengers are safe, no apparent damage to the train. Guard has been informed." },
-      { timestamp: "00:53", text: "L2: Good. I will now contact the Incident Controller. Remain on this channel. I will call you back shortly." },
-      { timestamp: "01:00", text: "L1: Understood, standing by on this channel." },
-    ],
-  },
-  {
-    id: "demo-2",
-    name: "recording_002.mp3",
-    staffName: "A. Patel",
-    objectUrl: null,
-    transcribing: false,
-    grade: "A",
-    override: null,
-    duration: 63,
-    transcription: null,
-    segments: [
-      { timestamp: "00:00", text: "L1: Control, this is the PICOP at Northfield Junction, requesting a line blockage on the down slow between Northfield Junction and Elmbridge." },
-      { timestamp: "00:09", text: "L2: Received PICOP Northfield Junction. Can you confirm the nature of the work and the protection required?" },
-      { timestamp: "00:15", text: "L1: Track inspection work. We require a possession from 02:00 to 05:30, protection by line blockage only." },
-      { timestamp: "00:22", text: "L2: Understood. Can you confirm all persons are clear of the line and you are ready to take possession?" },
-      { timestamp: "00:28", text: "L1: Confirmed, all persons are stood back, I am the responsible person in charge." },
-      { timestamp: "00:33", text: "L2: Right, I am granting the line blockage. Down slow between Northfield Junction and Elmbridge is now blocked to all movements. Time is zero two zero zero." },
-      { timestamp: "00:43", text: "L1: Received. Line blockage confirmed, down slow Northfield Junction to Elmbridge, time zero two zero zero. I will call you when ready to hand back." },
-      { timestamp: "00:52", text: "L2: Correct. Maintain communication every thirty minutes or if the situation changes." },
-      { timestamp: "00:57", text: "L1: Understood, will do." },
-    ],
-  },
-  {
-    id: "demo-3",
-    name: "recording_003.mp3",
-    staffName: "T. Williams",
-    objectUrl: null,
-    transcribing: false,
-    grade: "D",
-    flag: "Unprofessional language detected — driver used inappropriate phrasing during communication.",
-    override: null,
-    duration: 45,
-    transcription: null,
-    segments: [
-      { timestamp: "00:00", text: "L1: Yeah hi, it's me again, erm, there's something on the track I think, near the bridge." },
-      { timestamp: "00:05", text: "L2: Can you identify yourself and your location please?" },
-      { timestamp: "00:08", text: "L1: Oh right yeah sorry, it's the driver, train erm... four Charlie something, near the viaduct." },
-      { timestamp: "00:15", text: "L2: I need your exact train number and milepost or signal reference. Can you provide that?" },
-      { timestamp: "00:20", text: "L1: Hang on... it's 4C22 I think. And I'm roughly between signals, I can't see a milepost from here." },
-      { timestamp: "00:28", text: "L2: Is this an emergency? Is the train stopped?" },
-      { timestamp: "00:31", text: "L1: Yeah well, I've slowed right down, I didn't want to stop on the viaduct though." },
-      { timestamp: "00:36", text: "L2: I need you to stop the train now and confirm your exact position before I can take any action." },
-      { timestamp: "00:42", text: "L1: Okay, stopping now." },
-    ],
-  },
-  {
-    id: "demo-5",
-    name: "recording_005.mp3",
-    staffName: "M. Clarke",
-    objectUrl: null,
-    transcribing: false,
-    grade: "B",
-    flag: "Staff used non-standard terminology — 'block it off' used instead of correct 'line blockage' procedure phrasing.",
-    override: null,
-    duration: 54,
-    transcription: null,
-    segments: [
-      { timestamp: "00:00", text: "L1: Control, Driver of 2C19, I need to report a person seen trackside near milepost 42." },
-      { timestamp: "00:07", text: "L2: Received 2C19. Is the person on or near the running line?" },
-      { timestamp: "00:11", text: "L1: They appear to be on the embankment, close to the up line. I've slowed right down." },
-      { timestamp: "00:17", text: "L2: Understood. Can you confirm the person is not on the line itself?" },
-      { timestamp: "00:21", text: "L1: Correct, not on the line, but very close. I'd say within a metre." },
-      { timestamp: "00:26", text: "L2: Right, I'm going to block it off now — I mean, I'll implement a line blockage. Stand by." },
-      { timestamp: "00:33", text: "L1: Standing by, train is at reduced speed approaching the location." },
-      { timestamp: "00:38", text: "L2: Line blockage now in place on the up line between mileposts 41 and 43. Do not pass milepost 43 until further notice." },
-      { timestamp: "00:47", text: "L1: Confirmed, holding short of milepost 43." },
-    ],
-  },
-  {
-    id: "demo-4",
-    name: "recording_004.mp3",
-    staffName: "R. Johnson",
-    objectUrl: null,
-    transcribing: false,
-    grade: "C",
-    override: { grade: "B", justification: "Reviewed in full — driver recovered well after initial hesitation and all key information was confirmed. Upgraded on reflection." },
-    duration: 71,
-    transcription: null,
-    segments: [
-      { timestamp: "00:00", text: "L1: Control, Driver of 1A56, I need to report an obstruction on the line at signal PE203." },
-      { timestamp: "00:07", text: "L2: Received, 1A56. What is the nature of the obstruction?" },
-      { timestamp: "00:11", text: "L1: There is what appears to be a fallen tree across both running lines. I have stopped the train short of the obstruction." },
-      { timestamp: "00:18", text: "L2: Understood. Can you confirm your train is stopped and passengers are safe?" },
-      { timestamp: "00:22", text: "L1: Yes, train is stopped. Passengers are... erm, yes they're fine." },
-      { timestamp: "00:27", text: "L2: Good. I am implementing emergency block protection now. Do not move the train." },
-      { timestamp: "00:33", text: "L1: Confirmed, not moving." },
-      { timestamp: "00:35", text: "L2: Is there any risk to persons on the train from the obstruction? Can you see whether the tree is clear of the train?" },
-      { timestamp: "00:42", text: "L1: The tree is approximately fifty metres ahead, no immediate risk to the train." },
-      { timestamp: "00:48", text: "L2: Received. I am notifying the Incident Controller and Infrastructure Manager. Stay on this channel." },
-      { timestamp: "00:54", text: "L1: Understood, standing by." },
-    ],
-  },
-];
 
 const GRADE_CONFIG = {
   A: { label: "A", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
@@ -141,9 +17,10 @@ const GRADE_CONFIG = {
 };
 
 export default function MonitoringOnMass() {
-  const [recordings, setRecordings] = useState(PLACEHOLDER_RECORDINGS);
+  const [staged, setStaged] = useState([]); // { id, file, objectUrl, name, staffId, staffName }
+  const [processed, setProcessed] = useState([]); // fully processed Recording records
+  const [processing, setProcessing] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [filterGrade, setFilterGrade] = useState(null);
   const [filterFlagged, setFilterFlagged] = useState(false);
   const [staffMembers, setStaffMembers] = useState([]);
@@ -151,78 +28,31 @@ export default function MonitoringOnMass() {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  const handleGenerateReport = (recording) => {
-    const staffId = selectedStaff !== "unknown" ? selectedStaff : null;
-    const staff = staffMembers.find(s => s.id === staffId);
-    const params = new URLSearchParams();
-    if (staffId) params.set("staffId", staffId);
-    if (staff) params.set("staffName", staff.name);
-    if (recording.audio_url) params.set("audioUrl", recording.audio_url);
-    navigate(`/reports/new?${params.toString()}`);
-  };
-
   useEffect(() => {
     base44.entities.StaffMember.list().then(setStaffMembers).catch(() => {});
+    // Load existing recordings from DB on mount
+    base44.entities.Recording.list("-created_date", 50).then(recs => {
+      setProcessed(recs.map(r => ({ ...r, _source: "db" })));
+    }).catch(() => {});
   }, []);
 
-  const handleFiles = async (incoming) => {
+  const selectedStaffObj = selectedStaff !== "unknown" ? staffMembers.find(s => s.id === selectedStaff) : null;
+
+  const handleFiles = (incoming) => {
     const audioFiles = Array.from(incoming).filter(
       (f) => f.type.startsWith("audio/") || f.name.match(/\.(mp3|wav|m4a|ogg|flac|aac)$/i)
     );
     if (!audioFiles.length) return;
 
-    setUploading(true);
-
-    for (const file of audioFiles) {
-      const id = crypto.randomUUID();
-      const objectUrl = URL.createObjectURL(file);
-
-      // Add to list immediately as transcribing
-      setRecordings((prev) => [
-        ...prev,
-        { id, name: file.name, objectUrl, transcribing: true, grade: null, override: null, segments: null, transcription: null, duration: null, staffName: selectedStaff !== "unknown" ? (staffMembers.find(s => s.id === selectedStaff)?.name ?? null) : null },
-      ]);
-
-      // Upload then transcribe
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const result = await base44.functions.invoke("transcribeAudio", { file_url });
-      const data = result.data;
-      const grade = nextPlaceholderGrade();
-
-      const staffId = selectedStaff !== "unknown" ? selectedStaff : null;
-      const staffNameForRecord = staffId ? (staffMembers.find(s => s.id === staffId)?.name ?? null) : null;
-
-      // Persist to database
-      await base44.entities.Recording.create({
-        name: file.name,
-        staff_id: staffId,
-        staff_name: staffNameForRecord,
-        audio_url: file_url,
-        duration: data.duration,
-        grade,
-        transcription: data.text,
-        segments: data.segments,
-        language: data.language,
-      });
-
-      setRecordings((prev) =>
-        prev.map((r) =>
-          r.id === id
-            ? {
-                ...r,
-                transcribing: false,
-                transcription: data.text,
-                segments: data.segments,
-                duration: data.duration,
-                language: data.language,
-                grade,
-              }
-            : r
-        )
-      );
-    }
-
-    setUploading(false);
+    const newStaged = audioFiles.map(file => ({
+      id: crypto.randomUUID(),
+      file,
+      objectUrl: URL.createObjectURL(file),
+      name: file.name,
+      staffId: selectedStaffObj?.id ?? null,
+      staffName: selectedStaffObj?.name ?? null,
+    }));
+    setStaged(prev => [...prev, ...newStaged]);
   };
 
   const handleDrop = (e) => {
@@ -231,26 +61,101 @@ export default function MonitoringOnMass() {
     handleFiles(e.dataTransfer.files);
   };
 
-  const handleGradeOverride = (id, grade, justification) => {
-    setRecordings((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r;
-        if (grade === null) {
-          const { override, ...rest } = r;
-          return rest;
-        }
-        return { ...r, override: { grade, justification } };
-      })
-    );
-  };
-
-  const removeRecording = (id) => {
-    setRecordings((prev) => {
-      const rec = prev.find((r) => r.id === id);
+  const removeStaged = (id) => {
+    setStaged(prev => {
+      const rec = prev.find(r => r.id === id);
       if (rec?.objectUrl) URL.revokeObjectURL(rec.objectUrl);
-      return prev.filter((r) => r.id !== id);
+      return prev.filter(r => r.id !== id);
     });
   };
+
+  const handleProcessAll = async () => {
+    if (!staged.length || processing) return;
+    setProcessing(true);
+
+    const toProcess = [...staged];
+    setStaged([]);
+
+    // Kick off all uploads + processing in parallel
+    const results = await Promise.allSettled(
+      toProcess.map(async (item) => {
+        // Mark as uploading in UI
+        setProcessed(prev => [...prev, { id: item.id, name: item.name, staff_name: item.staffName, _status: "uploading", objectUrl: item.objectUrl }]);
+
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
+
+        // Mark as processing
+        setProcessed(prev => prev.map(r => r.id === item.id ? { ...r, _status: "processing" } : r));
+
+        const result = await base44.functions.invoke("processRecording", {
+          file_url,
+          staff_id: item.staffId,
+          staff_name: item.staffName,
+        });
+
+        const { recording } = result.data;
+
+        // Replace placeholder with real DB record
+        setProcessed(prev => prev.map(r =>
+          r.id === item.id
+            ? { ...recording, objectUrl: item.objectUrl, _status: "done", _source: "db" }
+            : r
+        ));
+
+        URL.revokeObjectURL(item.objectUrl);
+        return recording;
+      })
+    );
+
+    // Mark any failures
+    results.forEach((res, i) => {
+      if (res.status === "rejected") {
+        const item = toProcess[i];
+        setProcessed(prev => prev.map(r =>
+          r.id === item.id ? { ...r, _status: "failed" } : r
+        ));
+      }
+    });
+
+    setProcessing(false);
+  };
+
+  const handleGradeOverride = async (id, grade, justification) => {
+    if (grade === null) {
+      await base44.entities.Recording.update(id, { override: null });
+      setProcessed(prev => prev.map(r => r.id === id ? { ...r, override: null } : r));
+    } else {
+      const override = { grade, justification };
+      await base44.entities.Recording.update(id, { override });
+      setProcessed(prev => prev.map(r => r.id === id ? { ...r, override } : r));
+    }
+  };
+
+  const handleGenerateReport = (recording) => {
+    const params = new URLSearchParams();
+    if (recording.staff_id) params.set("staffId", recording.staff_id);
+    if (recording.staff_name) params.set("staffName", recording.staff_name);
+    if (recording.audio_url) params.set("audioUrl", recording.audio_url);
+    navigate(`/reports/new?${params.toString()}`);
+  };
+
+  // Recordings to display (processed/in-progress)
+  const allRecordings = processed.filter(r => {
+    if (filterFlagged && !r.flag) return false;
+    if (filterGrade) {
+      const g = r.override?.grade ?? r.grade;
+      return g === filterGrade;
+    }
+    return true;
+  });
+
+  const gradeCounts = {};
+  let flaggedCount = 0;
+  processed.forEach(r => {
+    const g = r.override?.grade ?? r.grade;
+    if (g) gradeCounts[g] = (gradeCounts[g] || 0) + 1;
+    if (r.flag) flaggedCount++;
+  });
 
   return (
     <motion.div
@@ -282,7 +187,7 @@ export default function MonitoringOnMass() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unknown">Unknown</SelectItem>
+                  <SelectItem value="unknown">Unknown / Unassigned</SelectItem>
                   {staffMembers.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
@@ -291,7 +196,7 @@ export default function MonitoringOnMass() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
@@ -303,7 +208,7 @@ export default function MonitoringOnMass() {
           >
             <FileAudio className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
             <p className="text-sm font-medium text-foreground">Drag & drop audio files here</p>
-            <p className="text-xs text-muted-foreground mt-1">or click to browse — MP3, WAV, M4A, AAC supported</p>
+            <p className="text-xs text-muted-foreground mt-1">or click to browse — MP3, WAV, M4A, AAC, OGG, FLAC supported</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -314,105 +219,128 @@ export default function MonitoringOnMass() {
             />
           </div>
 
-          {uploading && (
-            <p className="text-xs text-muted-foreground mt-3 text-center animate-pulse">
-              Uploading and transcribing recordings…
-            </p>
+          {/* Staged files list */}
+          {staged.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Staged — ready to process ({staged.length})
+              </p>
+              {staged.map(item => (
+                <div key={item.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50 border border-border">
+                  <FileAudio className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium flex-1 truncate">{item.name}</span>
+                  {item.staffName && (
+                    <span className="text-xs text-primary/70 shrink-0">{item.staffName}</span>
+                  )}
+                  <button onClick={() => removeStaged(item.id)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+
+              <Button
+                onClick={handleProcessAll}
+                disabled={processing}
+                className="w-full gap-2 bg-orange-500 hover:bg-orange-600 text-white mt-1"
+              >
+                {processing ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
+                ) : (
+                  <><Zap className="w-4 h-4" /> Analyse {staged.length} Recording{staged.length !== 1 ? "s" : ""}</>
+                )}
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Recordings List */}
-      {recordings.length > 0 && (
+      {/* Processed Recordings List */}
+      {processed.length > 0 && (
         <div className="space-y-3">
-          {/* Grade summary / filter bar */}
-          {(() => {
-            const counts = {};
-            let flaggedCount = 0;
-            recordings.forEach((r) => {
-              const g = r.override?.grade ?? r.grade;
-              if (g) counts[g] = (counts[g] || 0) + 1;
-              if (r.flag) flaggedCount++;
-            });
-            return (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
-                {["A", "B", "C", "D", "n/a"].filter(g => counts[g]).map((g) => {
-                  const cfg = GRADE_CONFIG[g];
-                  const active = filterGrade === g;
-                  return (
-                    <button
-                      key={g}
-                      onClick={() => setFilterGrade(active ? null : g)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold transition-all ${
-                        active
-                          ? `${cfg.color} ring-2 ring-offset-1 ring-current/30`
-                          : `${cfg.color} opacity-60 hover:opacity-100`
-                      }`}
-                    >
-                      <span>{cfg.label}</span>
-                      <span className="opacity-70">×{counts[g]}</span>
-                    </button>
-                  );
-                })}
-                {flaggedCount > 0 && (
-                  <button
-                    onClick={() => setFilterFlagged(f => !f)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold transition-all ${
-                      filterFlagged
-                        ? "bg-red-50 text-red-600 border-red-300 ring-2 ring-offset-1 ring-red-300/30"
-                        : "bg-red-50 text-red-600 border-red-300 opacity-60 hover:opacity-100"
-                    }`}
-                  >
-                    <AlertTriangle className="w-3 h-3" />
-                    <span className="opacity-70">×{flaggedCount}</span>
-                  </button>
-                )}
-                {(filterGrade || filterFlagged) && (
-                  <button
-                    onClick={() => { setFilterGrade(null); setFilterFlagged(false); }}
-                    className="text-xs text-muted-foreground hover:text-foreground underline ml-1"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-            );
-          })()}
+          {/* Filter bar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
+            {["A", "B", "C", "D", "n/a"].filter(g => gradeCounts[g]).map((g) => {
+              const cfg = GRADE_CONFIG[g];
+              const active = filterGrade === g;
+              return (
+                <button
+                  key={g}
+                  onClick={() => setFilterGrade(active ? null : g)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold transition-all ${
+                    active ? `${cfg.color} ring-2 ring-offset-1 ring-current/30` : `${cfg.color} opacity-60 hover:opacity-100`
+                  }`}
+                >
+                  <span>{cfg.label}</span>
+                  <span className="opacity-70">×{gradeCounts[g]}</span>
+                </button>
+              );
+            })}
+            {flaggedCount > 0 && (
+              <button
+                onClick={() => setFilterFlagged(f => !f)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-semibold transition-all ${
+                  filterFlagged
+                    ? "bg-red-50 text-red-600 border-red-300 ring-2 ring-offset-1 ring-red-300/30"
+                    : "bg-red-50 text-red-600 border-red-300 opacity-60 hover:opacity-100"
+                }`}
+              >
+                <AlertTriangle className="w-3 h-3" />
+                <span className="opacity-70">×{flaggedCount} flagged</span>
+              </button>
+            )}
+            {(filterGrade || filterFlagged) && (
+              <button onClick={() => { setFilterGrade(null); setFilterFlagged(false); }} className="text-xs text-muted-foreground hover:text-foreground underline ml-1">
+                Clear
+              </button>
+            )}
+          </div>
 
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              {recordings.length} Recording{recordings.length > 1 ? "s" : ""}
+              {processed.length} Recording{processed.length !== 1 ? "s" : ""}
             </h2>
           </div>
 
-          {recordings.filter((r) => {
-            if (filterFlagged && !r.flag) return false;
-            if (filterGrade) {
-              const g = r.override?.grade ?? r.grade;
-              return g === filterGrade;
+          {allRecordings.map((rec) => {
+            // In-progress states
+            if (rec._status === "uploading" || rec._status === "processing") {
+              return (
+                <div key={rec.id} className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-card">
+                  <Loader2 className="w-4 h-4 animate-spin text-orange-500 shrink-0" />
+                  <span className="text-sm font-medium flex-1 truncate">{rec.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {rec._status === "uploading" ? "Uploading…" : "Transcribing & analysing…"}
+                  </span>
+                </div>
+              );
             }
-            return true;
-          }).map((rec) => (
-            <div key={rec.id} className="relative group">
-              <RecordingRow recording={rec} onGradeOverride={handleGradeOverride} onGenerateReport={handleGenerateReport} />
-              <button
-                onClick={() => removeRecording(rec.id)}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+            if (rec._status === "failed") {
+              return (
+                <div key={rec.id} className="flex items-center gap-3 px-4 py-3 rounded-lg border border-red-200 bg-red-50">
+                  <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                  <span className="text-sm font-medium flex-1 truncate text-red-700">{rec.name}</span>
+                  <span className="text-xs text-red-500">Processing failed</span>
+                </div>
+              );
+            }
+            return (
+              <RecordingRow
+                key={rec.id}
+                recording={{ ...rec, objectUrl: rec.objectUrl ?? null }}
+                onGradeOverride={handleGradeOverride}
+                onGenerateReport={handleGenerateReport}
+              />
+            );
+          })}
         </div>
       )}
 
-      {/* Empty state placeholder */}
-      {recordings.length === 0 && !uploading && (
+      {processed.length === 0 && staged.length === 0 && !processing && (
         <div className="text-center py-12 text-muted-foreground">
           <FileAudio className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p className="text-sm">No recordings uploaded yet.</p>
-          <p className="text-xs mt-1">Upload audio files above to begin transcription.</p>
+          <p className="text-sm">No recordings yet.</p>
+          <p className="text-xs mt-1">Upload audio files above, then click Analyse to begin.</p>
         </div>
       )}
     </motion.div>
