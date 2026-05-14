@@ -73,7 +73,7 @@ function GradeSelector({ value, onChange }) {
   );
 }
 
-function AudioPlayer({ url, name }) {
+function AudioPlayer({ url, name, expanded = false }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -97,7 +97,7 @@ function AudioPlayer({ url, name }) {
   };
 
   return (
-    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+    <div className={cn("flex items-center gap-2", expanded && "w-full")} onClick={(e) => e.stopPropagation()}>
       <audio
         ref={audioRef}
         src={url}
@@ -112,11 +112,19 @@ function AudioPlayer({ url, name }) {
         {playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 ml-0.5" />}
       </button>
       {duration > 0 && (
-        <div className="flex items-center gap-1.5 min-w-0">
-          <div className="w-20 h-1.5 bg-border rounded-full overflow-hidden">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <div
+            className="flex-1 h-2 bg-border rounded-full overflow-hidden cursor-pointer relative group"
+            onClick={(e) => {
+              e.stopPropagation();
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio = (e.clientX - rect.left) / rect.width;
+              if (audioRef.current) audioRef.current.currentTime = ratio * duration;
+            }}
+          >
             <div
-              className="h-full bg-orange-400 rounded-full transition-all"
-              style={{ width: `${duration ? (progress / duration) * 100 : 0}%` }}
+              className="h-full bg-orange-400 rounded-full transition-none pointer-events-none"
+              style={{ width: `${(progress / duration) * 100}%` }}
             />
           </div>
           <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
@@ -249,7 +257,7 @@ export default function RecordingRow({ recording, onGradeOverride, onGenerateRep
             {/* Audio player (expanded) */}
             {(recording.objectUrl || recording.audio_url) && (
               <div className="pt-3">
-                <AudioPlayer url={recording.objectUrl || recording.audio_url} name={recording.name} />
+                <AudioPlayer url={recording.objectUrl || recording.audio_url} name={recording.name} expanded />
               </div>
             )}
 
