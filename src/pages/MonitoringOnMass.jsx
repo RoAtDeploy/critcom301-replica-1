@@ -134,8 +134,7 @@ export default function MonitoringOnMass() {
   const handleGenerateReport = (recording) => {
     const params = new URLSearchParams();
     if (recording.staff_id) params.set("staffId", recording.staff_id);
-    if (recording.staff_name) params.set("staffName", recording.staff_name);
-    if (recording.audio_url) params.set("audioUrl", recording.audio_url);
+    if (recording.id && recording._source === "db") params.set("recordingId", recording.id);
     navigate(`/reports/new?${params.toString()}`);
   };
 

@@ -9,14 +9,17 @@ import TranscriptEditor from "@/components/report/TranscriptEditor";
 
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAdmin } from "@/context/AdminContext";
 
 export default function GenerateReport() {
   const navigate = useNavigate();
 
-  const prefilledStaffId = new URLSearchParams(window.location.search).get("staffId");
+  const params = new URLSearchParams(window.location.search);
+  const prefilledStaffId = params.get("staffId");
+  const prefilledRecordingId = params.get("recordingId");
+
   const [dragOver, setDragOver] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState(prefilledStaffId);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -31,6 +34,29 @@ export default function GenerateReport() {
   const [otherRole, setOtherRole] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
+  const [loadingRecording, setLoadingRecording] = useState(false);
+
+  // Pre-fill from a Recording entity if recordingId is provided
+  useEffect(() => {
+    if (!prefilledRecordingId) return;
+    setLoadingRecording(true);
+    base44.entities.Recording.filter({ id: prefilledRecordingId }).then((recs) => {
+      const rec = recs[0];
+      if (!rec) return;
+      if (rec.staff_id) setSelectedStaffId(rec.staff_id);
+      if (rec.audio_url) setAudioUrl(rec.audio_url);
+      if (rec.transcription || rec.segments?.length > 0) {
+        const segData = rec.segments?.length > 0 ? rec.segments : [];
+        setTranscription({
+          text: rec.transcription || "",
+          duration: rec.duration || 0,
+          language: rec.language || "",
+          segments: segData,
+        });
+        setLabelledSegments(autoLabelSegments(segData));
+      }
+    }).finally(() => setLoadingRecording(false));
+  }, [prefilledRecordingId]);
 
   const { staffList, roles: adminRoles, callTypes } = useAdmin();
   const selectedStaff = staffList.find((s) => s.id === selectedStaffId);
@@ -118,6 +144,14 @@ export default function GenerateReport() {
     navigate(`/reports/${saved.id}?assessed=1`);
   };
 
+  if (loadingRecording) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -191,6 +225,15 @@ export default function GenerateReport() {
             </div>
           )}
 
+          {prefilledRecordingId && audioUrl && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-sm text-primary">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              Recording and transcription loaded from Monitoring on Mass.
+            </div>
+          )}
+
+          {/* Upload section — hidden when pre-filled from a monitoring recording */}
+          {!(prefilledRecordingId && audioUrl) && (
           <div className="space-y-2">
             <Label>Upload Recording</Label>
             {!audioFile ? (
@@ -330,6 +373,69 @@ export default function GenerateReport() {
               </div>
             )}
           </div>
+          )} {/* end upload section */}
+
+          {/* Transcript editor shown inline when pre-filled from monitoring */}
+          {prefilledRecordingId && transcription && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-accent font-medium">
+                <CheckCircle2 className="w-4 h-4" />
+                Transcription loaded • {Math.round(transcription.duration)}s
+              </div>
+              <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-primary" />
+                  <p className="text-sm font-semibold">Review & correct transcript</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Segments alternate between <span className="font-semibold text-blue-600">S1</span> and <span className="font-semibold text-orange-600">S2</span>. Click any speaker label to toggle it if it's been misidentified.
+                </p>
+                <TranscriptEditor
+                  segments={labelledSegments}
+                  onSegmentsChange={setLabelledSegments}
+                  speakerLabels={{
+                    ...(staffChannel && selectedStaff ? { [staffChannel]: selectedStaff.name.split(' ').map(w => w[0]).join('').toUpperCase() } : {}),
+                    ...(staffChannel && otherRole ? { [staffChannel === 'S1' ? 'S2' : 'S1']: otherRole.toUpperCase() } : {}),
+                  }}
+                />
+              </div>
+              <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
+                <p className="text-sm font-semibold">Assign speakers</p>
+                <p className="text-xs text-muted-foreground">Select which speaker is the staff member.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {['S1', 'S2'].map((spk) => {
+                    const isStaffChannel = staffChannel === spk;
+                    const isOtherChannel = staffChannel && staffChannel !== spk;
+                    const isBlue = spk === 'S1';
+                    return (
+                      <div key={spk} className={`rounded-lg border-2 p-3 space-y-2 transition-all ${isStaffChannel ? (isBlue ? 'border-blue-500 bg-blue-50' : 'border-orange-500 bg-orange-50') : 'border-border bg-background'}`}>
+                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${isBlue ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                          Speaker {spk === 'S1' ? '1' : '2'}
+                        </span>
+                        {isStaffChannel ? (
+                          <div className="flex items-center gap-1.5 py-1">
+                            <User className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <span className="text-sm font-semibold text-foreground truncate">{selectedStaff?.name || 'Staff Member'}</span>
+                          </div>
+                        ) : isOtherChannel ? (
+                          <Select value={otherRole} onValueChange={setOtherRole}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select their role…" /></SelectTrigger>
+                            <SelectContent>{adminRoles.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-xs text-muted-foreground py-1">Assign below</p>
+                        )}
+                        <button type="button" onClick={() => { setStaffChannel(spk); setOtherRole(null); }}
+                          className={`w-full text-xs font-semibold py-1.5 rounded-md border transition-all ${isStaffChannel ? (isBlue ? 'border-blue-400 bg-blue-100 text-blue-700' : 'border-orange-400 bg-orange-100 text-orange-700') : 'border-border hover:bg-muted text-muted-foreground'}`}>
+                          {isStaffChannel ? '✓ Staff member' : 'Set as staff member'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Call Context (Optional)</Label>
