@@ -1,5 +1,30 @@
 import { useState, useRef } from "react";
-import { ChevronDown, ChevronUp, Play, Pause, Pencil, X, Loader2, Clock, AlertTriangle, FileText } from "lucide-react";
+import { ChevronDown, ChevronUp, Play, Pause, Pencil, X, Loader2, Clock, AlertTriangle, FileText, Timer } from "lucide-react";
+
+function getDaysRemaining(createdDate) {
+  if (!createdDate) return null;
+  const msLeft = new Date(createdDate).getTime() + 90 * 24 * 60 * 60 * 1000 - Date.now();
+  return Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+}
+
+function ExpiryBadge({ createdDate }) {
+  const days = getDaysRemaining(createdDate);
+  if (days === null) return null;
+  const urgent = days <= 14;
+  const warning = days <= 30;
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border shrink-0 ${
+      urgent
+        ? "bg-red-50 text-red-600 border-red-200"
+        : warning
+        ? "bg-amber-50 text-amber-600 border-amber-200"
+        : "bg-slate-50 text-slate-500 border-slate-200"
+    }`}>
+      <Timer className="w-3 h-3" />
+      {days}d
+    </span>
+  );
+}
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -187,6 +212,9 @@ export default function RecordingRow({ recording, onGradeOverride, onGenerateRep
           <button onClick={() => setOpen(o => !o)}>
             {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </button>
+
+          {/* Expiry countdown */}
+          <ExpiryBadge createdDate={recording.created_date} />
 
           {/* Grade Badge — far right */}
           <div className="flex items-center gap-1.5 shrink-0">
