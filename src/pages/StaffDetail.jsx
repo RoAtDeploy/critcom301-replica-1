@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft, Pencil, FileText, TrendingUp, Phone, Mail,
-  Building2, Users, BadgeCheck, X, Check, Sparkles
+  Building2, Users, BadgeCheck, X, Check, Sparkles, Radio, Clock
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAdmin } from "@/context/AdminContext";
@@ -37,9 +37,11 @@ export default function StaffDetail() {
   const [form, setForm] = useState(original ? { ...original } : {});
   const [rolesOpen, setRolesOpen] = useState(false);
   const [reports, setReports] = useState([]);
+  const [recordings, setRecordings] = useState([]);
 
   useEffect(() => {
     base44.entities.Report.filter({ staff_id: id }, "-created_date").then(setReports);
+    base44.entities.Recording.filter({ staff_id: id }, "-created_date").then(setRecordings).catch(() => {});
   }, [id]);
 
   if (!member) return (
@@ -264,6 +266,60 @@ export default function StaffDetail() {
           )}
         </CardContent>
       </Card>
+      {/* Calls from Monitoring on Mass */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Radio className="w-4 h-4 text-orange-500" />
+            Monitoring Calls ({recordings.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {recordings.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No calls uploaded via Monitoring on Mass for this staff member.</p>
+          ) : (
+            recordings.map((rec) => {
+              const GRADE_COLOR = {
+                A: "bg-emerald-100 text-emerald-700 border-emerald-300",
+                B: "bg-yellow-100 text-yellow-700 border-yellow-300",
+                C: "bg-orange-100 text-orange-700 border-orange-300",
+                D: "bg-red-100 text-red-700 border-red-300",
+                "n/a": "bg-slate-100 text-slate-500 border-slate-300",
+              };
+              const effectiveGrade = rec.override?.grade ?? rec.grade;
+              const gradeColor = effectiveGrade ? GRADE_COLOR[effectiveGrade] : "bg-muted text-muted-foreground border-border";
+              return (
+                <div key={rec.id} className="flex items-center justify-between py-3 px-3 rounded-lg bg-muted/20 border border-border/40">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                      <Radio className="w-4 h-4 text-orange-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{rec.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {rec.duration && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="w-3 h-3" />{Math.round(rec.duration)}s
+                          </span>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(rec.created_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {effectiveGrade && (
+                    <span className={`inline-flex items-center justify-center rounded border w-7 h-7 text-xs font-bold shrink-0 ${gradeColor}`}>
+                      {effectiveGrade === "n/a" ? "N/A" : effectiveGrade}
+                    </span>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+
     </motion.div>
   );
 }

@@ -187,6 +187,23 @@ export default function MonitoringOnMass() {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const result = await base44.functions.invoke("transcribeAudio", { file_url });
       const data = result.data;
+      const grade = nextPlaceholderGrade();
+
+      const staffId = selectedStaff !== "unknown" ? selectedStaff : null;
+      const staffNameForRecord = staffId ? (staffMembers.find(s => s.id === staffId)?.name ?? null) : null;
+
+      // Persist to database
+      await base44.entities.Recording.create({
+        name: file.name,
+        staff_id: staffId,
+        staff_name: staffNameForRecord,
+        audio_url: file_url,
+        duration: data.duration,
+        grade,
+        transcription: data.text,
+        segments: data.segments,
+        language: data.language,
+      });
 
       setRecordings((prev) =>
         prev.map((r) =>
@@ -198,7 +215,7 @@ export default function MonitoringOnMass() {
                 segments: data.segments,
                 duration: data.duration,
                 language: data.language,
-                grade: nextPlaceholderGrade(), // placeholder — will be configured later
+                grade,
               }
             : r
         )

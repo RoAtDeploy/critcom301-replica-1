@@ -1,0 +1,55 @@
+{
+  "name": "Recording",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Original file name"
+    },
+    "staff_id": {
+      "type": "string",
+      "description": "ID of the associated staff member"
+    },
+    "staff_name": {
+      "type": "string",
+      "description": "Name of the associated staff member at time of upload"
+    },
+    "audio_url": {
+      "type": "string",
+      "description": "URL of the uploaded audio file"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Duration of the recording in seconds"
+    },
+    "grade": {
+      "type": "string",
+      "description": "Assessed grade (A, B, C, D, n/a)"
+    },
+    "override": {
+      "type": "object",
+      "description": "Grade override object with grade and justification"
+    },
+    "flag": {
+      "type": "string",
+      "description": "Issue flag text if flagged"
+    },
+    "transcription": {
+      "type": "string",
+      "description": "Plain text transcription"
+    },
+    "segments": {
+      "type": "array",
+      "description": "Timestamped transcript segments",
+      "items": {
+        "type": "object"
+      }
+    },
+    "language": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
