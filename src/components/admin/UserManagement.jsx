@@ -31,26 +31,28 @@ export default function UserManagement() {
       const baseRole = form.role === "admin" ? "admin" : "user";
       await base44.users.inviteUser(form.email.trim(), baseRole);
       
-      // Get the newly created user
-      const allUsers = await base44.entities.User.list();
-      const newUser = allUsers.find(u => u.email === form.email.trim());
-      
-      // Update role and name fields
-      if (newUser) {
-        const updates = { role: form.role };
-        if (form.firstName) updates.firstName = form.firstName;
-        if (form.lastName) updates.lastName = form.lastName;
-        await base44.entities.User.update(newUser.id, updates);
-        Object.assign(newUser, updates);
-      }
-      
-      // Add to list immediately so they're available right away
-      if (newUser) {
-        setUsers(prev => [...prev, newUser]);
-      }
+      // Add optimistically to local state immediately
+      const optimisticUser = {
+        id: Math.random().toString(36),
+        email: form.email.trim(),
+        full_name: form.firstName && form.lastName ? `${form.firstName} ${form.lastName}` : form.email.trim(),
+        firstName: form.firstName,
+        lastName: form.lastName,
+        role: form.role,
+      };
+      setUsers(prev => [...prev, optimisticUser]);
       
       setSuccess(`${form.email.trim()} added. Setup email sent — they can be assigned immediately.`);
       setForm({ firstName: "", lastName: "", email: "", role: "assessor" });
+      
+      // Fetch real user after a delay and replace optimistic entry
+      setTimeout(async () => {
+        const allUsers = await base44.entities.User.list();
+        const realUser = allUsers.find(u => u.email === form.email.trim());
+        if (realUser) {
+          setUsers(prev => prev.map(u => u.email === form.email.trim() ? realUser : u));
+        }
+      }, 1000);
     } catch (err) {
       setError(err.message || "Failed to add user.");
     }
