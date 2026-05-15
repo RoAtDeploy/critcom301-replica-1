@@ -285,7 +285,14 @@ export default function ReportDetail() {
               {report.status === "sent" && (
                 <div className="flex items-center gap-2 text-xs text-accent">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Sent to {report.staff_email || "staff member"}</span>
+                  <span>
+                    Sent to {report.staff_email || "staff member"}
+                    {report.sent_at && (
+                      <span className="ml-1 text-muted-foreground">
+                        · {new Date(report.sent_at).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    )}
+                  </span>
                   <a href={`/staff-review/${report.id}`} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-foreground underline">
                     <ExternalLink className="w-3 h-3" /> Preview staff view
                   </a>

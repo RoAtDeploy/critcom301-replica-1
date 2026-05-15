@@ -43,8 +43,8 @@ CritCon301 Monitoring Team
     body,
   });
 
-  // Update report status to 'sent'
-  await base44.asServiceRole.entities.Report.update(reportId, { status: 'sent', staff_email: staffEmail });
+  // Update report status to 'sent' and record the sent timestamp
+  await base44.asServiceRole.entities.Report.update(reportId, { status: 'sent', staff_email: staffEmail, sent_at: new Date().toISOString() });
 
   return Response.json({ success: true });
 });
