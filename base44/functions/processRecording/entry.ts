@@ -56,15 +56,43 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { file_url, staff_id, staff_name } = await req.json();
+    const { file_url, staff_id, staff_name, file_name } = await req.json();
 
     if (!file_url) {
       return Response.json({ error: 'file_url is required' }, { status: 400 });
     }
 
-    // Step 1: Transcribe the audio
-    const transcribeResult = await base44.functions.invoke('transcribeAudio', { file_url });
-    const { text, segments, duration, language } = transcribeResult.data;
+    // Step 1: Transcribe the audio (inline — avoids auth issues when called in parallel)
+    const apiKey = Deno.env.get('OPENAI_API_KEY');
+    const fetchRes = await fetch(file_url);
+    const audioBlob = await fetchRes.blob();
+
+    const form = new FormData();
+    form.append('file', audioBlob, 'audio.mp3');
+    form.append('model', 'whisper-1');
+    form.append('response_format', 'verbose_json');
+
+    const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+
+    if (!whisperRes.ok) {
+      const err = await whisperRes.text();
+      throw new Error(`Whisper error: ${err}`);
+    }
+
+    const whisperData = await whisperRes.json();
+    const text = whisperData.text;
+    const language = whisperData.language;
+    const duration = whisperData.duration;
+    const segments = (whisperData.segments || []).map(seg => ({
+      timestamp: (() => { const m = Math.floor(seg.start / 60).toString().padStart(2,'0'); const s = Math.floor(seg.start % 60).toString().padStart(2,'0'); return `${m}:${s}`; })(),
+      start: seg.start,
+      end: seg.end,
+      text: seg.text.trim(),
+    }));
 
     if (!text) {
       return Response.json({ error: 'Transcription failed or returned empty' }, { status: 500 });
@@ -119,7 +147,7 @@ Deno.serve(async (req) => {
 
     // Step 3: Persist Recording to database
     const recording = await base44.asServiceRole.entities.Recording.create({
-      name: `recording_${Date.now()}.audio`,
+      name: file_name || `recording_${Date.now()}.audio`,
       staff_id: staff_id || null,
       staff_name: staff_name || null,
       audio_url: file_url,

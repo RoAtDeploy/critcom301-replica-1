@@ -92,6 +92,7 @@ export default function MonitoringOnMass() {
 
         const result = await base44.functions.invoke("processRecording", {
           file_url,
+          file_name: item.name,
           staff_id: item.staffId,
           staff_name: item.staffName,
         });
