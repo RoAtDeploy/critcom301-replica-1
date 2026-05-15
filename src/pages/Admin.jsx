@@ -1,18 +1,34 @@
-import { Settings2, BrainCircuit, BookOpen } from "lucide-react";
+import { Settings2, BrainCircuit, BookOpen, Users } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminGeneral from "@/components/admin/AdminGeneral";
 import AdminDefinitions from "@/components/admin/AdminDefinitions";
 import AdminAI from "@/components/admin/AdminAI";
+import UserManagement from "@/components/admin/UserManagement";
+import { base44 } from "@/api/base44Client";
 
 const tabs = [
   { id: "general", label: "General Settings", icon: Settings2 },
   { id: "definitions", label: "Industry Definitions", icon: BookOpen },
   { id: "ai", label: "AI Calibration", icon: BrainCircuit },
+  { id: "users", label: "User Management", icon: Users },
 ];
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("general");
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => { base44.auth.me().then(setCurrentUser); }, []);
+
+  if (currentUser && currentUser.role !== "admin") {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
+        <Settings2 className="w-10 h-10 text-muted-foreground" />
+        <h2 className="text-lg font-semibold">Access Restricted</h2>
+        <p className="text-sm text-muted-foreground">Only admin users can access this page.</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-6">
@@ -49,6 +65,7 @@ export default function Admin() {
       {activeTab === "general" && <AdminGeneral />}
       {activeTab === "definitions" && <AdminDefinitions />}
       {activeTab === "ai" && <AdminAI />}
+      {activeTab === "users" && <UserManagement />}
     </motion.div>
   );
 }
