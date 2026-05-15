@@ -79,17 +79,21 @@ function AudioPlayer({ url, name, expanded = false }) {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [error, setError] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+
+  if (!url) return null;
 
   const toggle = (e) => {
     e.stopPropagation();
-    if (!audioRef.current || error) return;
+    if (!audioRef.current) return;
+    setLoadError(false);
     if (playing) {
       audioRef.current.pause();
+      setPlaying(false);
     } else {
-      audioRef.current.play().catch(() => setError(true));
+      audioRef.current.play().catch(() => { setLoadError(true); setPlaying(false); });
+      setPlaying(true);
     }
-    setPlaying(!playing);
   };
 
   const fmt = (s) => {
@@ -98,35 +102,28 @@ function AudioPlayer({ url, name, expanded = false }) {
     return `${m}:${sec}`;
   };
 
-  const resolvedUrl = url || null;
-  if (!resolvedUrl) return null;
-
   return (
     <div className={cn("flex items-center gap-2", expanded && "w-full")} onClick={(e) => e.stopPropagation()}>
       <audio
         ref={audioRef}
-        src={resolvedUrl}
+        src={url}
         onTimeUpdate={() => setProgress(audioRef.current?.currentTime || 0)}
-        onLoadedMetadata={() => { setDuration(audioRef.current?.duration || 0); setError(false); }}
+        onLoadedMetadata={() => { setDuration(audioRef.current?.duration || 0); setLoadError(false); }}
         onEnded={() => setPlaying(false)}
-        onError={() => { setError(true); setPlaying(false); }}
-        preload="none"
+        onError={() => { setLoadError(true); setPlaying(false); }}
+        preload="metadata"
       />
       <button
         onClick={toggle}
-        className={cn(
-          "w-7 h-7 rounded-full flex items-center justify-center text-white transition-colors shrink-0",
-          error ? "bg-slate-300 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"
-        )}
-        title={error ? "Audio unavailable" : undefined}
+        className="w-7 h-7 rounded-full flex items-center justify-center text-white bg-orange-500 hover:bg-orange-600 transition-colors shrink-0"
       >
         {playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 ml-0.5" />}
       </button>
-      {error && <span className="text-xs text-muted-foreground">Audio unavailable</span>}
-      {!error && duration > 0 && (
+      {loadError && <span className="text-xs text-muted-foreground">Audio unavailable</span>}
+      {!loadError && duration > 0 && (
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <div
-            className="flex-1 h-2 bg-border rounded-full overflow-hidden cursor-pointer relative group"
+            className="flex-1 h-2 bg-border rounded-full overflow-hidden cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               const rect = e.currentTarget.getBoundingClientRect();
