@@ -24,8 +24,15 @@ export default function ReportDetail() {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
 
   useEffect(() => {
-    base44.entities.Report.get(id).then((r) => {
+    base44.entities.Report.get(id).then(async (r) => {
       setReport(r);
+      // Pull email from staff profile if not already on the report
+      if (r.staff_id && !r.staff_email) {
+        const staff = await base44.entities.StaffMember.get(r.staff_id).catch(() => null);
+        if (staff?.email) {
+          setReport({ ...r, staff_email: staff.email });
+        }
+      }
       setLoading(false);
     });
   }, [id]);
@@ -58,7 +65,11 @@ export default function ReportDetail() {
   };
 
   const handleSendToStaff = async () => {
-    const email = staffEmailInput.trim() || report.staff_email;
+    let email = staffEmailInput.trim() || report.staff_email;
+    if (!email && report.staff_id) {
+      const staff = await base44.entities.StaffMember.get(report.staff_id).catch(() => null);
+      email = staff?.email || "";
+    }
     if (!email) { setShowEmailInput(true); return; }
     setSendingEmail(true);
     await base44.functions.invoke("sendStaffReviewEmail", {
