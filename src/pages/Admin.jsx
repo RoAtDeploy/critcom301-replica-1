@@ -1,8 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Building2, Users, Briefcase, Settings2, Phone, BookOpen, ListChecks } from "lucide-react";
+import { Building2, Users, Briefcase, Settings2, Phone, BookOpen, ListChecks, AlertTriangle, BrainCircuit, Radio, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import OptionList from "@/components/admin/OptionList";
 import DefinitionsManager from "@/components/admin/DefinitionsManager";
+import AlertTriggersManager from "@/components/admin/AlertTriggersManager";
+import QuickGradeGuideline from "@/components/admin/QuickGradeGuideline";
+import AssessmentRulesManager from "@/components/admin/AssessmentRulesManager";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -106,6 +109,73 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <DefinitionsManager />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* AI Controls Header */}
+      <motion.div variants={itemVariants}>
+        <div className="flex items-center gap-3 pt-2">
+          <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
+            <BrainCircuit className="w-5 h-5 text-rose-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">AI Controls</h2>
+            <p className="text-muted-foreground mt-0.5 text-sm">Configure how the AI makes decisions across monitoring and detailed reports.</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Alert Triggers */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-500" />
+              <CardTitle className="text-base">Alert Triggers</CardTitle>
+            </div>
+            <CardDescription>
+              Words or phrases that, when detected in a transcript, automatically flag the recording with a warning. Configure severity and category for each trigger.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AlertTriggersManager />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Quick Grade Guideline */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Radio className="w-4 h-4 text-orange-500" />
+              <CardTitle className="text-base">Quick Grade Guideline</CardTitle>
+            </div>
+            <CardDescription>
+              Defines how the AI assigns an overall grade to recordings processed via Monitoring on Mass. Edit the text to influence grading logic.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <QuickGradeGuideline />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Assessment Rules */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-500" />
+              <CardTitle className="text-base">Assessment Rules — Full Report Scoring</CardTitle>
+            </div>
+            <CardDescription>
+              Define the grading criteria for each of the 10 communication aspects assessed in full reports. Customise what constitutes an A, B, C, or D grade per aspect.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AssessmentRulesManager />
           </CardContent>
         </Card>
       </motion.div>

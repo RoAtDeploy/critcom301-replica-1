@@ -115,10 +115,17 @@ Deno.serve(async (req) => {
 
     const { transcript, reportId, staffChannel, staffName, otherRole } = await req.json();
 
-    // Fetch industry definitions to include in the prompt
-    const definitions = await base44.asServiceRole.entities.IndustryDefinition.list();
+    // Fetch industry definitions and assessment rules concurrently
+    const [definitions, assessmentRules] = await Promise.all([
+      base44.asServiceRole.entities.IndustryDefinition.list(),
+      base44.asServiceRole.entities.AssessmentRule.list(),
+    ]);
     const definitionsText = definitions.length > 0
       ? `\n\nINDUSTRY-SPECIFIC TERMINOLOGY (use these exact definitions when interpreting the transcript):\n${definitions.map(d => `- ${d.term}: ${d.definition}`).join('\n')}`
+      : '';
+
+    const rulesText = assessmentRules.length > 0
+      ? `\n\nADMIN-CONFIGURED ASSESSMENT CRITERIA (use these criteria to grade each aspect — they override the defaults above):\n${[...assessmentRules].sort((a, b) => Number(a.aspect_id) - Number(b.aspect_id)).map(r => `Aspect ${r.aspect_id} — ${r.aspect_name}:\n  A: ${r.grade_a_criteria}\n  B: ${r.grade_b_criteria || 'Between A and C'}\n  C: ${r.grade_c_criteria || 'Between B and D'}\n  D: ${r.grade_d_criteria}${r.additional_guidance ? `\n  Watch-points: ${r.additional_guidance}` : ''}`).join('\n\n')}`
       : '';
 
     if (!transcript) {
@@ -153,7 +160,7 @@ ${transcriptText}`;
     const [assessment, summaryResult] = await Promise.all([
       base44.integrations.Core.InvokeLLM({
         model: 'claude_sonnet_4_6',
-        prompt: `${ASSESSMENT_PROMPT}${definitionsText}\n\n${staffContext}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
+        prompt: `${ASSESSMENT_PROMPT}${definitionsText}${rulesText}\n\n${staffContext}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
         response_json_schema: {
           type: 'object',
           properties: {

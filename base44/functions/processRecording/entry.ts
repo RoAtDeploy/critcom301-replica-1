@@ -3,13 +3,19 @@ import OpenAI from 'npm:openai';
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY") });
 
-const SCREENING_PROMPT = `You are a content screening assistant for railway communications. Review the following transcript and determine if it contains any alert-worthy content.
+function buildScreeningPrompt(triggers) {
+  const enabledTriggers = triggers.filter(t => t.enabled);
+  const triggerLines = enabledTriggers.length > 0
+    ? `\n\nADMIN-CONFIGURED ALERT TRIGGERS — you MUST flag if any of the following are detected:\n${enabledTriggers.map(t => `- [${t.severity.toUpperCase()} / ${t.category}] "${t.phrase}"`).join('\n')}`
+    : '';
+
+  return `You are a content screening assistant for railway communications. Review the following transcript and determine if it contains any alert-worthy content.
 
 Alert-worthy content includes:
 - Profanity or inappropriate language
 - Aggressive or threatening behaviour
 - Non-standard or dangerous safety-critical communication (e.g. unclear emergency reporting)
-- Confusion or significant errors that could have safety implications
+- Confusion or significant errors that could have safety implications${triggerLines}
 
 If alert-worthy content is found, respond with a single concise sentence describing the specific issue (e.g. "Profanity detected — staff used inappropriate language during reporting").
 If no issues are found, respond with exactly: null
@@ -18,21 +24,26 @@ Respond with ONLY the flag sentence or the word null. No other text.
 
 TRANSCRIPT:
 `;
+}
 
-const GRADE_PROMPT = `You are a railway communications quality assessor. Based on the following transcript, assign an overall grade for the STAFF MEMBER's communication performance.
-
-Grades:
+function buildGradePrompt(guideline) {
+  const guidelineText = guideline || `Assign a quick overall grade (A, B, C, D, or n/a) based on the staff member's communication performance.
 - A: High standard. Protocols fully followed. Effective non-technical skills throughout.
 - B: Satisfactory but improvable. Most protocols followed. Minor gaps in technique.
 - C: Gives rise to concerns. Significant protocol variations. Limited non-technical skills.
 - D: Not acceptable. Little or no protocol adherence. Safety compromised.
-- n/a: Cannot be assessed (too short, not applicable).
+- n/a: Cannot be assessed (too short, not applicable).`;
+
+  return `You are a railway communications quality assessor. Based on the following transcript, assign an overall grade for the STAFF MEMBER's communication performance.
+
+${guidelineText}
 
 Respond with ONLY a JSON object in this exact format, no other text:
 {"grade": "A" | "B" | "C" | "D" | "n/a", "reasoning": "<one sentence explanation>"}
 
 TRANSCRIPT:
 `;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -59,6 +70,16 @@ Deno.serve(async (req) => {
     const transcriptForPrompt = segments?.length > 0
       ? segments.map(s => `[${s.timestamp}] ${s.text}`).join('\n')
       : text;
+
+    // Load admin AI config concurrently
+    const [alertTriggers, gradeConfigs] = await Promise.all([
+      base44.asServiceRole.entities.AlertTrigger.list(),
+      base44.asServiceRole.entities.AdminConfig.filter({ key: 'quickGradeGuideline' }),
+    ]);
+    const guidelineText = gradeConfigs[0]?.values?.[0] || null;
+
+    const SCREENING_PROMPT = buildScreeningPrompt(alertTriggers);
+    const GRADE_PROMPT = buildGradePrompt(guidelineText);
 
     // Step 2: Grade and screen concurrently
     const [gradeResponse, flagResponse] = await Promise.all([

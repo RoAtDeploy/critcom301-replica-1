@@ -8,7 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Settings2,
-  Radio
+  Radio,
+  BookOpen
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -73,13 +74,14 @@ export default function Sidebar() {
       </nav>
 
       {/* Admin Section */}
-      <div className="px-3 pb-3 border-t border-sidebar-border pt-4">
+      <div className="px-3 pb-3 border-t border-sidebar-border pt-4 space-y-1">
         {!collapsed && (
           <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3 mb-3">
             Admin
           </p>
         )}
         <NavLink item={{ label: "Admin", icon: Settings2, path: "/admin" }} />
+        <NavLink item={{ label: "User Guide", icon: BookOpen, path: "/user-guide" }} />
       </div>
 
       {/* Collapse Toggle */}

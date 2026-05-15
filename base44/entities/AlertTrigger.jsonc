@@ -1,0 +1,41 @@
+{
+  "name": "AlertTrigger",
+  "type": "object",
+  "properties": {
+    "phrase": {
+      "type": "string",
+      "description": "The word or phrase that triggers an alert"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium",
+      "description": "Severity level of the alert"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "profanity",
+        "safety",
+        "aggression",
+        "keyword"
+      ],
+      "default": "keyword",
+      "description": "Category of the trigger"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this trigger is currently active"
+    }
+  },
+  "required": [
+    "phrase",
+    "severity",
+    "category"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "AssessmentRule",
+  "type": "object",
+  "properties": {
+    "aspect_id": {
+      "type": "string",
+      "description": "The aspect number this rule applies to (1-10)"
+    },
+    "aspect_name": {
+      "type": "string",
+      "description": "Name of the assessment aspect"
+    },
+    "grade_a_criteria": {
+      "type": "string",
+      "description": "What constitutes an A (Competent) grade for this aspect"
+    },
+    "grade_b_criteria": {
+      "type": "string",
+      "description": "What constitutes a B (Competent with Development) grade for this aspect"
+    },
+    "grade_c_criteria": {
+      "type": "string",
+      "description": "What constitutes a C (Medium Risk) grade for this aspect"
+    },
+    "grade_d_criteria": {
+      "type": "string",
+      "description": "What constitutes a D (High Risk) grade for this aspect"
+    },
+    "additional_guidance": {
+      "type": "string",
+      "description": "Extra context or watch-points for the AI assessor"
+    }
+  },
+  "required": [
+    "aspect_id",
+    "aspect_name",
+    "grade_a_criteria",
+    "grade_d_criteria"
+  ]
+}
