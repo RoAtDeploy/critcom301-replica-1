@@ -41,6 +41,7 @@ export default function UserManagement() {
 
   const roleBadge = (role) => {
     if (role === "admin") return <Badge className="bg-primary/10 text-primary border-primary/20">Admin</Badge>;
+    if (role === "line_manager") return <Badge className="bg-chart-3/10 text-chart-3 border-chart-3/20">Line Manager</Badge>;
     return <Badge variant="secondary">Assessor</Badge>;
   };
 
@@ -67,6 +68,7 @@ export default function UserManagement() {
             className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <option value="assessor">Assessor</option>
+            <option value="line_manager">Line Manager</option>
             <option value="admin">Admin</option>
           </select>
           <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()} className="gap-2 shrink-0">
@@ -115,6 +117,7 @@ export default function UserManagement() {
                     className="h-7 rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="assessor">Assessor</option>
+                    <option value="line_manager">Line Manager</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
@@ -127,7 +130,8 @@ export default function UserManagement() {
       <div className="p-4 rounded-xl border border-border bg-muted/30 space-y-1">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> Role Permissions</p>
         <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Admin</span> — Full access: settings, AI calibration, user management, all reports.</p>
-        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Assessor</span> — Can create and manage reports and staff; no access to admin settings or user management.</p>
+        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Assessor</span> — Can create and manage reports and staff; no access to admin settings or user management. Also available as a line manager.</p>
+        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Line Manager</span> — Appears in the line manager dropdown when assigning staff. Assessors can also serve as line managers.</p>
       </div>
     </div>
   );

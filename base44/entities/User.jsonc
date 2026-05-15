@@ -6,9 +6,11 @@
       "type": "string",
       "enum": [
         "admin",
-        "assessor"
+        "assessor",
+        "line_manager"
       ],
       "default": "assessor"
     }
-  }
+  },
+  "required": []
 }

@@ -22,6 +22,7 @@ export function AdminProvider({ children }) {
   const [roles, setRoles] = useState(DEFAULTS.roles);
   const [departments, setDepartments] = useState(DEFAULTS.departments);
   const [lineManagers, setLineManagers] = useState(DEFAULTS.lineManagers);
+  const [lineManagerUsers, setLineManagerUsers] = useState([]); // actual User records with line_manager or assessor role
   const [callTypes, setCallTypes] = useState(DEFAULTS.callTypes);
   const [actionTemplates, setActionTemplates] = useState(DEFAULTS.actionTemplates);
   const [staffList, setStaffList] = useState([]);
@@ -39,20 +40,24 @@ export function AdminProvider({ children }) {
     Promise.all([
       base44.entities.StaffMember.list("-created_date"),
       base44.entities.AdminConfig.list(),
-    ]).then(([staff, configs]) => {
+      base44.entities.User.list(),
+    ]).then(([staff, configs, users]) => {
       setStaffList(staff);
 
       const rolesConfig = configs.find((c) => c.key === "roles");
       const depsConfig = configs.find((c) => c.key === "departments");
-      const lmConfig = configs.find((c) => c.key === "lineManagers");
       const ctConfig = configs.find((c) => c.key === "callTypes");
       const atConfig = configs.find((c) => c.key === "actionTemplates");
 
       if (rolesConfig?.values?.length) setRoles(rolesConfig.values);
       if (depsConfig?.values?.length) setDepartments(depsConfig.values);
-      if (lmConfig?.values?.length) setLineManagers(lmConfig.values);
       if (ctConfig?.values?.length) setCallTypes(ctConfig.values);
       if (atConfig?.values?.length) setActionTemplates(atConfig.values);
+
+      // Line managers come from users with role 'line_manager' OR 'assessor' (dual role)
+      const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
+      setLineManagerUsers(lmUsers);
+      setLineManagers(lmUsers.map((u) => u.full_name).filter(Boolean));
 
       setStaffLoading(false);
     });
@@ -164,7 +169,7 @@ export function AdminProvider({ children }) {
 
   return (
     <AdminContext.Provider value={{
-      departments, lineManagers, roles, callTypes, actionTemplates,
+      departments, lineManagers, lineManagerUsers, roles, callTypes, actionTemplates,
       staffList, staffLoading,
       addStaff, updateStaff, refreshStaff,
       addItem, removeItem, editItem,
