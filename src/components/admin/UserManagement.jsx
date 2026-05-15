@@ -16,8 +16,15 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const all = await base44.entities.User.list();
-    setUsers(all);
+    const [appUsers, pendingUsers] = await Promise.all([
+      base44.entities.User.list(),
+      base44.entities.PendingUser.list()
+    ]);
+    const combined = [
+      ...appUsers,
+      ...pendingUsers.map(p => ({ ...p, is_pending: true }))
+    ];
+    setUsers(combined);
     setLoading(false);
   };
 
@@ -29,20 +36,25 @@ export default function UserManagement() {
     setSuccess("");
     setInviting(true);
     try {
-      // Invite with base role (user or admin only)
-      const baseRole = form.role === "admin" ? "admin" : "user";
-      await base44.users.inviteUser(form.email.trim(), baseRole);
-      
-      // Add optimistically to local state immediately
-      const optimisticUser = {
-        id: `optimistic-${Math.random().toString(36).slice(2)}`,
+      // Create pending user placeholder in database
+      const pendingUser = await base44.entities.PendingUser.create({
         email: form.email.trim(),
-        full_name: form.firstName && form.lastName ? `${form.firstName} ${form.lastName}` : form.email.trim(),
-        role: form.role === "admin" ? "admin" : "user",
-      };
-      setUsers(prev => [...prev, optimisticUser]);
+        firstName: form.firstName,
+        lastName: form.lastName,
+        role: form.role,
+        status: "pending"
+      });
       
-      setSuccess(`${form.email.trim()} added. Setup email sent — they can be assigned immediately.`);
+      // Show in UI immediately
+      setUsers(prev => [...prev, {
+        id: pendingUser.id,
+        email: pendingUser.email,
+        full_name: form.firstName && form.lastName ? `${form.firstName} ${form.lastName}` : form.email.trim(),
+        role: form.role,
+        is_pending: true
+      }]);
+      
+      setSuccess(`${form.email.trim()} added as pending. Ready to invite when needed.`);
       setForm({ firstName: "", lastName: "", email: "", role: "assessor" });
       
       // Refresh line managers in AdminContext so dropdown updates
@@ -54,9 +66,16 @@ export default function UserManagement() {
   };
 
   const handleRoleChange = async (userId, newRole) => {
-    // Skip updates for optimistic users (temporary IDs)
-    if (userId.startsWith("optimistic-")) return;
-    await base44.entities.User.update(userId, { role: newRole });
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    
+    // Update pending user
+    if (user.is_pending) {
+      await base44.entities.PendingUser.update(userId, { role: newRole });
+    } else {
+      // Update app user
+      await base44.entities.User.update(userId, { role: newRole });
+    }
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
   };
 
@@ -135,16 +154,17 @@ export default function UserManagement() {
         ) : (
           <ul className="divide-y divide-border">
             {users.map(user => (
-              <li key={user.id} className="flex items-center gap-3 px-5 py-3">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold text-primary">
+              <li key={user.id} className={`flex items-center gap-3 px-5 py-3 ${user.is_pending ? "bg-muted/30" : ""}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${user.is_pending ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
+                  <span className="text-xs font-bold">
                     {(user.full_name || user.email || "?")[0].toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{user.full_name || "—"}</p>
+                  <p className={`text-sm font-medium truncate ${user.is_pending ? "text-muted-foreground" : ""}`}>{user.full_name || "—"}</p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                     <Mail className="w-3 h-3 shrink-0" />{user.email}
+                    {user.is_pending && <span className="ml-1 text-xs font-medium text-chart-3">Pending</span>}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

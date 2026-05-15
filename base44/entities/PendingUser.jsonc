@@ -1,0 +1,37 @@
+{
+  "name": "PendingUser",
+  "type": "object",
+  "properties": {
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "assessor",
+        "line_manager",
+        "admin"
+      ],
+      "default": "assessor"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "invited"
+      ],
+      "default": "pending",
+      "description": "Whether user has been invited to the app"
+    }
+  },
+  "required": [
+    "email"
+  ]
+}
