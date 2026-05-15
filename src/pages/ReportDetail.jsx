@@ -285,7 +285,7 @@ export default function ReportDetail() {
               {report.status === "sent" && (
                 <div className="flex items-center gap-2 text-xs text-accent">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Sent to {report.staff_email}</span>
+                  <span>Sent to {report.staff_email || "staff member"}</span>
                   <a href={`/staff-review/${report.id}`} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-foreground underline">
                     <ExternalLink className="w-3 h-3" /> Preview staff view
                   </a>
