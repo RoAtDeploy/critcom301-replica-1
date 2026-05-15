@@ -36,26 +36,35 @@ export function AdminProvider({ children }) {
   }, []);
 
   const refreshLineManagers = useCallback(async () => {
-    const users = await base44.entities.User.list();
+    const [users, pendingUsers] = await Promise.all([
+      base44.entities.User.list(),
+      base44.entities.PendingUser.list(),
+    ]);
     const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
+    const lmPending = pendingUsers.filter((u) => u.role === "line_manager" || u.role === "assessor");
     setLineManagerUsers(lmUsers);
-    const displayNames = lmUsers
-      .map((u) => {
+    const displayNames = [
+      ...lmUsers.map((u) => {
         if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
         if (u.full_name) return u.full_name;
         return u.email;
-      })
-      .filter(Boolean);
+      }),
+      ...lmPending.map((u) => {
+        if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
+        return u.email;
+      }),
+    ].filter(Boolean);
     setLineManagers(displayNames);
   }, []);
 
   // Load everything from DB on mount
   useEffect(() => {
     const loadData = async () => {
-      const [staff, configs, users] = await Promise.all([
+      const [staff, configs, users, pendingUsers] = await Promise.all([
         base44.entities.StaffMember.list("-created_date"),
         base44.entities.AdminConfig.list(),
         base44.entities.User.list(),
+        base44.entities.PendingUser.list(),
       ]);
       setStaffList(staff);
 
@@ -71,25 +80,36 @@ export function AdminProvider({ children }) {
 
       // Line managers come from users with role 'line_manager' OR 'assessor' (dual role)
       const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
+      const lmPending = pendingUsers.filter((u) => u.role === "line_manager" || u.role === "assessor");
       setLineManagerUsers(lmUsers);
-      const displayNames = lmUsers
-        .map((u) => {
+      const displayNames = [
+        ...lmUsers.map((u) => {
           if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
           if (u.full_name) return u.full_name;
           return u.email;
-        })
-        .filter(Boolean);
+        }),
+        ...lmPending.map((u) => {
+          if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
+          return u.email;
+        }),
+      ].filter(Boolean);
       setLineManagers(displayNames);
 
       setStaffLoading(false);
     };
     loadData();
 
-    // Subscribe to User changes to auto-refresh line managers
-    const unsubscribe = base44.entities.User.subscribe(() => {
+    // Subscribe to User and PendingUser changes to auto-refresh line managers
+    const unsubscribeUsers = base44.entities.User.subscribe(() => {
       loadData();
     });
-    return unsubscribe;
+    const unsubscribePending = base44.entities.PendingUser.subscribe(() => {
+      loadData();
+    });
+    return () => {
+      unsubscribeUsers();
+      unsubscribePending();
+    };
   }, []);
 
   // Helper: upsert a config record by key
