@@ -34,7 +34,7 @@ export default function ActionDeadlineBadge({ report, className = "" }) {
     return (
       <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 ${className}`}>
         <Clock className="w-3 h-3" />
-        {days !== null && days > 0 ? `${days}d left` : "Due today"}
+        {days !== null ? `Due in ${days} day${days === 1 ? "" : "s"}` : "Action Due"}
       </span>
     );
   }
