@@ -248,7 +248,7 @@ export default function StaffDetail() {
         <CardHeader className="flex flex-row items-center justify-between pb-3 cursor-pointer" onClick={() => setReportsOpen(o => !o)}>
           <CardTitle className="text-base flex items-center gap-2">
             <FileText className="w-4 h-4 text-muted-foreground" />
-            Reports ({reports.filter(r => r.status === "saved").length} saved, {reports.filter(r => r.status !== "saved").length} drafts)
+            Reports ({reports.length})
           </CardTitle>
           <div className="flex items-center gap-2">
             <Link to={`/reports/new?staffId=${id}`} onClick={e => e.stopPropagation()}>
@@ -259,37 +259,74 @@ export default function StaffDetail() {
             {reportsOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </div>
         </CardHeader>
-        {reportsOpen && <CardContent className="space-y-2">
-          {reports.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No reports yet for this staff member.</p>
-          ) : (
-            reports.map((report) => (
-              <Link key={report.id} to={`/reports/${report.id}`}>
-                <div className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-primary" />
+        {reportsOpen && (
+          <CardContent className="space-y-4">
+            {reports.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No reports yet for this staff member.</p>
+            ) : (() => {
+              const openReports = reports.filter(r => r.status !== "signed_off");
+              const completedReports = reports.filter(r => r.status === "signed_off");
+
+              const STATUS_LABELS = {
+                draft: { label: "Draft", className: "bg-muted text-muted-foreground border-border" },
+                saved: { label: "Saved", className: "bg-primary/10 text-primary border-primary/20" },
+                sent: { label: "Sent", className: "bg-chart-3/10 text-chart-3 border-chart-3/20" },
+                staff_reviewed: { label: "Staff Reviewed", className: "bg-chart-5/10 text-chart-5 border-chart-5/20" },
+                signed_off: { label: "Signed Off", className: "bg-accent/10 text-accent border-accent/20" },
+              };
+
+              const ReportRow = ({ report }) => {
+                const statusCfg = STATUS_LABELS[report.status] || STATUS_LABELS.draft;
+                return (
+                  <Link key={report.id} to={`/reports/${report.id}`}>
+                    <div className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{report.call_type || "Call Report"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {report.other_role ? `With ${report.other_role}` : report.role || "—"}
+                            {report.call_date ? ` · ${new Date(report.call_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className={statusCfg.className}>
+                        {statusCfg.label}
+                      </Badge>
                     </div>
+                  </Link>
+                );
+              };
+
+              return (
+                <>
+                  {openReports.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium">{report.call_type || "Call Report"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {report.other_role ? `With ${report.other_role}` : report.role || "—"}
-                        {report.call_date ? ` · ${new Date(report.call_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}
-                      </p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">Open Assessments ({openReports.length})</p>
+                      <div className="space-y-1">
+                        {openReports.map(r => <ReportRow key={r.id} report={r} />)}
+                      </div>
                     </div>
-                  </div>
-                  <Badge variant="secondary" className={
-                    report.status === "saved"
-                      ? "bg-accent/10 text-accent border-accent/20"
-                      : "bg-muted text-muted-foreground border-border"
-                  }>
-                    {report.status === "saved" ? "Saved" : "Draft"}
-                  </Badge>
-                </div>
-              </Link>
-            ))
-          )}
-        </CardContent>}
+                  )}
+                  {completedReports.length > 0 && (
+                    <div>
+                      {openReports.length > 0 && <div className="border-t border-border/40 my-2" />}
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">Completed ({completedReports.length})</p>
+                      <div className="space-y-1">
+                        {completedReports.map(r => <ReportRow key={r.id} report={r} />)}
+                      </div>
+                    </div>
+                  )}
+                  {openReports.length === 0 && completedReports.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-8">No reports yet.</p>
+                  )}
+                </>
+              );
+            })()}
+          </CardContent>
+        )}
       </Card>
       {/* Calls from Monitoring on Mass */}
       <Card className="border-border/50">
