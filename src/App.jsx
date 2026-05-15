@@ -11,7 +11,6 @@ import Dashboard from '@/pages/Dashboard';
 import StaffMembers from '@/pages/StaffMembers';
 import AddStaff from '@/pages/AddStaff';
 import GenerateReport from '@/pages/GenerateReport.jsx';
-import ActionItems from '@/pages/ActionItems';
 import Admin from '@/pages/Admin';
 import StaffDetail from '@/pages/StaffDetail';
 import ReportDetail from '@/pages/ReportDetail';
@@ -50,7 +49,6 @@ const AuthenticatedApp = () => {
         <Route path="/staff/:id" element={<StaffDetail />} />
         <Route path="/reports/new" element={<GenerateReport />} />
         <Route path="/reports/:id" element={<ReportDetail />} />
-        <Route path="/actions" element={<ActionItems />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/monitoring" element={<MonitoringOnMass />} />
         <Route path="/open-assessments" element={<OpenAssessments />} />

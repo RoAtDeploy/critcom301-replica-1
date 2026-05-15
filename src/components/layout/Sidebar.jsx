@@ -3,7 +3,6 @@ import {
   LayoutDashboard, 
   Users, 
   FileText, 
-  ListChecks,
   Headphones,
   ChevronLeft,
   ChevronRight,
@@ -21,7 +20,6 @@ const navItems = [
   { label: "Open Assessments", icon: ClipboardList, path: "/open-assessments" },
   { label: "Staff Members", icon: Users, path: "/staff" },
   { label: "Generate Report", icon: FileText, path: "/reports/new" },
-  { label: "Action Items", icon: ListChecks, path: "/actions" },
   { label: "Monitoring on Mass", icon: Radio, path: "/monitoring" },
 ];
 
