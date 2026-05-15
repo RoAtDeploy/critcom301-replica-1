@@ -22,7 +22,11 @@ export default function UserManagement() {
     ]);
     const combined = [
       ...appUsers,
-      ...pendingUsers.map(p => ({ ...p, is_pending: true }))
+      ...pendingUsers.map(p => ({
+        ...p,
+        full_name: p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : p.email,
+        is_pending: true
+      }))
     ];
     setUsers(combined);
     setLoading(false);
