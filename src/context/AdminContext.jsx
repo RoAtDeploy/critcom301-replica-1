@@ -37,11 +37,12 @@ export function AdminProvider({ children }) {
 
   // Load everything from DB on mount
   useEffect(() => {
-    Promise.all([
-      base44.entities.StaffMember.list("-created_date"),
-      base44.entities.AdminConfig.list(),
-      base44.entities.User.list(),
-    ]).then(([staff, configs, users]) => {
+    const loadData = async () => {
+      const [staff, configs, users] = await Promise.all([
+        base44.entities.StaffMember.list("-created_date"),
+        base44.entities.AdminConfig.list(),
+        base44.entities.User.list(),
+      ]);
       setStaffList(staff);
 
       const rolesConfig = configs.find((c) => c.key === "roles");
@@ -57,10 +58,24 @@ export function AdminProvider({ children }) {
       // Line managers come from users with role 'line_manager' OR 'assessor' (dual role)
       const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
       setLineManagerUsers(lmUsers);
-      setLineManagers(lmUsers.map((u) => u.full_name).filter(Boolean));
+      const displayNames = lmUsers
+        .map((u) => {
+          if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
+          if (u.full_name) return u.full_name;
+          return u.email;
+        })
+        .filter(Boolean);
+      setLineManagers(displayNames);
 
       setStaffLoading(false);
+    };
+    loadData();
+
+    // Subscribe to User changes to auto-refresh line managers
+    const unsubscribe = base44.entities.User.subscribe(() => {
+      loadData();
     });
+    return unsubscribe;
   }, []);
 
   // Helper: upsert a config record by key

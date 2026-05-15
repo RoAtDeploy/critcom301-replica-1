@@ -10,6 +10,12 @@
         "line_manager"
       ],
       "default": "assessor"
+    },
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
     }
   },
   "required": []

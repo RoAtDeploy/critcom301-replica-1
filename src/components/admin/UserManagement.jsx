@@ -35,10 +35,13 @@ export default function UserManagement() {
       const allUsers = await base44.entities.User.list();
       const newUser = allUsers.find(u => u.email === form.email.trim());
       
-      // If custom role, update it
-      if (newUser && form.role !== baseRole) {
-        await base44.entities.User.update(newUser.id, { role: form.role });
-        newUser.role = form.role;
+      // Update role and name fields
+      if (newUser) {
+        const updates = { role: form.role };
+        if (form.firstName) updates.firstName = form.firstName;
+        if (form.lastName) updates.lastName = form.lastName;
+        await base44.entities.User.update(newUser.id, updates);
+        Object.assign(newUser, updates);
       }
       
       // Add to list immediately so they're available right away
