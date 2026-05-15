@@ -35,7 +35,7 @@ export default function MonitoringOnMass() {
     base44.entities.StaffMember.list().then(setStaffMembers).catch(() => {});
     // Load existing recordings from DB on mount
     base44.entities.Recording.list("-created_date", 50).then(recs => {
-      setProcessed(recs.map(r => ({ ...r, _source: "db" })));
+      setProcessed(recs.map(r => ({ ...r, _source: "db", objectUrl: undefined })));
     }).catch(() => {});
   }, []);
 

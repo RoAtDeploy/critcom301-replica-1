@@ -98,13 +98,14 @@ function AudioPlayer({ url, name, expanded = false }) {
     return `${m}:${sec}`;
   };
 
-  if (!url) return null;
+  const resolvedUrl = url || null;
+  if (!resolvedUrl) return null;
 
   return (
     <div className={cn("flex items-center gap-2", expanded && "w-full")} onClick={(e) => e.stopPropagation()}>
       <audio
         ref={audioRef}
-        src={url}
+        src={resolvedUrl}
         onTimeUpdate={() => setProgress(audioRef.current?.currentTime || 0)}
         onLoadedMetadata={() => { setDuration(audioRef.current?.duration || 0); setError(false); }}
         onEnded={() => setPlaying(false)}
@@ -206,8 +207,8 @@ export default function RecordingRow({ recording, onGradeOverride, onGenerateRep
           </button>
 
           {/* Audio player (collapsed) */}
-          {(recording.objectUrl || recording.audio_url) && !open && (
-            <AudioPlayer url={recording.objectUrl || recording.audio_url} name={recording.name} />
+          {(recording.objectUrl ?? recording.audio_url) && !open && (
+            <AudioPlayer url={recording.objectUrl ?? recording.audio_url} name={recording.name} />
           )}
 
           {/* Grade description */}
@@ -269,9 +270,9 @@ export default function RecordingRow({ recording, onGradeOverride, onGenerateRep
         {open && (
           <div className="px-4 pb-4 pt-0 border-t border-border/30 space-y-3">
             {/* Audio player (expanded) */}
-            {(recording.objectUrl || recording.audio_url) && (
+            {(recording.objectUrl ?? recording.audio_url) && (
               <div className="pt-3">
-                <AudioPlayer url={recording.objectUrl || recording.audio_url} name={recording.name} expanded />
+                <AudioPlayer url={recording.objectUrl ?? recording.audio_url} name={recording.name} expanded />
               </div>
             )}
 
