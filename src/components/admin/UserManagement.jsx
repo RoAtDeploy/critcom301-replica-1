@@ -33,16 +33,20 @@ export default function UserManagement() {
       const baseRole = form.role === "admin" ? "admin" : "user";
       await base44.users.inviteUser(form.email.trim(), baseRole);
       
+      // Add optimistically to local state immediately
+      const optimisticUser = {
+        id: Math.random().toString(36),
+        email: form.email.trim(),
+        full_name: form.firstName && form.lastName ? `${form.firstName} ${form.lastName}` : form.email.trim(),
+        role: form.role === "admin" ? "admin" : "user",
+      };
+      setUsers(prev => [...prev, optimisticUser]);
+      
       setSuccess(`${form.email.trim()} added. Setup email sent — they can be assigned immediately.`);
       setForm({ firstName: "", lastName: "", email: "", role: "assessor" });
       
-      // Fetch fresh users list after a delay so real user shows up
-      setTimeout(async () => {
-        const allUsers = await base44.entities.User.list();
-        setUsers(allUsers);
-        // Refresh line managers in AdminContext so dropdown updates
-        await refreshLineManagers();
-      }, 1500);
+      // Refresh line managers in AdminContext so dropdown updates
+      await refreshLineManagers();
     } catch (err) {
       setError(err.message || "Failed to add user.");
     }
