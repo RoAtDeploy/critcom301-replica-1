@@ -1,15 +1,15 @@
-import { Users, FileText, ListChecks, TrendingUp, Settings2, ArrowRight } from "lucide-react";
+import { Users, FileText, ListChecks } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import RecentReports from "@/components/dashboard/RecentReports";
 import RecentActions from "@/components/dashboard/RecentActions";
 import AdminSummary from "@/components/dashboard/AdminSummary";
+import CallTimeCard from "@/components/dashboard/CallTimeCard";
 import { motion } from "framer-motion";
 
 const stats = [
   { title: "Total Staff", value: "24", subtitle: "Active members", icon: Users, trend: "+3", trendUp: true, color: "indigo" },
   { title: "Reports Generated", value: "156", subtitle: "This month", icon: FileText, trend: "12%", trendUp: true, color: "teal" },
   { title: "Open Actions", value: "18", subtitle: "Across all staff", icon: ListChecks, trend: "5", trendUp: false, color: "orange" },
-  { title: "Avg. Score", value: "82%", subtitle: "Call quality", icon: TrendingUp, trend: "4%", trendUp: true, color: "rose" },
 ];
 
 const containerVariants = {
@@ -42,6 +42,7 @@ export default function Dashboard() {
         {stats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}
+        <CallTimeCard />
       </motion.div>
 
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
