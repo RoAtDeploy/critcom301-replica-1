@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
-import { CheckCircle2, AlertTriangle, MessageSquare, ShieldCheck, Sparkles, User, Calendar, Phone, Loader2 } from "lucide-react";
+import { CheckCircle2, AlertTriangle, MessageSquare, ShieldCheck, Sparkles, User, Calendar, Phone, Loader2, PenLine } from "lucide-react";
+import SignaturePad from "@/components/report/SignaturePad";
 
 const GRADE_CONFIG = {
   A: { color: "bg-emerald-100 text-emerald-700 border-emerald-300", label: "A", description: "No Action Required" },
@@ -37,6 +38,7 @@ export default function StaffReview() {
   const [items, setItems] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [signature, setSignature] = useState(null);
 
   useEffect(() => {
     base44.functions.invoke("staffReviewReport", { reportId: id, action: "get" }).then((res) => {
@@ -56,7 +58,7 @@ export default function StaffReview() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await base44.functions.invoke("staffReviewReport", { reportId: id, action: "submit", items });
+    await base44.functions.invoke("staffReviewReport", { reportId: id, action: "submit", items, signature });
     setSubmitted(true);
     setSubmitting(false);
   };
@@ -172,11 +174,17 @@ export default function StaffReview() {
               {feedbackItems.map((item, i) => {
                 const cfg = GRADE_CONFIG[item.aspect_grade];
                 return (
-                  <div key={item.aspect_id} className="rounded-lg border border-border p-3 space-y-1.5">
+                  <div key={item.aspect_id} className="rounded-lg border border-border p-3 space-y-2">
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex items-center justify-center rounded border w-6 h-6 text-xs font-bold shrink-0 ${cfg.color}`}>{cfg.label}</span>
                       <span className="text-sm font-medium">{item.aspect_name}</span>
                     </div>
+                    {item.include_ai_feedback !== false && item.ai_reasoning && (
+                      <div className="flex gap-2 pl-8">
+                        <Sparkles className="w-3 h-3 text-primary shrink-0 mt-0.5" />
+                        <p className="text-xs text-foreground/70 leading-relaxed">{item.ai_reasoning}</p>
+                      </div>
+                    )}
                     {item.reviewer_comment && (
                       <p className="text-sm text-foreground/75 leading-relaxed pl-8">{item.reviewer_comment}</p>
                     )}
@@ -205,8 +213,14 @@ export default function StaffReview() {
                   <div key={item.aspect_id} className={`rounded-lg border p-4 space-y-3 ${submitted ? "opacity-75" : ""}`}>
                     <div className="flex items-start gap-2">
                       <span className={`inline-flex items-center justify-center rounded border w-6 h-6 text-xs font-bold shrink-0 mt-0.5 ${cfg.color}`}>{cfg.label}</span>
-                      <div className="flex-1">
+                      <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium">{item.aspect_name}</p>
+                        {item.include_ai_feedback !== false && item.ai_reasoning && (
+                          <div className="flex gap-1.5">
+                            <Sparkles className="w-3 h-3 text-primary shrink-0 mt-0.5" />
+                            <p className="text-xs text-foreground/70 leading-relaxed">{item.ai_reasoning}</p>
+                          </div>
+                        )}
                         {item.reviewer_comment && (
                           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.reviewer_comment}</p>
                         )}
@@ -244,11 +258,27 @@ export default function StaffReview() {
           </Card>
         )}
 
+        {/* Signature */}
+        {!submitted && (
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <PenLine className="w-4 h-4 text-muted-foreground" />
+                Signature
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">By signing below, you confirm you have read and acknowledged all feedback and actions in this report.</p>
+            </CardHeader>
+            <CardContent>
+              <SignaturePad onChange={setSignature} />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Submit */}
         {!submitted ? (
           <Button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || !signature}
             className="w-full bg-primary hover:bg-primary/90"
             size="lg"
           >

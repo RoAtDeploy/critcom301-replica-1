@@ -109,6 +109,15 @@
           "reviewer_comment": {
             "type": "string"
           },
+          "ai_reasoning": {
+            "type": "string",
+            "description": "AI-generated reasoning for this aspect"
+          },
+          "include_ai_feedback": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to show AI reasoning to the staff member"
+          },
           "completed": {
             "type": "boolean",
             "default": false
@@ -118,6 +127,10 @@
           }
         }
       }
+    },
+    "staff_signature": {
+      "type": "string",
+      "description": "Base64 PNG of the staff member's signature"
     },
     "staff_reviewed_at": {
       "type": "string",

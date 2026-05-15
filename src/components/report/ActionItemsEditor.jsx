@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, MessageSquare, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { CheckCircle2, MessageSquare, AlertTriangle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const GRADE_CONFIG = {
@@ -18,6 +19,7 @@ function AspectActionRow({ item, actionTemplates, onChange }) {
   const grade = item.aspect_grade;
   const isCritical = grade === "C" || grade === "D";
   const cfg = GRADE_CONFIG[grade] || GRADE_CONFIG["n/a"];
+  const includeAI = item.include_ai_feedback !== false; // default true
 
   return (
     <div className={`rounded-lg border overflow-hidden`}>
@@ -42,6 +44,27 @@ function AspectActionRow({ item, actionTemplates, onChange }) {
 
       {open && (
         <div className="px-4 pb-4 border-t border-border/30 space-y-3 pt-3">
+
+          {/* AI Reasoning preview + toggle */}
+          {item.ai_reasoning && (
+            <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2.5 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <Sparkles className="w-3 h-3" />
+                  AI Feedback
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{includeAI ? "Visible to staff" : "Hidden from staff"}</span>
+                  <Switch
+                    checked={includeAI}
+                    onCheckedChange={(v) => onChange({ ...item, include_ai_feedback: v })}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-foreground/75 leading-relaxed">{item.ai_reasoning}</p>
+            </div>
+          )}
+
           {isCritical ? (
             <>
               <div>
@@ -119,15 +142,21 @@ export default function ActionItemsEditor({ report, onReportUpdate, actionTempla
   const [items, setItems] = useState(() =>
     relevantAspects.map(a => {
       const g = a.override?.grade ?? a.grade;
-      return existingMap[a.id] || {
+      const existing = existingMap[a.id];
+      return {
         aspect_id: a.id,
         aspect_name: a.name,
         aspect_grade: g,
         action: "",
         action_type: "predefined",
         reviewer_comment: "",
+        ai_reasoning: a.reasoning || "",
+        include_ai_feedback: true,
         completed: false,
         staff_comment: "",
+        ...(existing || {}),
+        // Always keep ai_reasoning in sync with latest assessment
+        ai_reasoning: a.reasoning || existing?.ai_reasoning || "",
       };
     })
   );
