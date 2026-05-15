@@ -18,14 +18,24 @@ import { useAdmin } from "@/context/AdminContext";
 import ActionDeadlineBadge from "@/components/report/ActionDeadlineBadge";
 
 const getInitials = (name) => name.split(" ").map((n) => n[0]).join("");
-const scoreColor = (score) => {
-  if (score >= 85) return "text-accent";
-  if (score >= 70) return "text-chart-3";
+const scoreToGrade = (score) => {
+  if (score >= 85) return "A";
+  if (score >= 70) return "B";
+  if (score >= 55) return "C";
+  return "D";
+};
+const gradeColor = (score) => {
+  const grade = scoreToGrade(score);
+  if (grade === "A") return "text-accent";
+  if (grade === "B") return "text-chart-3";
+  if (grade === "C") return "text-chart-3";
   return "text-destructive";
 };
-const scoreBg = (score) => {
-  if (score >= 85) return "bg-accent/10 text-accent border-accent/20";
-  if (score >= 70) return "bg-chart-3/10 text-chart-3 border-chart-3/20";
+const gradeBg = (score) => {
+  const grade = scoreToGrade(score);
+  if (grade === "A") return "bg-accent/10 text-accent border-accent/20";
+  if (grade === "B") return "bg-chart-3/10 text-chart-3 border-chart-3/20";
+  if (grade === "C") return "bg-chart-3/10 text-chart-3 border-chart-3/20";
   return "bg-destructive/10 text-destructive border-destructive/20";
 };
 
@@ -235,8 +245,8 @@ export default function StaffDetail() {
                   <TrendingUp className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Avg Score</p>
-                  <p className={`font-semibold mt-0.5 ${scoreColor(member.avgScore)}`}>{member.avgScore}%</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Avg Grade</p>
+                  <p className={`font-semibold mt-0.5 ${gradeColor(member.avgScore)}`}>{scoreToGrade(member.avgScore)}</p>
                 </div>
               </div>
             </div>
