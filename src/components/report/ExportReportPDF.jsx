@@ -240,20 +240,23 @@ export default function ExportReportPDF({ report }) {
       y += 4;
 
       // ── Sign-Off ──────────────────────────────────────────────────────
-      y = checkPageBreak(doc, y, 20);
+      y = checkPageBreak(doc, y, 28);
       y = sectionHeader(doc, "Assessor Sign-Off", y, pageW);
       doc.setFillColor(220, 252, 231);
-      doc.roundedRect(margin, y - 2, contentW, 16, 2, 2, "F");
+      doc.roundedRect(margin, y - 2, contentW, 22, 2, 2, "F");
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(21, 128, 61);
-      doc.text("Report Finalised", margin + 4, y + 4);
+      doc.text("Report Finalised", margin + 4, y + 5);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(30, 30, 30);
-      const signOffText = `Signed off by ${report.signed_off_by || "Assessor"}${report.signed_off_at ? " on " + new Date(report.signed_off_at).toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}`;
-      doc.text(signOffText, margin + 4, y + 10);
-      y += 20;
+      doc.text(`Signed off by: ${report.signed_off_by || "Assessor"}`, margin + 4, y + 12);
+      if (report.signed_off_at) {
+        const signOffDate = new Date(report.signed_off_at).toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+        doc.text(`Date & time: ${signOffDate}`, margin + 4, y + 18);
+      }
+      y += 26;
 
       // ── Footer on every page ──────────────────────────────────────────
       const totalPages = doc.internal.getNumberOfPages();
