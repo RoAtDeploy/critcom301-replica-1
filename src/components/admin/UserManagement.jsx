@@ -26,10 +26,26 @@ export default function UserManagement() {
     setError("");
     setSuccess("");
     setInviting(true);
-    await base44.users.inviteUser(form.email.trim(), form.role);
-    setSuccess(`Setup email sent to ${form.email.trim()}. They'll be prompted to set their password.`);
-    setForm({ firstName: "", lastName: "", email: "", role: "assessor" });
-    await fetchUsers();
+    try {
+      // Invite with base role (user or admin only)
+      const baseRole = form.role === "admin" ? "admin" : "user";
+      await base44.users.inviteUser(form.email.trim(), baseRole);
+      
+      // If custom role, update after invite
+      if (form.role !== baseRole) {
+        const allUsers = await base44.entities.User.list();
+        const newUser = allUsers.find(u => u.email === form.email.trim());
+        if (newUser) {
+          await base44.entities.User.update(newUser.id, { role: form.role });
+        }
+      }
+      
+      setSuccess(`Setup email sent to ${form.email.trim()}. They'll be prompted to set their password.`);
+      setForm({ firstName: "", lastName: "", email: "", role: "assessor" });
+      await fetchUsers();
+    } catch (err) {
+      setError(err.message || "Failed to add user.");
+    }
     setInviting(false);
   };
 
