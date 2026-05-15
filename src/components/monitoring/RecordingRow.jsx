@@ -79,14 +79,15 @@ function AudioPlayer({ url, name, expanded = false }) {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [error, setError] = useState(false);
 
   const toggle = (e) => {
     e.stopPropagation();
-    if (!audioRef.current) return;
+    if (!audioRef.current || error) return;
     if (playing) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch(() => setError(true));
     }
     setPlaying(!playing);
   };
@@ -97,22 +98,31 @@ function AudioPlayer({ url, name, expanded = false }) {
     return `${m}:${sec}`;
   };
 
+  if (!url) return null;
+
   return (
     <div className={cn("flex items-center gap-2", expanded && "w-full")} onClick={(e) => e.stopPropagation()}>
       <audio
         ref={audioRef}
         src={url}
         onTimeUpdate={() => setProgress(audioRef.current?.currentTime || 0)}
-        onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
+        onLoadedMetadata={() => { setDuration(audioRef.current?.duration || 0); setError(false); }}
         onEnded={() => setPlaying(false)}
+        onError={() => { setError(true); setPlaying(false); }}
+        preload="none"
       />
       <button
         onClick={toggle}
-        className="w-7 h-7 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center text-white transition-colors shrink-0"
+        className={cn(
+          "w-7 h-7 rounded-full flex items-center justify-center text-white transition-colors shrink-0",
+          error ? "bg-slate-300 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"
+        )}
+        title={error ? "Audio unavailable" : undefined}
       >
         {playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 ml-0.5" />}
       </button>
-      {duration > 0 && (
+      {error && <span className="text-xs text-muted-foreground">Audio unavailable</span>}
+      {!error && duration > 0 && (
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <div
             className="flex-1 h-2 bg-border rounded-full overflow-hidden cursor-pointer relative group"
@@ -136,6 +146,7 @@ function AudioPlayer({ url, name, expanded = false }) {
     </div>
   );
 }
+
 
 export default function RecordingRow({ recording, onGradeOverride, onGenerateReport }) {
   const [open, setOpen] = useState(false);
