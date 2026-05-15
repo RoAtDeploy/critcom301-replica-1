@@ -122,6 +122,10 @@
     "staff_reviewed_at": {
       "type": "string",
       "description": "ISO timestamp when staff submitted their review"
+    },
+    "sent_at": {
+      "type": "string",
+      "description": "ISO timestamp when the report was sent to staff"
     }
   },
   "required": [

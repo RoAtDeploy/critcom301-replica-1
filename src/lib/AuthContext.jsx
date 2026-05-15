@@ -54,6 +54,12 @@ export const AuthProvider = ({ children }) => {
         if (appError.status === 403 && appError.data?.extra_data?.reason) {
           const reason = appError.data.extra_data.reason;
           if (reason === 'auth_required') {
+            // Don't redirect to login for public staff-review pages
+            if (window.location.pathname.startsWith('/staff-review/')) {
+              setIsLoadingPublicSettings(false);
+              setIsLoadingAuth(false);
+              return;
+            }
             setAuthError({
               type: 'auth_required',
               message: 'Authentication required'
