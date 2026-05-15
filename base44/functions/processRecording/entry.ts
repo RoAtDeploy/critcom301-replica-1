@@ -32,14 +32,14 @@ function buildGradePrompt(guideline) {
 - B: Satisfactory but improvable. Most protocols followed. Minor gaps in technique.
 - C: Gives rise to concerns. Significant protocol variations. Limited non-technical skills.
 - D: Not acceptable. Little or no protocol adherence. Safety compromised.
-- X: Not safety-critical in nature. No work-related instructions or important information conveyed (e.g. wrong number, personal call, no meaningful dialogue, general conversation with no safety-critical content). Do NOT grade A-D if the call is out of scope.
-- n/a: Cannot be assessed (too short, unintelligible, silent recording).`;
+- X: ONLY use this when the call is UNAMBIGUOUSLY not safety-critical — e.g. a clearly wrong number with no work content, an obviously personal/social call with no operational relevance, or a call where there is no meaningful dialogue at all. When in doubt, grade A-D based on the content present. Do NOT assign X simply because a call is brief or informal.
+- n/a: Cannot be assessed (too short to judge, entirely unintelligible, silent/blank recording).`;
 
   return `You are a railway communications quality assessor. Based on the following transcript, assign an overall grade for the STAFF MEMBER's communication performance.
 
 ${guidelineText}
 
-IMPORTANT: If the call is not safety-critical in nature (wrong number, personal call, no instructions conveyed, no work-relevant content), assign grade X — do NOT attempt to grade it A-D.
+CRITICAL RULE: Grade X must only be used when you are absolutely certain the call has zero operational or safety relevance (wrong number, purely personal/social with no work content whatsoever, or completely empty). If there is ANY railway operational content, work-related discussion, or safety-relevant communication — even brief or informal — you MUST grade it A, B, C, or D. Default to grading A-D when uncertain. X is the exception, not the default.
 
 Respond with ONLY a JSON object in this exact format, no other text:
 {"grade": "A" | "B" | "C" | "D" | "X" | "n/a", "reasoning": "<one sentence explanation>"}
