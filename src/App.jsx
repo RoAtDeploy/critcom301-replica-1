@@ -17,6 +17,7 @@ import StaffDetail from '@/pages/StaffDetail';
 import ReportDetail from '@/pages/ReportDetail';
 import { AdminProvider } from '@/context/AdminContext';
 import MonitoringOnMass from '@/pages/MonitoringOnMass';
+import OpenAssessments from '@/pages/OpenAssessments';
 import StaffReview from '@/pages/StaffReview';
 import UserGuide from '@/pages/UserGuide';
 
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
         <Route path="/actions" element={<ActionItems />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/monitoring" element={<MonitoringOnMass />} />
+        <Route path="/open-assessments" element={<OpenAssessments />} />
         <Route path="/user-guide" element={<UserGuide />} />
       </Route>
       <Route path="/staff-review/:id" element={<StaffReview />} />

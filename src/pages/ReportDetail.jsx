@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, CheckCircle2, Sparkles, Send, RefreshCw, ExternalLink, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import ReportStageTracker from "@/components/report/ReportStageTracker";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import ActionItemsEditor from "@/components/report/ActionItemsEditor";
 import { useAdmin } from "@/context/AdminContext";
@@ -108,27 +109,8 @@ export default function ReportDetail() {
         </p>
       </div>
 
-      {/* Stage Indicator */}
-      {hasAssessment() && (
-        <div className="flex items-center gap-0">
-          {[
-            { num: 1, label: "Review Assessment", done: report.status !== "draft", active: report.status === "draft" },
-            { num: 2, label: "Actions & Feedback", done: ["sent","staff_reviewed","signed_off"].includes(report.status), active: report.status === "saved" },
-          ].map(({ num, label, done, active }, i, arr) => (
-            <div key={num} className="flex items-center flex-1">
-              <div className="flex items-center gap-2 flex-1">
-                <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                  done ? "bg-accent border-accent text-white" : active ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground"
-                }`}>
-                  {done ? <CheckCircle2 className="w-3.5 h-3.5" /> : <span className="text-xs font-bold">{num}</span>}
-                </div>
-                <span className={`text-sm font-medium ${active ? "text-foreground" : done ? "text-accent" : "text-muted-foreground"}`}>{label}</span>
-              </div>
-              {i < arr.length - 1 && <div className="w-8 h-px bg-border mx-2 shrink-0" />}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Stage Tracker */}
+      <ReportStageTracker status={report.status} />
 
       {/* Summary */}
       <Card className="border-border/50">

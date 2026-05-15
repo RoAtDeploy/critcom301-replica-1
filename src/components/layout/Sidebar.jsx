@@ -9,13 +9,15 @@ import {
   ChevronRight,
   Settings2,
   Radio,
-  BookOpen
+  BookOpen,
+  ClipboardList
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { label: "Open Assessments", icon: ClipboardList, path: "/open-assessments" },
   { label: "Staff Members", icon: Users, path: "/staff" },
   { label: "Generate Report", icon: FileText, path: "/reports/new" },
   { label: "Action Items", icon: ListChecks, path: "/actions" },
