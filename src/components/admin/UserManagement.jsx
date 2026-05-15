@@ -35,7 +35,7 @@ export default function UserManagement() {
       
       // Add optimistically to local state immediately
       const optimisticUser = {
-        id: Math.random().toString(36),
+        id: `optimistic-${Math.random().toString(36).slice(2)}`,
         email: form.email.trim(),
         full_name: form.firstName && form.lastName ? `${form.firstName} ${form.lastName}` : form.email.trim(),
         role: form.role === "admin" ? "admin" : "user",
@@ -54,6 +54,8 @@ export default function UserManagement() {
   };
 
   const handleRoleChange = async (userId, newRole) => {
+    // Skip updates for optimistic users (temporary IDs)
+    if (userId.startsWith("optimistic-")) return;
     await base44.entities.User.update(userId, { role: newRole });
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
   };
