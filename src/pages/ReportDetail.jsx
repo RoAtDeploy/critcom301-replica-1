@@ -8,6 +8,7 @@ import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phon
 import ReportStageTracker from "@/components/report/ReportStageTracker";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import ActionItemsEditor from "@/components/report/ActionItemsEditor";
+import ExportReportPDF from "@/components/report/ExportReportPDF";
 import { useAdmin } from "@/context/AdminContext";
 import { motion } from "framer-motion";
 
@@ -440,9 +441,9 @@ export default function ReportDetail() {
         {["staff_reviewed","signed_off"].includes(report.status) && (
           <div className="px-5 pb-5">
             {report.status === "signed_off" ? (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-accent/10 border border-accent/30">
-                <ShieldCheck className="w-5 h-5 text-accent shrink-0" />
-                <div>
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-accent/10 border border-accent/30">
+                <ShieldCheck className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                <div className="flex-1">
                   <p className="text-sm font-semibold text-accent">Report finalised</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Signed off by <span className="font-medium text-foreground">{report.signed_off_by || "Assessor"}</span>
@@ -450,6 +451,9 @@ export default function ReportDetail() {
                       <span> on {new Date(report.signed_off_at).toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                     )}. No further changes can be made.
                   </p>
+                  <div className="mt-3">
+                    <ExportReportPDF report={report} />
+                  </div>
                 </div>
               </div>
             ) : (
