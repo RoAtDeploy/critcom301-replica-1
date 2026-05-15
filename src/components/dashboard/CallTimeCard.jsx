@@ -45,7 +45,7 @@ export default function CallTimeCard() {
     <Card className="p-6 hover:shadow-lg transition-shadow duration-300 border-border/50">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">Total Call Time</p>
+          <p className="text-sm font-medium text-muted-foreground">Talk Time Analysed</p>
           <p className="text-3xl font-bold mt-2 tracking-tight">{allTimeLabel}</p>
           {lastMonthLabel && (
             <p className="text-sm text-muted-foreground mt-1">{lastMonthLabel}</p>
@@ -56,8 +56,8 @@ export default function CallTimeCard() {
         </div>
       </div>
       <div className="mt-4 flex items-center gap-1.5">
-        <span className="text-sm font-semibold text-muted-foreground">All time</span>
-        <span className="text-xs text-muted-foreground">· persisted across deletions</span>
+        <span className="text-sm font-semibold text-accent">↑ All time</span>
+        <span className="text-xs text-muted-foreground">· manually reviewed time saved</span>
       </div>
     </Card>
   );
