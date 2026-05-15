@@ -5,12 +5,8 @@ import RecentActions from "@/components/dashboard/RecentActions";
 import AdminSummary from "@/components/dashboard/AdminSummary";
 import CallTimeCard from "@/components/dashboard/CallTimeCard";
 import { motion } from "framer-motion";
-
-const stats = [
-  { title: "Total Staff", value: "24", subtitle: "Active members", icon: Users, trend: "+3", trendUp: true, color: "indigo" },
-  { title: "Reports Generated", value: "156", subtitle: "This month", icon: FileText, trend: "12%", trendUp: true, color: "teal" },
-  { title: "Open Actions", value: "18", subtitle: "Across all staff", icon: ListChecks, trend: "5", trendUp: false, color: "orange" },
-];
+import { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -26,6 +22,33 @@ const itemVariants = {
 };
 
 export default function Dashboard() {
+  const [staffCount, setStaffCount] = useState(null);
+  const [reportCount, setReportCount] = useState(null);
+  const [openActions, setOpenActions] = useState(null);
+
+  useEffect(() => {
+    Promise.all([
+      base44.entities.StaffMember.filter({ status: "active" }),
+      base44.entities.Report.list(),
+      base44.entities.Report.list(),
+    ]).then(([staff, reports]) => {
+      setStaffCount(staff.length);
+      setReportCount(reports.length);
+      // Count open (incomplete) action items across all reports
+      const open = reports.reduce((sum, r) => {
+        const items = r.action_items || [];
+        return sum + items.filter(a => !a.completed).length;
+      }, 0);
+      setOpenActions(open);
+    });
+  }, []);
+
+  const stats = [
+    { title: "Total Staff", value: staffCount !== null ? String(staffCount) : "—", subtitle: "Active members", icon: Users, color: "indigo" },
+    { title: "Reports Generated", value: reportCount !== null ? String(reportCount) : "—", subtitle: "All time", icon: FileText, color: "teal" },
+    { title: "Open Actions", value: openActions !== null ? String(openActions) : "—", subtitle: "Across all staff", icon: ListChecks, color: "orange" },
+  ];
+
   return (
     <motion.div
       variants={containerVariants}
