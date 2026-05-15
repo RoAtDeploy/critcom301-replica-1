@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileAudio, X, Radio, AlertTriangle, User, Loader2, Zap } from "lucide-react";
+import { Upload, FileAudio, X, Radio, AlertTriangle, User, Loader2, Zap, Trash2, CheckSquare, Square } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -26,6 +26,8 @@ export default function MonitoringOnMass() {
   const [filterFlagged, setFilterFlagged] = useState(false);
   const [staffMembers, setStaffMembers] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState("unknown");
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -130,6 +132,32 @@ export default function MonitoringOnMass() {
       await base44.entities.Recording.update(id, { override });
       setProcessed(prev => prev.map(r => r.id === id ? { ...r, override } : r));
     }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const dbIds = allRecordings.filter(r => r._source === "db").map(r => r.id);
+    if (dbIds.every(id => selectedIds.has(id))) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(dbIds));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!selectedIds.size) return;
+    setDeleting(true);
+    await Promise.allSettled([...selectedIds].map(id => base44.entities.Recording.delete(id)));
+    setProcessed(prev => prev.filter(r => !selectedIds.has(r.id)));
+    setSelectedIds(new Set());
+    setDeleting(false);
   };
 
   const handleGenerateReport = (recording) => {
@@ -296,10 +324,30 @@ export default function MonitoringOnMass() {
             )}
           </div>
 
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              {processed.length} Recording{processed.length !== 1 ? "s" : ""}
-            </h2>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-foreground transition-colors">
+                {allRecordings.filter(r => r._source === "db").every(r => selectedIds.has(r.id)) && allRecordings.filter(r => r._source === "db").length > 0
+                  ? <CheckSquare className="w-4 h-4" />
+                  : <Square className="w-4 h-4" />
+                }
+              </button>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                {processed.length} Recording{processed.length !== 1 ? "s" : ""}
+              </h2>
+            </div>
+            {selectedIds.size > 0 && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDeleteSelected}
+                disabled={deleting}
+                className="text-xs gap-1.5"
+              >
+                {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                Delete {selectedIds.size} selected
+              </Button>
+            )}
           </div>
 
           {allRecordings.map((rec) => {
@@ -325,12 +373,18 @@ export default function MonitoringOnMass() {
               );
             }
             return (
-              <RecordingRow
-                key={rec.id}
-                recording={{ ...rec, objectUrl: rec.objectUrl ?? null }}
-                onGradeOverride={handleGradeOverride}
-                onGenerateReport={handleGenerateReport}
-              />
+              <div key={rec.id} className="flex items-center gap-2">
+                <button onClick={() => toggleSelect(rec.id)} className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                  {selectedIds.has(rec.id) ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4" />}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <RecordingRow
+                    recording={{ ...rec, objectUrl: rec.objectUrl ?? null }}
+                    onGradeOverride={handleGradeOverride}
+                    onGenerateReport={handleGenerateReport}
+                  />
+                </div>
+              </div>
             );
           })}
         </div>
