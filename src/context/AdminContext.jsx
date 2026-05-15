@@ -43,18 +43,20 @@ export function AdminProvider({ children }) {
     const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
     const lmPending = pendingUsers.filter((u) => u.role === "line_manager" || u.role === "assessor");
     setLineManagerUsers(lmUsers);
-    const displayNames = [
-      ...lmUsers.map((u) => {
-        if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
-        if (u.full_name) return u.full_name;
-        return u.email;
-      }),
-      ...lmPending.map((u) => {
-        if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
-        return u.email;
-      }),
-    ].filter(Boolean);
-    setLineManagers(displayNames);
+    
+    // Deduplicate by email, preferring User records over PendingUser
+    const emailMap = new Map();
+    lmUsers.forEach((u) => {
+      const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : (u.full_name || u.email);
+      emailMap.set(u.email, name);
+    });
+    lmPending.forEach((u) => {
+      if (!emailMap.has(u.email)) {
+        const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email;
+        emailMap.set(u.email, name);
+      }
+    });
+    setLineManagers(Array.from(emailMap.values()).filter(Boolean));
   }, []);
 
   // Load everything from DB on mount
@@ -82,18 +84,20 @@ export function AdminProvider({ children }) {
       const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
       const lmPending = pendingUsers.filter((u) => u.role === "line_manager" || u.role === "assessor");
       setLineManagerUsers(lmUsers);
-      const displayNames = [
-        ...lmUsers.map((u) => {
-          if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
-          if (u.full_name) return u.full_name;
-          return u.email;
-        }),
-        ...lmPending.map((u) => {
-          if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
-          return u.email;
-        }),
-      ].filter(Boolean);
-      setLineManagers(displayNames);
+
+      // Deduplicate by email, preferring User records over PendingUser
+      const emailMap = new Map();
+      lmUsers.forEach((u) => {
+        const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : (u.full_name || u.email);
+        emailMap.set(u.email, name);
+      });
+      lmPending.forEach((u) => {
+        if (!emailMap.has(u.email)) {
+          const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email;
+          emailMap.set(u.email, name);
+        }
+      });
+      setLineManagers(Array.from(emailMap.values()).filter(Boolean));
 
       setStaffLoading(false);
     };
