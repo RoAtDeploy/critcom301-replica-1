@@ -67,7 +67,12 @@ export default function ReportDetail() {
 
   const handleSignOff = async () => {
     setSigningOff(true);
-    const updated = await base44.entities.Report.update(id, { status: "signed_off" });
+    const me = await base44.auth.me();
+    const updated = await base44.entities.Report.update(id, {
+      status: "signed_off",
+      signed_off_by: me?.full_name || me?.email || "Assessor",
+      signed_off_at: new Date().toISOString(),
+    });
     setReport(updated);
     setSigningOff(false);
   };
@@ -439,7 +444,12 @@ export default function ReportDetail() {
                 <ShieldCheck className="w-5 h-5 text-accent shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-accent">Report finalised</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">This report has been signed off and is now complete. No further changes can be made.</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Signed off by <span className="font-medium text-foreground">{report.signed_off_by || "Assessor"}</span>
+                    {report.signed_off_at && (
+                      <span> on {new Date(report.signed_off_at).toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                    )}. No further changes can be made.
+                  </p>
                 </div>
               </div>
             ) : (

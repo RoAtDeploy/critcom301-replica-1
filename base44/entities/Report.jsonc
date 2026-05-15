@@ -139,6 +139,14 @@
     "sent_at": {
       "type": "string",
       "description": "ISO timestamp when the report was sent to staff"
+    },
+    "signed_off_by": {
+      "type": "string",
+      "description": "Full name of the assessor who signed off the report"
+    },
+    "signed_off_at": {
+      "type": "string",
+      "description": "ISO timestamp when the assessor signed off the report"
     }
   },
   "required": [
