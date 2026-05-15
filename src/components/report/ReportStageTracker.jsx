@@ -19,19 +19,23 @@ export default function ReportStageTracker({ status }) {
         {STAGES.map((stage, i) => {
           const done = i < currentIndex;
           const active = i === currentIndex;
+          // "signed_off" is the terminal state — treat it as fully done (green)
+          const isSignedOff = status === "signed_off" && stage.key === "signed_off";
+          const showDone = done || isSignedOff;
+          const showActive = active && !isSignedOff;
           return (
             <div key={stage.key} className="flex items-center">
               <div className="flex flex-col items-center gap-1.5">
                 <div
                   className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                    done
+                    showDone
                       ? "bg-accent border-accent text-white"
-                      : active
+                      : showActive
                       ? "bg-primary border-primary text-white"
                       : "bg-muted border-border text-muted-foreground"
                   }`}
                 >
-                  {done ? (
+                  {showDone ? (
                     <CheckCircle2 className="w-3.5 h-3.5" />
                   ) : (
                     <span className="text-xs font-bold">{i + 1}</span>
@@ -39,9 +43,9 @@ export default function ReportStageTracker({ status }) {
                 </div>
                 <span
                   className={`text-xs font-medium text-center max-w-[80px] leading-tight ${
-                    active
+                    showActive
                       ? "text-foreground"
-                      : done
+                      : showDone
                       ? "text-accent"
                       : "text-muted-foreground"
                   }`}

@@ -438,7 +438,7 @@ export default function ReportDetail() {
           )}
         </div>
 
-        {["staff_reviewed","signed_off"].includes(report.status) && (
+        {(report.status === "staff_reviewed" || report.status === "signed_off") && (
           <div className="px-5 pb-5">
             {report.status === "signed_off" ? (
               <div className="flex items-start gap-3 p-4 rounded-xl bg-accent/10 border border-accent/30">
