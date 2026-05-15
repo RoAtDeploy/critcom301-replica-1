@@ -27,19 +27,22 @@ TRANSCRIPT:
 }
 
 function buildGradePrompt(guideline) {
-  const guidelineText = guideline || `Assign a quick overall grade (A, B, C, D, or n/a) based on the staff member's communication performance.
+  const guidelineText = guideline || `Assign a quick overall grade (A, B, C, D, X, or n/a) based on the staff member's communication performance.
 - A: High standard. Protocols fully followed. Effective non-technical skills throughout.
 - B: Satisfactory but improvable. Most protocols followed. Minor gaps in technique.
 - C: Gives rise to concerns. Significant protocol variations. Limited non-technical skills.
 - D: Not acceptable. Little or no protocol adherence. Safety compromised.
-- n/a: Cannot be assessed (too short, not applicable).`;
+- X: Not safety-critical in nature. No work-related instructions or important information conveyed (e.g. wrong number, personal call, no meaningful dialogue, general conversation with no safety-critical content). Do NOT grade A-D if the call is out of scope.
+- n/a: Cannot be assessed (too short, unintelligible, silent recording).`;
 
   return `You are a railway communications quality assessor. Based on the following transcript, assign an overall grade for the STAFF MEMBER's communication performance.
 
 ${guidelineText}
 
+IMPORTANT: If the call is not safety-critical in nature (wrong number, personal call, no instructions conveyed, no work-relevant content), assign grade X — do NOT attempt to grade it A-D.
+
 Respond with ONLY a JSON object in this exact format, no other text:
-{"grade": "A" | "B" | "C" | "D" | "n/a", "reasoning": "<one sentence explanation>"}
+{"grade": "A" | "B" | "C" | "D" | "X" | "n/a", "reasoning": "<one sentence explanation>"}
 
 TRANSCRIPT:
 `;
@@ -100,7 +103,7 @@ Deno.serve(async (req) => {
     try {
       const gradeRaw = gradeResponse.choices[0].message.content.trim();
       const parsed = JSON.parse(gradeRaw);
-      if (['A', 'B', 'C', 'D', 'n/a'].includes(parsed.grade)) {
+      if (['A', 'B', 'C', 'D', 'X', 'n/a'].includes(parsed.grade)) {
         grade = parsed.grade;
       }
     } catch (_) {

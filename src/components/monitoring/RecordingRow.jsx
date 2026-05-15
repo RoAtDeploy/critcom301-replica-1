@@ -36,9 +36,10 @@ const GRADE_CONFIG = {
   C: { label: "C", color: "bg-orange-100 text-orange-700 border-orange-300", description: "DAP REQUIRED" },
   D: { label: "D", color: "bg-red-100 text-red-700 border-red-300", description: "IMMEDIATE ACTION REQUIRED" },
   "n/a": { label: "N/A", color: "bg-slate-100 text-slate-500 border-slate-300", description: "Not Applicable" },
+  X: { label: "X", color: "bg-slate-100 text-slate-400 border-slate-200", description: "NOT SAFETY-CRITICAL" },
 };
 
-const GRADES = ["A", "B", "C", "D", "n/a"];
+const GRADES = ["A", "B", "C", "D", "n/a", "X"];
 
 function GradeBadge({ grade }) {
   const cfg = GRADE_CONFIG[grade] || GRADE_CONFIG["n/a"];
@@ -163,11 +164,13 @@ export default function RecordingRow({ recording, onGradeOverride, onGenerateRep
     setSaving(false);
   };
 
+  const isOutOfScope = effectiveGrade === "X";
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className={cn(
         "rounded-lg border overflow-hidden",
-        cfg ? cfg.color.split(" ")[2] : "border-slate-200"
+        isOutOfScope ? "border-slate-200 opacity-60 hover:opacity-80 transition-opacity" : cfg ? cfg.color.split(" ")[2] : "border-slate-200"
       )}>
         {/* Collapsed Header */}
         <div className="flex items-center gap-3 px-4 py-3">

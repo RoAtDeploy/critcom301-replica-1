@@ -5,15 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, RotateCcw } from "lucide-react";
 
-const DEFAULT_GUIDELINE = `Assign a quick overall grade (A, B, C, D, or n/a) based on the staff member's communication performance in this call.
+const DEFAULT_GUIDELINE = `Assign a quick overall grade (A, B, C, D, X, or n/a) based on the staff member's communication performance in this call.
 
 Grade A: High standard throughout. Protocols fully followed. Strong identification, clear purpose, structured delivery, active listening, and appropriate use of safety-critical language.
 Grade B: Satisfactory performance with minor gaps. Most protocols followed. Some missed opportunities to clarify or confirm, but no significant safety concern.
 Grade C: Performance gives concern. Significant protocol variations or limited non-technical skills. Possible misunderstanding risk.
 Grade D: Unacceptable communications. Little or no protocol adherence. Safety may be compromised. Assign D if alert-flagged content is present (profanity, aggression, dangerous miscommunication).
-n/a: Cannot be assessed — transcript too short, unclear recording, or call type not applicable.
+Grade X: Not safety-critical in nature. No work-related instructions or important information conveyed. Applies to wrong numbers, personal calls, calls with no meaningful dialogue, or general conversation where no safety-critical content is present. Do NOT grade X calls as A-D.
+n/a: Cannot be assessed — transcript too short, silent, unintelligible, or recording failed.
 
-Prioritise safety protocol adherence above all else. If you are unsure between two grades, assign the lower one.`;
+Prioritise safety protocol adherence above all else. If you are unsure between two grades, assign the lower one. Always assign X before n/a if the call is intelligible but simply not safety-critical.`;
 
 export default function QuickGradeGuideline() {
   const queryClient = useQueryClient();

@@ -14,6 +14,7 @@ const GRADE_CONFIG = {
   C: { label: "C", color: "bg-orange-100 text-orange-700 border-orange-300" },
   D: { label: "D", color: "bg-red-100 text-red-700 border-red-300" },
   "n/a": { label: "N/A", color: "bg-slate-100 text-slate-500 border-slate-300" },
+  X: { label: "X", color: "bg-slate-100 text-slate-400 border-slate-200" },
 };
 
 export default function MonitoringOnMass() {
@@ -259,7 +260,7 @@ export default function MonitoringOnMass() {
           {/* Filter bar */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-muted-foreground font-medium mr-1">Filter:</span>
-            {["A", "B", "C", "D", "n/a"].filter(g => gradeCounts[g]).map((g) => {
+            {["A", "B", "C", "D", "n/a", "X"].filter(g => gradeCounts[g]).map((g) => {
               const cfg = GRADE_CONFIG[g];
               const active = filterGrade === g;
               return (
