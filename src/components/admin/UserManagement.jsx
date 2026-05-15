@@ -7,8 +7,7 @@ import { UserPlus, Trash2, Shield, User, Mail, Loader2 } from "lucide-react";
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("assessor");
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", role: "assessor" });
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -22,14 +21,14 @@ export default function UserManagement() {
 
   useEffect(() => { fetchUsers(); }, []);
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
+  const handleAdd = async () => {
+    if (!form.email.trim()) { setError("Email is required."); return; }
     setError("");
     setSuccess("");
     setInviting(true);
-    await base44.users.inviteUser(inviteEmail.trim(), inviteRole);
-    setSuccess(`Invitation sent to ${inviteEmail.trim()}`);
-    setInviteEmail("");
+    await base44.users.inviteUser(form.email.trim(), form.role);
+    setSuccess(`Setup email sent to ${form.email.trim()}. They'll be prompted to set their password.`);
+    setForm({ firstName: "", lastName: "", email: "", role: "assessor" });
     await fetchUsers();
     setInviting(false);
   };
@@ -47,37 +46,54 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Invite new user */}
+      {/* Add new user */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-center gap-2">
           <UserPlus className="w-4 h-4 text-primary" />
-          <h3 className="font-semibold text-sm">Invite New User</h3>
+          <h3 className="font-semibold text-sm">Add New User</h3>
+          <span className="text-xs text-muted-foreground ml-1">— they'll receive an email to set their password</span>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input
+            type="text"
+            placeholder="First name"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            value={form.firstName}
+            onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
+          />
+          <input
+            type="text"
+            placeholder="Last name"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            value={form.lastName}
+            onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
+          />
           <input
             type="email"
-            placeholder="Email address…"
-            className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            value={inviteEmail}
-            onChange={e => setInviteEmail(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") handleInvite(); }}
+            placeholder="Email address *"
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            value={form.email}
+            onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+            onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
           />
           <select
-            value={inviteRole}
-            onChange={e => setInviteRole(e.target.value)}
+            value={form.role}
+            onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
             className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <option value="assessor">Assessor</option>
             <option value="line_manager">Line Manager</option>
             <option value="admin">Admin</option>
           </select>
-          <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()} className="gap-2 shrink-0">
-            {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-            {inviting ? "Sending…" : "Send Invite"}
-          </Button>
         </div>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-        {success && <p className="text-xs text-accent">{success}</p>}
+        <div className="flex items-center gap-3">
+          <Button onClick={handleAdd} disabled={inviting || !form.email.trim()} className="gap-2 shrink-0">
+            {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+            {inviting ? "Setting up…" : "Add User"}
+          </Button>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          {success && <p className="text-xs text-accent">{success}</p>}
+        </div>
       </div>
 
       {/* User list */}
