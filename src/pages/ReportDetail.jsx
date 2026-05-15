@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, CheckCircle2, Sparkles, Send, RefreshCw, ExternalLink, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, CheckCircle2, Sparkles, Send, RefreshCw, ExternalLink, Pencil, ChevronDown, ChevronUp, ShieldCheck, PenLine, AlertTriangle, MessageSquare } from "lucide-react";
 import ReportStageTracker from "@/components/report/ReportStageTracker";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import ActionItemsEditor from "@/components/report/ActionItemsEditor";
@@ -22,6 +22,7 @@ export default function ReportDetail() {
   const [showEmailInput, setShowEmailInput] = useState(false);
   const { actionTemplates } = useAdmin();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [signingOff, setSigningOff] = useState(false);
 
   useEffect(() => {
     base44.entities.Report.get(id).then(async (r) => {
@@ -62,6 +63,13 @@ export default function ReportDetail() {
     const updated = await base44.entities.Report.update(id, { status: "saved" });
     setReport(updated);
     setSaving(false);
+  };
+
+  const handleSignOff = async () => {
+    setSigningOff(true);
+    const updated = await base44.entities.Report.update(id, { status: "signed_off" });
+    setReport(updated);
+    setSigningOff(false);
   };
 
   const handleSendToStaff = async () => {
@@ -282,7 +290,7 @@ export default function ReportDetail() {
 
             {/* Send to staff */}
             <div className="pt-2 border-t border-border/40 space-y-2">
-              {report.status === "sent" && (
+              {["sent","staff_reviewed","signed_off"].includes(report.status) && (
                 <div className="flex items-center gap-2 text-xs text-accent">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>
@@ -309,21 +317,147 @@ export default function ReportDetail() {
                   autoFocus
                 />
               )}
-              <Button
-                onClick={handleSendToStaff}
-                disabled={sendingEmail}
-                size="sm"
-                variant={report.status === "sent" ? "outline" : "default"}
-                className="gap-2"
-              >
-                <Send className="w-3.5 h-3.5" />
-                {sendingEmail ? "Sending…" : report.status === "sent" ? "Resend to Staff" : "Send to Staff Member"}
-              </Button>
+              {!["staff_reviewed","signed_off"].includes(report.status) && (
+                <Button
+                  onClick={handleSendToStaff}
+                  disabled={sendingEmail}
+                  size="sm"
+                  variant={report.status === "sent" ? "outline" : "default"}
+                  className="gap-2"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  {sendingEmail ? "Sending…" : report.status === "sent" ? "Resend to Staff" : "Send to Staff Member"}
+                </Button>
+              )}
             </div>
           </div>
         )}
       </div>
 
+      {/* STAGE 3 — Staff Review */}
+      <div className={`rounded-xl border-2 transition-colors ${
+        report.status === "staff_reviewed" ? "border-primary/40 bg-primary/5" :
+        report.status === "signed_off" ? "border-border" :
+        "border-border opacity-50 pointer-events-none"
+      }`}>
+        <div className="flex items-center gap-2 px-5 py-4">
+          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-bold ${
+            report.status === "signed_off" ? "bg-accent border-accent text-white" :
+            report.status === "staff_reviewed" ? "bg-primary border-primary text-white" :
+            "bg-muted border-border text-muted-foreground"
+          }`}>
+            {report.status === "signed_off" ? <CheckCircle2 className="w-3.5 h-3.5" /> : "3"}
+          </div>
+          <h2 className="font-semibold text-sm">Stage 3 — Staff Acknowledgement</h2>
+          {!["staff_reviewed","signed_off"].includes(report.status) && (
+            <span className="text-xs text-muted-foreground ml-auto">Awaiting staff review</span>
+          )}
+        </div>
+
+        {["staff_reviewed","signed_off"].includes(report.status) && (
+          <div className="px-5 pb-5 space-y-4">
+            <p className="text-xs text-muted-foreground -mt-2">
+              {report.staff_name} reviewed this report
+              {report.staff_reviewed_at && (
+                <span> on {new Date(report.staff_reviewed_at).toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+              )}.
+            </p>
+
+            {/* Action confirmations */}
+            {report.action_items?.filter(i => i.aspect_grade === "C" || i.aspect_grade === "D").length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-orange-500" /> Action Confirmations
+                </p>
+                {report.action_items.filter(i => i.aspect_grade === "C" || i.aspect_grade === "D").map(item => (
+                  <div key={item.aspect_id} className="rounded-lg border border-border p-3 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center justify-center rounded border w-5 h-5 text-xs font-bold shrink-0 ${
+                          item.aspect_grade === "D" ? "bg-red-100 text-red-700 border-red-300" : "bg-orange-100 text-orange-700 border-orange-300"
+                        }`}>{item.aspect_grade}</span>
+                        <span className="text-sm font-medium">{item.aspect_name}</span>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        item.completed ? "bg-accent/15 text-accent" : "bg-orange-100 text-orange-700"
+                      }`}>
+                        {item.completed ? "Confirmed" : "Not confirmed"}
+                      </span>
+                    </div>
+                    {item.action && (
+                      <p className="text-xs text-muted-foreground pl-7">{item.action}</p>
+                    )}
+                    {item.staff_comment && (
+                      <div className="pl-7">
+                        <p className="text-xs text-muted-foreground italic">"{item.staff_comment}"</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Signature */}
+            {report.staff_signature && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <PenLine className="w-3.5 h-3.5" /> Staff Signature
+                </p>
+                <div className="rounded-lg border border-border bg-white p-3 inline-block">
+                  <img src={report.staff_signature} alt="Staff signature" className="max-h-24 max-w-xs" />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* STAGE 4 — Assessor Sign-Off */}
+      <div className={`rounded-xl border-2 transition-colors ${
+        report.status === "staff_reviewed" ? "border-primary/40 bg-primary/5" :
+        report.status === "signed_off" ? "border-accent/40 bg-accent/5" :
+        "border-border opacity-50 pointer-events-none"
+      }`}>
+        <div className="flex items-center gap-2 px-5 py-4">
+          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-bold ${
+            report.status === "signed_off" ? "bg-accent border-accent text-white" :
+            report.status === "staff_reviewed" ? "bg-primary border-primary text-white" :
+            "bg-muted border-border text-muted-foreground"
+          }`}>
+            {report.status === "signed_off" ? <CheckCircle2 className="w-3.5 h-3.5" /> : "4"}
+          </div>
+          <h2 className="font-semibold text-sm">Stage 4 — Assessor Sign-Off</h2>
+          {!["staff_reviewed","signed_off"].includes(report.status) && (
+            <span className="text-xs text-muted-foreground ml-auto">Complete Stage 3 first</span>
+          )}
+        </div>
+
+        {["staff_reviewed","signed_off"].includes(report.status) && (
+          <div className="px-5 pb-5">
+            {report.status === "signed_off" ? (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-accent/10 border border-accent/30">
+                <ShieldCheck className="w-5 h-5 text-accent shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-accent">Report finalised</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">This report has been signed off and is now complete. No further changes can be made.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">The staff member has acknowledged their feedback and actions. Review their confirmations above, then sign off to finalise this report.</p>
+                <Button
+                  onClick={handleSignOff}
+                  disabled={signingOff}
+                  className="w-full bg-accent hover:bg-accent/90 gap-2"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  {signingOff ? "Finalising…" : "Sign Off & Finalise Report"}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
     </motion.div>
   );
