@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft, Pencil, FileText, TrendingUp, Phone, Mail,
-  Building2, Users, BadgeCheck, X, Check, Sparkles, Radio, ChevronDown, ChevronUp
+  Building2, Users, BadgeCheck, X, Check, Sparkles, Radio, ChevronDown, ChevronUp, Trash2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAdmin } from "@/context/AdminContext";
@@ -276,6 +276,13 @@ export default function StaffDetail() {
                 signed_off: { label: "Signed Off", className: "bg-accent/10 text-accent border-accent/20" },
               };
 
+              const handleDeleteDraft = async (e, reportId) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await base44.entities.Report.delete(reportId);
+                setReports(prev => prev.filter(r => r.id !== reportId));
+              };
+
               const ReportRow = ({ report }) => {
                 const statusCfg = STATUS_LABELS[report.status] || STATUS_LABELS.draft;
                 return (
@@ -294,9 +301,20 @@ export default function StaffDetail() {
                           <ActionDeadlineBadge report={report} className="mt-1" />
                         </div>
                       </div>
-                      <Badge variant="secondary" className={statusCfg.className}>
-                        {statusCfg.label}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className={statusCfg.className}>
+                          {statusCfg.label}
+                        </Badge>
+                        {report.status === "draft" && (
+                          <button
+                            onClick={(e) => handleDeleteDraft(e, report.id)}
+                            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Delete draft"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </Link>
                 );
