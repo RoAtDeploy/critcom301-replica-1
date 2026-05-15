@@ -12,8 +12,9 @@ import {
   BookOpen,
   ClipboardList
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { base44 } from "@/api/base44Client";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
@@ -27,6 +28,14 @@ const navItems = [
 export default function Sidebar() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [openCount, setOpenCount] = useState(null);
+
+  useEffect(() => {
+    base44.entities.Report.list().then(reports => {
+      const open = reports.filter(r => r.status !== "signed_off").length;
+      setOpenCount(open);
+    }).catch(() => {});
+  }, []);
 
   const isActive = (path) =>
     location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
@@ -42,7 +51,16 @@ export default function Sidebar() {
       )}
     >
       <item.icon className="w-5 h-5 shrink-0 text-orange-500" />
-      {!collapsed && <span>{item.label}</span>}
+      {!collapsed && (
+        <>
+          <span className="flex-1">{item.label}</span>
+          {item.path === "/open-assessments" && openCount > 0 && (
+            <span className="bg-orange-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center leading-tight">
+              {openCount}
+            </span>
+          )}
+        </>
+      )}
     </Link>
   );
 
