@@ -35,6 +35,20 @@ export function AdminProvider({ children }) {
     setStaffLoading(false);
   }, []);
 
+  const refreshLineManagers = useCallback(async () => {
+    const users = await base44.entities.User.list();
+    const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
+    setLineManagerUsers(lmUsers);
+    const displayNames = lmUsers
+      .map((u) => {
+        if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
+        if (u.full_name) return u.full_name;
+        return u.email;
+      })
+      .filter(Boolean);
+    setLineManagers(displayNames);
+  }, []);
+
   // Load everything from DB on mount
   useEffect(() => {
     const loadData = async () => {
@@ -186,7 +200,7 @@ export function AdminProvider({ children }) {
     <AdminContext.Provider value={{
       departments, lineManagers, lineManagerUsers, roles, callTypes, actionTemplates,
       staffList, staffLoading,
-      addStaff, updateStaff, refreshStaff,
+      addStaff, updateStaff, refreshStaff, refreshLineManagers,
       addItem, removeItem, editItem,
     }}>
       {children}

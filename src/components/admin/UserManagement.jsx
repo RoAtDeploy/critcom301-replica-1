@@ -3,8 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Trash2, Shield, User, Mail, Loader2 } from "lucide-react";
+import { useAdmin } from "@/context/AdminContext";
 
 export default function UserManagement() {
+  const { refreshLineManagers } = useAdmin();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", role: "assessor" });
@@ -45,13 +47,15 @@ export default function UserManagement() {
       setSuccess(`${form.email.trim()} added. Setup email sent — they can be assigned immediately.`);
       setForm({ firstName: "", lastName: "", email: "", role: "assessor" });
       
-      // Fetch real user after a delay and replace optimistic entry
+      // Fetch real user after a delay and replace optimistic entry, then refresh line managers
       setTimeout(async () => {
         const allUsers = await base44.entities.User.list();
         const realUser = allUsers.find(u => u.email === form.email.trim());
         if (realUser) {
           setUsers(prev => prev.map(u => u.email === form.email.trim() ? realUser : u));
         }
+        // Refresh line managers in AdminContext so dropdown updates
+        await refreshLineManagers();
       }, 1000);
     } catch (err) {
       setError(err.message || "Failed to add user.");
