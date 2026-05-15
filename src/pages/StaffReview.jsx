@@ -56,6 +56,11 @@ export default function StaffReview() {
     setItems(prev => prev.map((it, i) => i === index ? { ...it, [field]: value } : it));
   };
 
+  const allActionsAcknowledged = actionItems.every(item => {
+    const liveItem = items.find(i => i.aspect_id === item.aspect_id);
+    return liveItem?.completed;
+  });
+
   const handleSubmit = async () => {
     setSubmitting(true);
     await base44.functions.invoke("staffReviewReport", { reportId: id, action: "submit", items, signature });
@@ -276,18 +281,23 @@ export default function StaffReview() {
 
         {/* Submit */}
         {!submitted ? (
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting || !signature}
-            className="w-full bg-primary hover:bg-primary/90"
-            size="lg"
-          >
-            {submitting ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting…</>
-            ) : (
-              <><CheckCircle2 className="w-4 h-4 mr-2" /> Confirm & Submit</>
+          <div>
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting || !signature || !allActionsAcknowledged}
+              className="w-full bg-primary hover:bg-primary/90"
+              size="lg"
+            >
+              {submitting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting…</>
+              ) : (
+                <><CheckCircle2 className="w-4 h-4 mr-2" /> Confirm & Submit</>
+              )}
+            </Button>
+            {actionItems.length > 0 && !allActionsAcknowledged && (
+              <p className="text-xs text-center text-orange-600 mt-2">Please acknowledge all required actions before submitting.</p>
             )}
-          </Button>
+          </div>
         ) : (
           <div className="flex items-center justify-center gap-3 p-6 rounded-xl bg-accent/10 border border-accent/30">
             <CheckCircle2 className="w-6 h-6 text-accent" />
