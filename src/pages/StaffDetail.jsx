@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAdmin } from "@/context/AdminContext";
+import ActionDeadlineBadge from "@/components/report/ActionDeadlineBadge";
 
 const getInitials = (name) => name.split(" ").map((n) => n[0]).join("");
 const scoreColor = (score) => {
@@ -290,6 +291,7 @@ export default function StaffDetail() {
                             {report.other_role ? `With ${report.other_role}` : report.role || "—"}
                             {report.call_date ? ` · ${new Date(report.call_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}
                           </p>
+                          <ActionDeadlineBadge report={report} className="mt-1" />
                         </div>
                       </div>
                       <Badge variant="secondary" className={statusCfg.className}>

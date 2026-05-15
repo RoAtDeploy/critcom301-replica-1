@@ -2,14 +2,22 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
-import { ClipboardList, ArrowRight } from "lucide-react";
+import { ClipboardList, ArrowRight, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import ActionDeadlineBadge from "@/components/report/ActionDeadlineBadge";
+import { getReportActionStatus } from "@/lib/actionDeadlines";
 
 const STAGES = [
   {
     key: "all",
     label: "All Open",
     description: "All reports not yet signed off",
+  },
+  {
+    key: "overdue",
+    label: "Overdue Actions",
+    description: "Reports with overdue C or D grade actions",
+    color: "bg-red-100 text-red-700 border-red-200",
   },
   {
     key: "draft",
@@ -57,14 +65,23 @@ export default function OpenAssessments() {
     });
   }, []);
 
+  const isOverdue = (r) => {
+    const s = getReportActionStatus(r);
+    return s === "overdue_immediate" || s === "overdue_7day";
+  };
+
   const filtered =
     activeFilter === "all"
       ? reports
+      : activeFilter === "overdue"
+      ? reports.filter(isOverdue)
       : reports.filter((r) => r.status === activeFilter);
 
   const countFor = (key) =>
     key === "all"
       ? reports.length
+      : key === "overdue"
+      ? reports.filter(isOverdue).length
       : reports.filter((r) => r.status === key).length;
 
   return (
@@ -165,6 +182,7 @@ export default function OpenAssessments() {
                         · {report.role}
                       </span>
                     )}
+                    <ActionDeadlineBadge report={report} />
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
