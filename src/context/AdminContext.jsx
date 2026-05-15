@@ -6,7 +6,14 @@ const DEFAULTS = {
   departments: ["Sales", "Customer Support", "Retention", "Onboarding", "Operations"],
   lineManagers: ["Alice Thompson", "Bob Harris", "Carol Davies", "David Singh"],
   callTypes: ["Closing Worksite", "Worksite Set-up", "Emergency Call"],
-  actionTemplates: ["1:1 feedback session with line manager", "Attend refresher training", "Complete written reflection", "Observe a colleague's communication", "Read relevant safety bulletin"],
+  actionTemplates: [
+    "1:1 coaching session with line manager",
+    "Attend safety critical communications refresher training",
+    "Complete a written self-reflection on the identified issue",
+    "Shadow a colleague to observe best practice communications",
+    "Re-read Rule Book Section G1 and complete sign-off sheet",
+    "Complete a competency assessment with assessor",
+  ],
 };
 
 const AdminContext = createContext(null);

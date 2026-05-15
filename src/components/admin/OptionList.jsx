@@ -6,8 +6,8 @@ import { Pencil, Trash2, Plus, Check, X } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
 
 export default function OptionList({ type, label, icon: Icon, color }) {
-  const { departments, lineManagers, roles, callTypes, addItem, removeItem, editItem } = useAdmin();
-  const items = type === "departments" ? departments : type === "lineManagers" ? lineManagers : type === "callTypes" ? callTypes : roles;
+  const { departments, lineManagers, roles, callTypes, actionTemplates, addItem, removeItem, editItem } = useAdmin();
+  const items = type === "departments" ? departments : type === "lineManagers" ? lineManagers : type === "callTypes" ? callTypes : type === "actionTemplates" ? actionTemplates : roles;
 
   const [newValue, setNewValue] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
