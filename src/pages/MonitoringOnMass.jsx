@@ -100,13 +100,12 @@ export default function MonitoringOnMass() {
         const { recording } = result.data;
 
         // Replace placeholder with real DB record
+        URL.revokeObjectURL(item.objectUrl);
         setProcessed(prev => prev.map(r =>
           r.id === item.id
-            ? { ...recording, objectUrl: item.objectUrl, _status: "done", _source: "db" }
+            ? { ...recording, _status: "done", _source: "db" }
             : r
         ));
-
-        URL.revokeObjectURL(item.objectUrl);
         return recording;
       })
     );
