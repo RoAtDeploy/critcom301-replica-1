@@ -35,7 +35,7 @@ export default function MonitoringOnMass() {
     base44.entities.StaffMember.list().then(setStaffMembers).catch(() => {});
     // Load existing recordings from DB on mount
     base44.entities.Recording.list("-created_date", 50).then(recs => {
-      setProcessed(recs.map(r => ({ ...r, _source: "db", objectUrl: undefined })));
+      setProcessed(recs.map(r => ({ ...r, ...(r.data || {}), _source: "db", objectUrl: undefined })));
     }).catch(() => {});
   }, []);
 
@@ -236,7 +236,7 @@ export default function MonitoringOnMass() {
             }`}
           >
             <FileAudio className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-            <p className="text-sm font-medium text-foreground">Drag & drop audio files here</p>
+            <p className="text-sm font-medium text-foreground">Drag &amp; drop audio files here</p>
             <p className="text-xs text-muted-foreground mt-1">or click to browse — MP3, WAV, M4A, AAC, OGG, FLAC supported</p>
             <input
               ref={fileInputRef}
