@@ -56,11 +56,6 @@ export default function StaffReview() {
     setItems(prev => prev.map((it, i) => i === index ? { ...it, [field]: value } : it));
   };
 
-  const allActionsAcknowledged = actionItems.every(item => {
-    const liveItem = items.find(i => i.aspect_id === item.aspect_id);
-    return liveItem?.completed;
-  });
-
   const handleSubmit = async () => {
     setSubmitting(true);
     await base44.functions.invoke("staffReviewReport", { reportId: id, action: "submit", items, signature });
@@ -86,6 +81,7 @@ export default function StaffReview() {
 
   const feedbackItems = items.filter(i => i.aspect_grade === "A" || i.aspect_grade === "B");
   const actionItems = items.filter(i => i.aspect_grade === "C" || i.aspect_grade === "D");
+  const allActionsAcknowledged = actionItems.every(item => item.completed);
   const workflowStep = report.status === "signed_off" ? 4 : report.status === "staff_reviewed" ? 3 : 2;
 
   return (
@@ -147,12 +143,12 @@ export default function StaffReview() {
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground">Date:</span>
-              <span className="font-medium">{report.call_date ? new Date(report.call_date).toLocaleDateString("en-GB") : "—"}</span>
+              <span className="font-medium">{report.call_date ? new Date(report.call_date).toLocaleDateString("en-GB") : "-"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground">Type:</span>
-              <span className="font-medium">{report.call_type || "—"}</span>
+              <span className="font-medium">{report.call_type || "-"}</span>
             </div>
           </CardContent>
         </Card>
@@ -176,7 +172,7 @@ export default function StaffReview() {
               <p className="text-xs text-muted-foreground">These aspects of your communication were assessed as satisfactory or above. Review the feedback from your line manager.</p>
             </CardHeader>
             <CardContent className="space-y-3">
-              {feedbackItems.map((item, i) => {
+              {feedbackItems.map((item) => {
                 const cfg = GRADE_CONFIG[item.aspect_grade];
                 return (
                   <div key={item.aspect_id} className="rounded-lg border border-border p-3 space-y-2">
@@ -211,7 +207,7 @@ export default function StaffReview() {
               <p className="text-xs text-muted-foreground">These items require you to take action. Please read each one, mark it as completed, and add a comment if needed.</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              {actionItems.map((item, globalIndex) => {
+              {actionItems.map((item) => {
                 const itemIndex = items.findIndex(it => it.aspect_id === item.aspect_id);
                 const cfg = GRADE_CONFIG[item.aspect_grade];
                 return (
@@ -250,7 +246,7 @@ export default function StaffReview() {
                       </label>
                     </div>
                     <Textarea
-                      placeholder="Add your comments (optional)…"
+                      placeholder="Add your comments (optional)"
                       className="h-16 resize-none text-sm"
                       value={item.staff_comment || ""}
                       disabled={submitted}
@@ -289,9 +285,9 @@ export default function StaffReview() {
               size="lg"
             >
               {submitting ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting…</>
+                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</span>
               ) : (
-                <><CheckCircle2 className="w-4 h-4 mr-2" /> Confirm & Submit</>
+                <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Confirm and Submit</span>
               )}
             </Button>
             {actionItems.length > 0 && !allActionsAcknowledged && (
