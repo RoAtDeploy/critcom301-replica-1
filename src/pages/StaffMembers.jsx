@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight, Upload, Download } from "lucide-react";
+import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight, Upload, Download, ShieldCheck, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -23,18 +23,34 @@ export default function StaffMembers() {
   const { staffList, refreshStaff } = useAdmin();
   const [search, setSearch] = useState("");
   const [reportCounts, setReportCounts] = useState({});
+  const [complianceCounts, setComplianceCounts] = useState({});
   const [csvOpen, setCsvOpen] = useState(false);
 
   useEffect(() => { refreshStaff(); }, []);
 
   useEffect(() => {
     if (staffList.length === 0) return;
-    base44.entities.Report.filter({ status: "saved" }).then((reports) => {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
+
+    Promise.all([
+      base44.entities.Report.filter({ status: "saved" }),
+      base44.entities.Report.filter({ status: "signed_off" }),
+    ]).then(([savedReports, signedOffReports]) => {
       const counts = {};
-      reports.forEach((r) => {
+      savedReports.forEach((r) => {
         counts[r.staff_id] = (counts[r.staff_id] || 0) + 1;
       });
       setReportCounts(counts);
+
+      const compliance = {};
+      signedOffReports.forEach((r) => {
+        const reportDate = new Date(r.signed_off_at || r.updated_date || r.created_date);
+        if (reportDate >= twelveMonthsAgo) {
+          compliance[r.staff_id] = (compliance[r.staff_id] || 0) + 1;
+        }
+      });
+      setComplianceCounts(compliance);
     });
   }, [staffList]);
 
@@ -125,8 +141,19 @@ export default function StaffMembers() {
                     <div className="flex items-center gap-2 text-sm">
                       <FileText className="w-4 h-4 text-muted-foreground" />
                       <span className="font-medium">{reportCounts[member.id] || 0}</span>
-                      <span className="text-muted-foreground">reports</span>
+                      <span className="text-muted-foreground">open</span>
                     </div>
+                    {(() => {
+                      const count = complianceCounts[member.id] || 0;
+                      const met = count >= 3;
+                      return (
+                        <div className={`flex items-center gap-1.5 text-sm px-2.5 py-1 rounded-full border ${met ? "bg-accent/10 text-accent border-accent/20" : "bg-destructive/10 text-destructive border-destructive/20"}`}>
+                          {met ? <ShieldCheck className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                          <span className="font-semibold">{count}/3</span>
+                          <span className="text-xs opacity-75">assessments</span>
+                        </div>
+                      );
+                    })()}
                     <Badge
                       variant="secondary"
                       className={
