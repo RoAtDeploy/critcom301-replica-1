@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Filter, FileText, Phone, TrendingUp, ChevronRight, Upload, Download, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Search, Filter, FileText, Phone, Clock, ChevronRight, Upload, Download, ShieldCheck, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -13,16 +13,20 @@ import CsvUploadDialog from "@/components/staff/CsvUploadDialog";
 
 const getInitials = (name) => name.split(" ").map((n) => n[0]).join("");
 
-const scoreColor = (score) => {
-  if (score >= 85) return "text-accent";
-  if (score >= 70) return "text-chart-3";
-  return "text-destructive";
+const formatDuration = (seconds) => {
+  if (!seconds || seconds <= 0) return "0m";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h >= 1) return `${h}h ${m}m`;
+  return `${m}m`;
 };
+
 
 export default function StaffMembers() {
   const { staffList, refreshStaff } = useAdmin();
   const [search, setSearch] = useState("");
-  const [reportCounts, setReportCounts] = useState({});
+  const [screenedCounts, setScreenedCounts] = useState({});
+  const [callSeconds, setCallSeconds] = useState({});
   const [complianceCounts, setComplianceCounts] = useState({});
   const [csvOpen, setCsvOpen] = useState(false);
 
@@ -34,22 +38,33 @@ export default function StaffMembers() {
     twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
 
     Promise.all([
-      base44.entities.Report.filter({ status: "saved" }),
-      base44.entities.Report.filter({ status: "signed_off" }),
-    ]).then(([savedReports, signedOffReports]) => {
-      const counts = {};
-      savedReports.forEach((r) => {
-        counts[r.staff_id] = (counts[r.staff_id] || 0) + 1;
-      });
-      setReportCounts(counts);
-
+      base44.entities.Report.list('-created_date', 2000),
+      base44.entities.Recording.list('-created_date', 2000),
+    ]).then(([reports, recordings]) => {
+      const screened = {};
+      const seconds = {};
       const compliance = {};
-      signedOffReports.forEach((r) => {
-        const reportDate = new Date(r.signed_off_at || r.updated_date || r.created_date);
-        if (reportDate >= twelveMonthsAgo) {
-          compliance[r.staff_id] = (compliance[r.staff_id] || 0) + 1;
+
+      reports.forEach((r) => {
+        if (!r.staff_id) return;
+        screened[r.staff_id] = (screened[r.staff_id] || 0) + 1;
+        seconds[r.staff_id] = (seconds[r.staff_id] || 0) + (r.transcription_duration || 0);
+        if (r.status === "signed_off") {
+          const d = new Date(r.signed_off_at || r.updated_date || r.created_date);
+          if (d >= twelveMonthsAgo) {
+            compliance[r.staff_id] = (compliance[r.staff_id] || 0) + 1;
+          }
         }
       });
+
+      recordings.forEach((r) => {
+        if (!r.staff_id) return;
+        screened[r.staff_id] = (screened[r.staff_id] || 0) + 1;
+        seconds[r.staff_id] = (seconds[r.staff_id] || 0) + (r.duration || 0);
+      });
+
+      setScreenedCounts(screened);
+      setCallSeconds(seconds);
       setComplianceCounts(compliance);
     });
   }, [staffList]);
@@ -130,19 +145,15 @@ export default function StaffMembers() {
                   <div className="hidden md:flex items-center gap-8">
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{member.calls}</span>
-                      <span className="text-muted-foreground">calls</span>
+                      <span className="font-medium">{screenedCounts[member.id] || 0}</span>
+                      <span className="text-muted-foreground">screened</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                      <span className={`font-bold ${scoreColor(member.avgScore)}`}>{member.avgScore}%</span>
-                      <span className="text-muted-foreground">avg</span>
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium">{formatDuration(callSeconds[member.id] || 0)}</span>
+                      <span className="text-muted-foreground">call time</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <FileText className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{reportCounts[member.id] || 0}</span>
-                      <span className="text-muted-foreground">open</span>
-                    </div>
+
                     {(() => {
                       const count = complianceCounts[member.id] || 0;
                       const met = count >= 3;
