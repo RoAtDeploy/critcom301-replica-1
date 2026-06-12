@@ -45,9 +45,21 @@ export default function StaffDetail() {
   const { roles: adminRoles, departments, lineManagers, staffList, updateStaff } = useAdmin();
 
   const original = staffList.find((s) => s.id === id);
+
+  const normaliseForm = (s) => {
+    if (!s) return {};
+    const parts = (s.name || "").trim().split(" ");
+    return {
+      ...s,
+      firstName: s.firstName || parts[0] || "",
+      lastName: s.lastName || parts.slice(1).join(" ") || "",
+    };
+  };
+
   const [member, setMember] = useState(original);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState(original ? { ...original } : {});
+  const [form, setForm] = useState(normaliseForm(original));
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
   const [reports, setReports] = useState([]);
   const [recordings, setRecordings] = useState([]);
@@ -78,9 +90,14 @@ export default function StaffDetail() {
   };
 
   const handleCancel = () => {
-    setForm({ ...member });
+    setForm(normaliseForm(member));
     setEditing(false);
     setRolesOpen(false);
+  };
+
+  const handleDelete = async () => {
+    await base44.entities.StaffMember.delete(id);
+    navigate("/staff");
   };
 
   const handleGradeOverride = async (recId, grade, justification) => {
@@ -149,9 +166,14 @@ export default function StaffDetail() {
                 </Badge>
               )}
               {!editing && (
-                <Button onClick={() => setEditing(true)} variant="outline" size="sm">
-                  <Pencil className="w-4 h-4 mr-1.5" /> Edit
-                </Button>
+                <>
+                  <Button onClick={() => setEditing(true)} variant="outline" size="sm">
+                    <Pencil className="w-4 h-4 mr-1.5" /> Edit
+                  </Button>
+                  <Button onClick={() => setConfirmDelete(true)} variant="outline" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -398,6 +420,24 @@ export default function StaffDetail() {
           )}
         </CardContent>}
       </Card>
+
+      {/* Delete confirmation */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card border border-border rounded-xl shadow-xl p-6 max-w-sm w-full mx-4 space-y-4">
+            <h2 className="text-base font-semibold">Delete Staff Member?</h2>
+            <p className="text-sm text-muted-foreground">
+              This will permanently delete <span className="font-medium text-foreground">{member.name}</span> and all associated data. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+              <Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground" onClick={handleDelete}>
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </motion.div>
   );
