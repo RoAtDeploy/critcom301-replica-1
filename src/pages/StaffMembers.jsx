@@ -169,7 +169,7 @@ export default function StaffMembers() {
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Status</p>
               <div className="flex gap-2 flex-wrap">
-                {[["all", "All"], ["active", "Active"], ["inactive", "Inactive"], ["review", "Review"]].map(([val, label]) => (
+                {[["all", "All"], ["active", "Active"], ["inactive", "Inactive"]].map(([val, label]) => (
                   <button
                     key={val}
                     onClick={() => setFilterStatus(val)}

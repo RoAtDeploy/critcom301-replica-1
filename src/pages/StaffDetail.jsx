@@ -137,7 +137,6 @@ export default function StaffDetail() {
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="review">Review</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
