@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Filter, FileText, Phone, Clock, ChevronRight, Upload, Download, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Search, Filter, Phone, Clock, ChevronRight, Upload, Download, ShieldCheck, AlertTriangle, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -23,12 +23,16 @@ const formatDuration = (seconds) => {
 
 
 export default function StaffMembers() {
-  const { staffList, refreshStaff } = useAdmin();
+  const { staffList, refreshStaff, roles: availableRoles } = useAdmin();
   const [search, setSearch] = useState("");
   const [screenedCounts, setScreenedCounts] = useState({});
   const [callSeconds, setCallSeconds] = useState({});
   const [complianceCounts, setComplianceCounts] = useState({});
   const [csvOpen, setCsvOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterRoles, setFilterRoles] = useState([]);
+  const [filterStatus, setFilterStatus] = useState("all"); // "all" | "active" | "review"
+  const [filterOutstanding, setFilterOutstanding] = useState(false);
 
   useEffect(() => { refreshStaff(); }, []);
 
@@ -69,9 +73,27 @@ export default function StaffMembers() {
     });
   }, [staffList]);
 
-  const filtered = staffList.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = staffList.filter((s) => {
+    if (!s.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterStatus !== "all" && s.status !== filterStatus) return false;
+    if (filterRoles.length > 0 && !filterRoles.some((r) => (s.roles || []).includes(r))) return false;
+    if (filterOutstanding && (complianceCounts[s.id] || 0) >= 3) return false;
+    return true;
+  });
+
+  const activeFilterCount = filterRoles.length + (filterStatus !== "all" ? 1 : 0) + (filterOutstanding ? 1 : 0);
+
+  const clearFilters = () => {
+    setFilterRoles([]);
+    setFilterStatus("all");
+    setFilterOutstanding(false);
+  };
+
+  const toggleRole = (role) => {
+    setFilterRoles((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+    );
+  };
 
   return (
     <motion.div
@@ -109,19 +131,97 @@ export default function StaffMembers() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search staff members…"
-            className="pl-10"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search staff members…"
+              className="pl-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button
+            variant={showFilters ? "default" : "outline"}
+            size="sm"
+            className="gap-2"
+            onClick={() => setShowFilters((v) => !v)}
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="bg-primary-foreground text-primary rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" onClick={clearFilters}>
+              <X className="w-3.5 h-3.5" /> Clear
+            </Button>
+          )}
         </div>
-        <Button variant="outline" size="icon">
-          <Filter className="w-4 h-4" />
-        </Button>
+
+        {showFilters && (
+          <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+            {/* Status */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Status</p>
+              <div className="flex gap-2 flex-wrap">
+                {[["all", "All"], ["active", "Active"], ["review", "Review"]].map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => setFilterStatus(val)}
+                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                      filterStatus === val
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background border-border hover:bg-muted"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Roles */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Role</p>
+              <div className="flex gap-2 flex-wrap">
+                {availableRoles.map((role) => (
+                  <button
+                    key={role}
+                    onClick={() => toggleRole(role)}
+                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                      filterRoles.includes(role)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background border-border hover:bg-muted"
+                    }`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Compliance */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Compliance</p>
+              <button
+                onClick={() => setFilterOutstanding((v) => !v)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  filterOutstanding
+                    ? "bg-destructive/10 text-destructive border-destructive/30"
+                    : "bg-background border-border hover:bg-muted"
+                }`}
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Outstanding assessments only (&lt;3/3)
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4">
