@@ -225,19 +225,21 @@ export default function StaffMembers() {
       </div>
 
       <div className="grid gap-4">
-        {filtered.map((member) => (
+        {filtered.map((member) => {
+          const isInactive = member.status === "inactive";
+          return (
           <Link key={member.id} to={`/staff/${member.id}`}>
-            <Card className="border-border/50 hover:shadow-md transition-shadow duration-200 cursor-pointer">
+            <Card className={`border-border/50 hover:shadow-md transition-shadow duration-200 cursor-pointer ${isInactive ? "opacity-50" : ""}`}>
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-12 h-12">
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      <AvatarFallback className={isInactive ? "bg-muted text-muted-foreground font-semibold" : "bg-primary/10 text-primary font-semibold"}>
                         {getInitials(member.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold">{member.name}</p>
+                      <p className={`font-semibold ${isInactive ? "text-muted-foreground" : ""}`}>{member.name}</p>
                       <p className="text-sm text-muted-foreground">{member.roles.join(", ")}</p>
                     </div>
                   </div>
@@ -282,7 +284,8 @@ export default function StaffMembers() {
               </CardContent>
             </Card>
           </Link>
-        ))}
+          );
+        })}
       </div>
       <CsvUploadDialog open={csvOpen} onClose={() => setCsvOpen(false)} onImported={refreshStaff} />
     </motion.div>
