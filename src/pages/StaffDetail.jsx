@@ -129,8 +129,12 @@ export default function StaffDetail() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant="secondary" className={member.status === "active" ? "bg-accent/10 text-accent border-accent/20" : "bg-chart-3/10 text-chart-3 border-chart-3/20"}>
-                {member.status === "active" ? "Active" : "Review"}
+              <Badge variant="secondary" className={
+                member.status === "active" ? "bg-accent/10 text-accent border-accent/20" :
+                member.status === "inactive" ? "bg-muted text-muted-foreground border-border" :
+                "bg-chart-3/10 text-chart-3 border-chart-3/20"
+              }>
+                {member.status === "active" ? "Active" : member.status === "inactive" ? "Inactive" : "Review"}
               </Badge>
               {!editing && (
                 <Button onClick={() => setEditing(true)} variant="outline" size="sm">
@@ -215,6 +219,17 @@ export default function StaffDetail() {
                     </div>
                   )}
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={form.status || "active"} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">

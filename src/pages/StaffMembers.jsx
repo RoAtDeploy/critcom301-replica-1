@@ -169,7 +169,7 @@ export default function StaffMembers() {
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Status</p>
               <div className="flex gap-2 flex-wrap">
-                {[["all", "All"], ["active", "Active"], ["review", "Review"]].map(([val, label]) => (
+                {[["all", "All"], ["active", "Active"], ["inactive", "Inactive"], ["review", "Review"]].map(([val, label]) => (
                   <button
                     key={val}
                     onClick={() => setFilterStatus(val)}
@@ -268,12 +268,12 @@ export default function StaffMembers() {
                     <Badge
                       variant="secondary"
                       className={
-                        member.status === "active"
-                          ? "bg-accent/10 text-accent border-accent/20"
-                          : "bg-chart-3/10 text-chart-3 border-chart-3/20"
+                        member.status === "active" ? "bg-accent/10 text-accent border-accent/20" :
+                        member.status === "inactive" ? "bg-muted text-muted-foreground border-border" :
+                        "bg-chart-3/10 text-chart-3 border-chart-3/20"
                       }
                     >
-                      {member.status === "active" ? "Active" : "Review"}
+                      {member.status === "active" ? "Active" : member.status === "inactive" ? "Inactive" : "Review"}
                     </Badge>
                   </div>
 
