@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { Resend } from 'npm:resend@4.0.0';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -107,11 +108,12 @@ Deno.serve(async (req) => {
 </body>
 </html>`;
 
-  await base44.integrations.Core.SendEmail({
-    from_name: "CritCon301",
+  const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+  await resend.emails.send({
+    from: 'CritCon301 <onboarding@resend.dev>',
     to: staffEmail,
     subject,
-    body,
+    html: body,
   });
 
   await base44.asServiceRole.entities.Report.update(reportId, {
