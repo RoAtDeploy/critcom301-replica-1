@@ -1,8 +1,15 @@
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function TopBar() {
+  const { user } = useAuth();
+
+  const initials = user?.full_name
+    ? user.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "?";
+
   return (
     <header className="h-[72px] border-b border-border bg-card/60 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-40">
       <div className="flex items-center gap-4">
@@ -14,12 +21,12 @@ export default function TopBar() {
         <div className="flex items-center gap-3">
           <Avatar className="w-9 h-9">
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-              JD
+              {initials}
             </AvatarFallback>
           </Avatar>
           <div className="hidden md:block">
-            <p className="text-sm font-medium leading-none">John Doe</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Admin</p>
+            <p className="text-sm font-medium leading-none">{user?.full_name || "—"}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 capitalize">{user?.role || "—"}</p>
           </div>
         </div>
       </div>
