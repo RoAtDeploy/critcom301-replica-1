@@ -161,6 +161,24 @@ export default function StaffReview() {
           </div>
         )}
 
+        {/* Audio Player */}
+        {report.audio_url && (
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                Call Recording
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">You can listen back to the call that was assessed.</p>
+            </CardHeader>
+            <CardContent>
+              <audio controls className="w-full" src={report.audio_url}>
+                Your browser does not support the audio element.
+              </audio>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Feedback (A/B) */}
         {feedbackItems.length > 0 && (
           <Card className="border-border/50">
