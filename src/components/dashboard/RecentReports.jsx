@@ -1,66 +1,84 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
 
-const mockReports = [
-  { id: 1, staffName: "Sarah Mitchell", date: "May 7, 2026", score: 92, status: "completed" },
-  { id: 2, staffName: "James Walker", date: "May 6, 2026", score: 78, status: "completed" },
-  { id: 3, staffName: "Emily Chen", date: "May 6, 2026", score: 85, status: "completed" },
-  { id: 4, staffName: "Marcus Johnson", date: "May 5, 2026", score: 64, status: "needs_review" },
-  { id: 5, staffName: "Olivia Brown", date: "May 5, 2026", score: 91, status: "completed" },
-];
-
-const scoreColor = (score) => {
-  if (score >= 85) return "text-accent";
-  if (score >= 70) return "text-chart-3";
-  return "text-destructive";
+const STATUS_CONFIG = {
+  draft:          { label: "Draft",          className: "bg-muted text-muted-foreground border-border" },
+  saved:          { label: "Saved",          className: "bg-secondary text-secondary-foreground border-border" },
+  sent:           { label: "Sent",           className: "bg-primary/10 text-primary border-primary/20" },
+  staff_reviewed: { label: "Staff Reviewed", className: "bg-accent/10 text-accent border-accent/20" },
+  signed_off:     { label: "Signed Off",     className: "bg-emerald-100 text-emerald-700 border-emerald-300" },
 };
 
 export default function RecentReports() {
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    base44.entities.Report.list("-updated_date", 5).then((data) => {
+      setReports(data);
+      setLoading(false);
+    });
+  }, []);
+
   return (
     <Card className="border-border/50">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <CardTitle className="text-lg font-semibold">Recent Reports</CardTitle>
-        <Link to="/staff">
+        <Link to="/open-assessments">
           <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
             View all <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </Link>
       </CardHeader>
       <CardContent className="space-y-1">
-        {mockReports.map((report) => (
-          <div
-            key={report.id}
-            className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-primary" />
+        {loading ? (
+          <div className="space-y-1">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-3 px-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-muted animate-pulse" />
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-28 bg-muted rounded animate-pulse" />
+                    <div className="h-2.5 w-20 bg-muted rounded animate-pulse" />
+                  </div>
+                </div>
+                <div className="h-5 w-20 bg-muted rounded animate-pulse" />
               </div>
-              <div>
-                <p className="text-sm font-medium">{report.staffName}</p>
-                <p className="text-xs text-muted-foreground">{report.date}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className={`text-sm font-bold ${scoreColor(report.score)}`}>
-                {report.score}%
-              </span>
-              <Badge
-                variant="secondary"
-                className={
-                  report.status === "completed"
-                    ? "bg-accent/10 text-accent border-accent/20"
-                    : "bg-chart-3/10 text-chart-3 border-chart-3/20"
-                }
-              >
-                {report.status === "completed" ? "Completed" : "Review"}
-              </Badge>
-            </div>
+            ))}
           </div>
-        ))}
+        ) : reports.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No reports yet.</p>
+        ) : (
+          reports.map((report) => {
+            const cfg = STATUS_CONFIG[report.status] || STATUS_CONFIG.draft;
+            const date = report.updated_date
+              ? new Date(report.updated_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+              : "-";
+            return (
+              <Link key={report.id} to={`/reports/${report.id}`}>
+                <div className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{report.staff_name || "Unknown"}</p>
+                      <p className="text-xs text-muted-foreground">{date}</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className={cfg.className}>
+                    {cfg.label}
+                  </Badge>
+                </div>
+              </Link>
+            );
+          })
+        )}
       </CardContent>
     </Card>
   );
