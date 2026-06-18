@@ -83,7 +83,7 @@ export default function MonitoringOnMass() {
     const results = await Promise.allSettled(
       toProcess.map(async (item) => {
         // Mark as uploading in UI
-        setProcessed(prev => [...prev, { id: item.id, name: item.name, staff_name: item.staffName, _status: "uploading", objectUrl: item.objectUrl }]);
+        setProcessed(prev => [{ id: item.id, name: item.name, staff_name: item.staffName, _status: "uploading", objectUrl: item.objectUrl }, ...prev]);
 
         const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
 
