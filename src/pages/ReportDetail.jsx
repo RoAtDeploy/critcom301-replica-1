@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, CheckCircle2, Sparkles, Send, RefreshCw, ExternalLink, Pencil, ChevronDown, ChevronUp, ShieldCheck, PenLine, AlertTriangle, MessageSquare } from "lucide-react";
+import { ArrowLeft, Clock, FileAudio, User, Briefcase, Calendar, AlignLeft, Phone, Users, CheckCircle2, Sparkles, Send, RefreshCw, ExternalLink, Pencil, ChevronDown, ChevronUp, ShieldCheck, PenLine, AlertTriangle, MessageSquare, Copy, Check } from "lucide-react";
 import ReportStageTracker from "@/components/report/ReportStageTracker";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import ActionItemsEditor from "@/components/report/ActionItemsEditor";
@@ -24,6 +24,15 @@ export default function ReportDetail() {
   const { actionTemplates } = useAdmin();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [signingOff, setSigningOff] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const staffReviewUrl = `${window.location.origin}/staff-review/${id}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(staffReviewUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
 
   useEffect(() => {
     base44.entities.Report.get(id).then(async (r) => {
@@ -297,19 +306,33 @@ export default function ReportDetail() {
             {/* Send to staff */}
             <div className="pt-2 border-t border-border/40 space-y-2">
               {["sent","staff_reviewed","signed_off"].includes(report.status) && (
-                <div className="flex items-center gap-2 text-xs text-accent">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>
-                    Sent to {report.staff_email || "staff member"}
-                    {report.sent_at && (
-                      <span className="ml-1 text-muted-foreground">
-                        · {new Date(report.sent_at).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    )}
-                  </span>
-                  <a href={`/staff-review/${report.id}`} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-foreground underline">
-                    <ExternalLink className="w-3 h-3" /> Preview staff view
-                  </a>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-accent">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>
+                      Sent to {report.staff_email || "staff member"}
+                      {report.sent_at && (
+                        <span className="ml-1 text-muted-foreground">
+                          · {new Date(report.sent_at).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      )}
+                    </span>
+                    <a href={`/staff-review/${report.id}`} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-foreground underline">
+                      <ExternalLink className="w-3 h-3" /> Preview staff view
+                    </a>
+                  </div>
+                  {/* Copyable staff review link */}
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                    <span className="text-xs text-muted-foreground truncate flex-1 font-mono">{staffReviewUrl}</span>
+                    <button
+                      onClick={handleCopyLink}
+                      className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      title="Copy staff review link"
+                    >
+                      {linkCopied ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{linkCopied ? "Copied!" : "Copy link"}</span>
+                    </button>
+                  </div>
                 </div>
               )}
               {showEmailInput && (
