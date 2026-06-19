@@ -4,16 +4,13 @@ on:
   push:
     branches:
       - '**'
-  pull_request:
-    branches:
-      - '**'
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout master repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -21,5 +18,4 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git push --mirror https://x-access-token:${{ secrets.SYNC_REPLICA_TOKEN }}@github.com/RoAtDeploy/critcom301-replica-1.git
-        continue-on-error: true
+          git push --mirror https://x-access-token:${{ secrets.SYNC_REPLICA_TOKEN }}@github.com/RoAtDeploy/critcom301-replica-1.git 2>&1
