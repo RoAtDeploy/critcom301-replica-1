@@ -36,9 +36,10 @@ THE 10 ASPECTS TO ASSESS (assess staff member only, aspect 11 is user-scored):
 
 4. Delivers the message accurately and concisely?
    No superfluous chat. Information is relevant and structured logically. No over-explanation. Speaks in chunks of essential information. Avoids meaningless phrases like "I just wanted to tell you" or "as I said before".
-   A: All information accurate and delivered without unnecessary padding or filler phrases.
+   IMPORTANT — call etiquette: Normal courtesy such as a "thank you", "please", "cheers", or a brief "goodbye"/"bye" is professional and acceptable. Do NOT mark the staff member down for these as long as the core message remains clear and unconfused, and the courtesies are not excessive or repeated to the point of padding the call. Only treat etiquette as a negative when it is clearly overdone (drawn-out social chat, repeated/excessive pleasantries) or when it actually obscures or confuses the message.
+   A: All information accurate and delivered without unnecessary padding or filler phrases. Brief, normal courtesies are fine and should not lower the grade.
    B: Mostly accurate and concise; minor inaccuracies or slight over-elaboration.
-   C: Some inaccuracies or significant verbosity / filler phrases that risk misunderstanding.
+   C: Some inaccuracies or significant verbosity / filler phrases (or genuinely excessive social chat) that risk misunderstanding.
    D: Inaccurate information given, or delivery so poor accuracy cannot be confirmed.
 
 5. Uses the safety critical communications protocols as specified by Rule Book Section G1?
