@@ -15,7 +15,9 @@ jobs:
           fetch-depth: 0
 
       - name: Push to replica-1
+        env:
+          REPLICA_URL: https://x-access-token:${{ secrets.SYNC_REPLICA_TOKEN }}@github.com/RoAtDeploy/critcom301-replica-1.git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git push --mirror https://x-access-token:${{ secrets.SYNC_REPLICA_TOKEN }}@github.com/RoAtDeploy/critcom301-replica-1.git 2>&1
+          git push --force --mirror "$REPLICA_URL"
