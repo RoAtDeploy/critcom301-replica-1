@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
           <!-- Header -->
           <tr>
             <td style="background-color:#1e2235;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
-              <p style="margin:0;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#8b9dc3;">CritCon301</p>
+              <p style="margin:0;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#8b9dc3;">CritCom301</p>
               <h1 style="margin:8px 0 0;font-size:22px;font-weight:700;color:#ffffff;line-height:1.3;">Communication Monitoring Report</h1>
             </td>
           </tr>
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
           <tr>
             <td style="background-color:#f0f2f8;border-radius:0 0 12px 12px;padding:20px 40px;text-align:center;border-top:1px solid #e8ecf4;">
               <p style="margin:0;font-size:12px;color:#8b9dc3;line-height:1.6;">
-                This email was sent by the <strong>CritCon301 Monitoring Team</strong>.<br/>
+                This email was sent by the <strong>CritCom301 Monitoring Team</strong>.<br/>
                 Please do not reply to this email. Contact your line manager with any questions.
               </p>
             </td>
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
 
   const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
   await resend.emails.send({
-    from: 'CritCon301 <onboarding@resend.dev>',
+    from: 'CritCom301 <onboarding@resend.dev>',
     to: staffEmail,
     subject,
     html: body,
