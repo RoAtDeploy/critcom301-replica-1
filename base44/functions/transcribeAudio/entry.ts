@@ -35,12 +35,14 @@ Deno.serve(async (req) => {
 
     const result = await whisperRes.json();
 
-    const segments = (result.segments || []).map(seg => ({
+    const rawSegments = (result.segments || []).map(seg => ({
       timestamp: formatTime(seg.start),
       start: seg.start,
       end: seg.end,
       text: seg.text.trim(),
     }));
+
+    const segments = mergeFragmentedSegments(rawSegments);
 
     return Response.json({
       text: result.text,
@@ -57,4 +59,39 @@ function formatTime(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
   const s = Math.floor(seconds % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
+}
+
+// Whisper often splits mid-sentence on short pauses, producing fragments like
+// "...I'll go through some details with" / "you." — merge these back together.
+// A segment is considered a fragment if it doesn't end with terminal punctuation
+// or is very short, and the gap to the next segment is small.
+function mergeFragmentedSegments(segments) {
+  if (!segments || segments.length === 0) return [];
+
+  const TERMINAL = /[.?!]$/;
+  const MAX_GAP_SEC = 1.5;       // only merge if segments are within 1.5s of each other
+  const SHORT_FRAGMENT_WORDS = 6; // segments with fewer words than this are likely fragments
+
+  const merged = [];
+
+  for (const seg of segments) {
+    const prev = merged[merged.length - 1];
+    const wordCount = seg.text ? seg.text.split(/\s+/).filter(Boolean).length : 0;
+    const gap = prev ? seg.start - prev.end : Infinity;
+
+    const prevNeedsMerge = prev && (
+      !TERMINAL.test(prev.text) ||
+      prev.text.split(/\s+/).filter(Boolean).length < SHORT_FRAGMENT_WORDS
+    );
+
+    if (prev && prevNeedsMerge && gap <= MAX_GAP_SEC) {
+      // Merge into previous segment
+      prev.text = (prev.text + ' ' + seg.text).replace(/\s+/g, ' ').trim();
+      prev.end = seg.end;
+    } else {
+      merged.push({ ...seg });
+    }
+  }
+
+  return merged;
 }
