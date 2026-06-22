@@ -64,20 +64,20 @@ function formatTime(seconds) {
 
 // Whisper often splits mid-sentence on short pauses, producing fragments like
 // "...I'll go through some details with" / "you." — merge these back together.
-// A segment is considered a fragment if it doesn't end with terminal punctuation
-// or is very short, and the gap to the next segment is small.
+// If a segment does NOT end with terminal punctuation (. ? !) it is almost
+// certainly a mid-sentence split and should be merged with the next segment
+// regardless of the gap. Short fragments are also merged within a generous gap.
 function mergeFragmentedSegments(segments) {
   if (!segments || segments.length === 0) return [];
 
   const TERMINAL = /[.?!]$/;
-  const MAX_GAP_SEC = 1.5;       // only merge if segments are within 1.5s of each other
-  const SHORT_FRAGMENT_WORDS = 6; // segments with fewer words than this are likely fragments
+  const MAX_GAP_SEC = 4;         // generous gap for short-fragment merging
+  const SHORT_FRAGMENT_WORDS = 8;
 
   const merged = [];
 
   for (const seg of segments) {
     const prev = merged[merged.length - 1];
-    const wordCount = seg.text ? seg.text.split(/\s+/).filter(Boolean).length : 0;
     const gap = prev ? seg.start - prev.end : Infinity;
 
     const prevNeedsMerge = prev && (
@@ -85,8 +85,13 @@ function mergeFragmentedSegments(segments) {
       prev.text.split(/\s+/).filter(Boolean).length < SHORT_FRAGMENT_WORDS
     );
 
-    if (prev && prevNeedsMerge && gap <= MAX_GAP_SEC) {
-      // Merge into previous segment
+    // Non-terminal segments always merge (they're mid-sentence splits).
+    // Short fragments merge only within the gap threshold.
+    const shouldMerge = prev && prevNeedsMerge && (
+      !TERMINAL.test(prev.text) || gap <= MAX_GAP_SEC
+    );
+
+    if (shouldMerge) {
       prev.text = (prev.text + ' ' + seg.text).replace(/\s+/g, ' ').trim();
       prev.end = seg.end;
     } else {
