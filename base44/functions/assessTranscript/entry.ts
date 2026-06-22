@@ -86,6 +86,7 @@ THE 10 ASPECTS TO ASSESS (assess staff member only, aspect 11 is user-scored):
 
 IMPORTANT:
 - Only judge the STAFF MEMBER's contributions (lines labelled [STAFF]).
+- TRANSCRIPTION NOTE: The transcription model may convert spoken words into their numeric or grouped forms. For example, if the staff member says "one, nine, five, three" it may appear in the transcript as "1953", or "zero, one" may appear as "01". The staff member IS still speaking the digits individually — the transcript format does NOT indicate they grouped them. Do NOT penalise a staff member for using grouped digits, numeric formats, or abbreviations that are simply artefacts of how the transcript was rendered. Judge whether they followed the single-number / phonetic protocol based on the spoken intent and context, not the written appearance of the transcript.
 - Do not assess or grade the other party's performance.
 - For aspects 6, 7, 9, 10 the interaction between parties is relevant context, but the grade still reflects the staff member's behaviour only.
 - Be specific in your reasoning — quote or paraphrase the staff member's actual words from the transcript.

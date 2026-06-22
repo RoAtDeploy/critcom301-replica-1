@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
     form.append('file', audioBlob, 'audio.mp3');
     form.append('model', 'whisper-1');
     form.append('response_format', 'verbose_json');
+    form.append('prompt', 'Railway safety-critical communications. Single digits spoken individually: zero, one, two, three, four, five, six, seven, eight, nine. Phonetic alphabet: Alpha, Bravo, Charlie, Delta, Echo, Foxtrot, Golf, Hotel, India, Juliet, Kilo, Lima, Mike, November, Oscar, Papa, Quebec, Romeo, Sierra, Tango, Uniform, Victor, Whiskey, X-ray, Yankee, Zulu. Signal numbers and headcodes given digit by digit. One two three four five six seven eight nine zero.');
 
     const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
