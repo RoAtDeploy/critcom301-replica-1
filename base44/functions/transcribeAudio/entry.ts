@@ -43,7 +43,8 @@ Deno.serve(async (req) => {
       text: seg.text.trim(),
     }));
 
-    const segments = mergeFragmentedSegments(rawSegments);
+    const merged = mergeFragmentedSegments(rawSegments);
+    const segments = await resegmentSpeakers(base44, merged);
 
     return Response.json({
       text: result.text,
@@ -100,4 +101,96 @@ function mergeFragmentedSegments(segments) {
   }
 
   return merged;
+}
+
+// Whisper segments can contain multiple speakers in one chunk (e.g. a question
+// immediately followed by the answer). This uses an LLM to split those into
+// individual speaker turns (S1 / S2) while preserving the exact text.
+// Timestamps are interpolated within each original segment's time range.
+async function resegmentSpeakers(base44, segments) {
+  if (!segments || segments.length === 0) return [];
+
+  // For a single short segment, skip the LLM call
+  if (segments.length === 1 && (segments[0].text || '').length < 40) {
+    return segments.map(s => ({ ...s, speaker: s.speaker || 'S1' }));
+  }
+
+  const lines = segments.map((s, i) => `[SEGMENT ${i}] ${s.text}`).join('\n');
+
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are given a transcript of a two-person railway safety-critical phone call. The text has been split into segments by an automatic speech recognition system, but some segments contain speech from BOTH speakers (e.g. a question from one person immediately followed by the answer from the other).
+
+Your job: re-segment the transcript so that each output turn contains speech from only ONE speaker, and label each as "S1" or "S2".
+
+Rules:
+- Split any segment that contains two speakers into separate turns.
+- Label each turn S1 or S2 based on the dialogue flow (questions tend to be one speaker, answers the other; alternate when unsure).
+- If a segment already contains a single speaker, output it as one turn with a label.
+- Preserve the exact text — do NOT alter, correct, paraphrase, or add/remove any words.
+- For each turn, indicate which original SEGMENT number it came from (0-based).
+
+TRANSCRIPT:
+${lines}`,
+    response_json_schema: {
+      type: 'object',
+      properties: {
+        turns: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              source_segment: { type: 'number' },
+              text: { type: 'string' },
+              speaker: { type: 'string' }
+            },
+            required: ['text', 'speaker']
+          }
+        }
+      }
+    }
+  });
+
+  const turns = result?.turns || result?.response?.turns || [];
+
+  // If LLM didn't return usable turns, fall back to original segments
+  if (turns.length === 0) {
+    return segments.map(s => ({ ...s, speaker: s.speaker || 'S1' }));
+  }
+
+  // Group turns by their source segment for timestamp interpolation
+  const turnsBySeg = {};
+  for (const turn of turns) {
+    const segIdx = Math.max(0, Math.min(turn.source_segment ?? 0, segments.length - 1));
+    if (!turnsBySeg[segIdx]) turnsBySeg[segIdx] = [];
+    turnsBySeg[segIdx].push(turn);
+  }
+
+  const result2 = [];
+
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    const segTurns = turnsBySeg[i] || [{ text: seg.text, speaker: 'S1' }];
+
+    const segDuration = seg.end - seg.start;
+    const totalChars = segTurns.reduce((sum, t) => sum + (t.text?.length || 0), 0) || 1;
+    let elapsed = 0;
+
+    for (const turn of segTurns) {
+      const charLen = turn.text?.length || 0;
+      const fraction = charLen / totalChars;
+      const turnDuration = fraction * segDuration;
+      const turnStart = seg.start + elapsed;
+      elapsed += turnDuration;
+
+      result2.push({
+        timestamp: formatTime(turnStart),
+        start: turnStart,
+        end: turnStart + turnDuration,
+        speaker: turn.speaker === 'S2' ? 'S2' : 'S1',
+        text: (turn.text || '').trim(),
+      });
+    }
+  }
+
+  return result2;
 }
