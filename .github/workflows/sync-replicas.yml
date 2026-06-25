@@ -13,11 +13,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+          
       - name: Push to replica-1
         env:
           REPLICA_URL: https://x-access-token:${{ secrets.SYNC_REPLICA_TOKEN }}@github.com/RoAtDeploy/critcom301-replica-1.git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git push --force --mirror "$REPLICA_URL"
+          git remote add replica-1 "$REPLICA_URL"
+          git push --force --mirror replica-1
