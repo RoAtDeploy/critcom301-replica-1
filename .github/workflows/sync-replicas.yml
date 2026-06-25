@@ -14,7 +14,7 @@ jobs:
         with:
           fetch-depth: 0
           
-       - name: Push to replica-1
+      - name: Push to replica-1
         env:
           GH_USERNAME: RoAtDeploy
           GH_TOKEN: ${{ secrets.SYNC_REPLICA_TOKEN }}
