@@ -8,6 +8,7 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    environment: CoreEnvironment
     steps:
       - name: Checkout master repository
         uses: actions/checkout@v4
