@@ -18,7 +18,7 @@ jobs:
       - name: Push to replica-1
         env:
           GH_USERNAME: RoAtDeploy
-          GH_TOKEN: ${{ secrets.SYNC_REPLICA_TOKEN }}
+          GH_TOKEN: ${{ secrets.CORE_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
