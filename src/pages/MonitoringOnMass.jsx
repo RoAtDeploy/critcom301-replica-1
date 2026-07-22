@@ -52,8 +52,6 @@ export default function MonitoringOnMass() {
       file,
       objectUrl: URL.createObjectURL(file),
       name: file.name,
-      staffId: selectedStaffObj?.id ?? null,
-      staffName: selectedStaffObj?.name ?? null,
     }));
     setStaged(prev => [...prev, ...newStaged]);
   };
@@ -79,11 +77,16 @@ export default function MonitoringOnMass() {
     const toProcess = [...staged];
     setStaged([]);
 
+    // Resolve the staff assignment at the moment of processing so the
+    // currently-selected staff member in the dropdown is always applied.
+    const staffId = selectedStaffObj?.id ?? null;
+    const staffName = selectedStaffObj?.name ?? null;
+
     // Kick off all uploads + processing in parallel
     const results = await Promise.allSettled(
       toProcess.map(async (item) => {
         // Mark as uploading in UI
-        setProcessed(prev => [{ id: item.id, name: item.name, staff_name: item.staffName, _status: "uploading", objectUrl: item.objectUrl }, ...prev]);
+        setProcessed(prev => [{ id: item.id, name: item.name, staff_name: staffName, _status: "uploading", objectUrl: item.objectUrl }, ...prev]);
 
         const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
 
@@ -93,8 +96,8 @@ export default function MonitoringOnMass() {
         const result = await base44.functions.invoke("processRecording", {
           file_url,
           file_name: item.name,
-          staff_id: item.staffId,
-          staff_name: item.staffName,
+          staff_id: staffId,
+          staff_name: staffName,
         });
 
         const { recording } = result.data;
@@ -257,8 +260,10 @@ export default function MonitoringOnMass() {
                 <div key={item.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50 border border-border">
                   <FileAudio className="w-4 h-4 text-muted-foreground shrink-0" />
                   <span className="text-sm font-medium flex-1 truncate">{item.name}</span>
-                  {item.staffName && (
-                    <span className="text-xs text-primary/70 shrink-0">{item.staffName}</span>
+                  {selectedStaffObj ? (
+                    <span className="text-xs text-primary/70 shrink-0">{selectedStaffObj.name}</span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground shrink-0">Unassigned</span>
                   )}
                   <button onClick={() => removeStaged(item.id)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
                     <X className="w-3.5 h-3.5" />
