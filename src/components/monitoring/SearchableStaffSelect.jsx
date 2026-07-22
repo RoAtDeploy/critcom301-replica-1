@@ -6,11 +6,20 @@ import { cn } from "@/lib/utils";
 
 export default function SearchableStaffSelect({ staffMembers, value, onChange, placeholder = "Select staff" }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   const sorted = useMemo(
     () => [...staffMembers].sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [staffMembers]
   );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return sorted;
+    return sorted.filter((s) =>
+      `${s.name || ""} ${s.email || ""} ${s.lastName || ""}`.toLowerCase().includes(q)
+    );
+  }, [sorted, query]);
 
   const selectedObj = value !== "unknown" ? staffMembers.find((s) => s.id === value) : null;
   const displayLabel = value === "unknown" ? "Unknown / Unassigned" : selectedObj?.name || placeholder;
@@ -21,7 +30,7 @@ export default function SearchableStaffSelect({ staffMembers, value, onChange, p
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }}>
       <PopoverTrigger asChild>
         <button
           role="combobox"
@@ -39,28 +48,29 @@ export default function SearchableStaffSelect({ staffMembers, value, onChange, p
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="end">
-        <Command filter={(itemValue, search) => {
-          return itemValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
-        }}>
-          <CommandInput placeholder="Search staff…" />
+        <Command shouldFilter={false}>
+          <CommandInput placeholder="Search staff…" value={query} onValueChange={setQuery} />
           <CommandList>
-            <CommandEmpty>No staff found.</CommandEmpty>
-            <CommandGroup>
-              <CommandItem value="unknown" onSelect={() => handleSelect("unknown")}>
-                <Check className={cn("mr-1.5 h-3.5 w-3.5", value === "unknown" ? "opacity-100" : "opacity-0")} />
-                Unknown / Unassigned
-              </CommandItem>
-              {sorted.map((s) => (
-                <CommandItem
-                  key={s.id}
-                  value={`${s.name || ""} ${s.email || ""} ${s.lastName || ""}`}
-                  onSelect={() => handleSelect(s.id)}
-                >
-                  <Check className={cn("mr-1.5 h-3.5 w-3.5", value === s.id ? "opacity-100" : "opacity-0")} />
-                  {s.name}
+            {filtered.length === 0 ? (
+              <CommandEmpty>No staff found.</CommandEmpty>
+            ) : (
+              <CommandGroup>
+                <CommandItem value="unknown" onSelect={() => handleSelect("unknown")}>
+                  <Check className={cn("mr-1.5 h-3.5 w-3.5", value === "unknown" ? "opacity-100" : "opacity-0")} />
+                  Unknown / Unassigned
                 </CommandItem>
-              ))}
-            </CommandGroup>
+                {filtered.map((s) => (
+                  <CommandItem
+                    key={s.id}
+                    value={s.id}
+                    onSelect={() => handleSelect(s.id)}
+                  >
+                    <Check className={cn("mr-1.5 h-3.5 w-3.5", value === s.id ? "opacity-100" : "opacity-0")} />
+                    {s.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>
