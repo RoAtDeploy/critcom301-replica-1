@@ -27,11 +27,16 @@ export default function Sidebar() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [openCount, setOpenCount] = useState(null);
+  const [activeStaffCount, setActiveStaffCount] = useState(null);
 
   useEffect(() => {
     base44.entities.Report.list().then(reports => {
       const open = reports.filter(r => r.status !== "signed_off").length;
       setOpenCount(open);
+    }).catch(() => {});
+    base44.entities.StaffMember.list().then(staff => {
+      const active = staff.filter(s => s.status === "active").length;
+      setActiveStaffCount(active);
     }).catch(() => {});
   }, []);
 
@@ -55,6 +60,11 @@ export default function Sidebar() {
           {item.path === "/open-assessments" && openCount > 0 && (
             <span className="bg-orange-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center leading-tight">
               {openCount}
+            </span>
+          )}
+          {item.path === "/staff" && activeStaffCount != null && (
+            <span className="bg-sidebar-accent text-sidebar-foreground text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center leading-tight">
+              {activeStaffCount}
             </span>
           )}
         </>
