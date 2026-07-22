@@ -14,6 +14,7 @@ import {
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { base44 } from "@/api/base44Client";
+import { LogOut } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
@@ -110,6 +111,17 @@ export default function Sidebar() {
         )}
         <NavLink item={{ label: "Admin", icon: Settings2, path: "/admin" }} />
         <NavLink item={{ label: "User Guide", icon: BookOpen, path: "/user-guide" }} />
+      </div>
+
+      {/* Logout */}
+      <div className="px-3 pb-2 pt-2">
+        <button
+          onClick={() => base44.auth.logout()}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-destructive/20 hover:text-destructive transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          {!collapsed && <span>Logout</span>}
+        </button>
       </div>
 
       {/* Collapse Toggle */}
