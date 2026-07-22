@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, FileAudio, X, Radio, AlertTriangle, User, Loader2, Zap, Trash2, CheckSquare, Square } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import RecordingRow from "@/components/monitoring/RecordingRow";
+import SearchableStaffSelect from "@/components/monitoring/SearchableStaffSelect";
 
 const GRADE_CONFIG = {
   A: { label: "A", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
@@ -213,17 +213,11 @@ export default function MonitoringOnMass() {
             </CardTitle>
             <div className="flex items-center gap-2 shrink-0">
               <User className="w-4 h-4 text-muted-foreground" />
-              <Select value={selectedStaff} onValueChange={setSelectedStaff}>
-                <SelectTrigger className="h-8 text-xs w-44">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unknown">Unknown / Unassigned</SelectItem>
-                  {staffMembers.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableStaffSelect
+                staffMembers={staffMembers}
+                value={selectedStaff}
+                onChange={setSelectedStaff}
+              />
             </div>
           </div>
         </CardHeader>
