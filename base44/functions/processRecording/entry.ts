@@ -41,6 +41,8 @@ ${guidelineText}
 
 CRITICAL RULE: Grade X must only be used when you are absolutely certain the call has zero operational or safety relevance (wrong number, purely personal/social with no work content whatsoever, or completely empty). If there is ANY railway operational content, work-related discussion, or safety-relevant communication — even brief or informal — you MUST grade it A, B, C, or D. Default to grading A-D when uncertain. X is the exception, not the default.
 
+First, silently list the concrete evidence from the transcript that supports each grade boundary, then decide the single grade that best fits the evidence. Be consistent: the same transcript must always produce the same grade.
+
 Respond with ONLY a JSON object in this exact format, no other text:
 {"grade": "A" | "B" | "C" | "D" | "X" | "n/a", "reasoning": "<one sentence explanation>"}
 
@@ -117,12 +119,12 @@ Deno.serve(async (req) => {
       openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: GRADE_PROMPT + transcriptForPrompt }],
-        temperature: 0.2,
+        temperature: 0,
       }),
       openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: SCREENING_PROMPT + transcriptForPrompt }],
-        temperature: 0.2,
+        temperature: 0,
       }),
     ]);
 
