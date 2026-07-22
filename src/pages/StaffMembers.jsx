@@ -224,34 +224,34 @@ export default function StaffMembers() {
         )}
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-2">
         {filtered.map((member) => {
           const isInactive = member.status === "inactive";
           return (
           <Link key={member.id} to={`/staff/${member.id}`}>
             <Card className={`border-border/50 hover:shadow-md transition-shadow duration-200 cursor-pointer ${isInactive ? "opacity-50" : ""}`}>
-              <CardContent className="p-5">
+              <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-12 h-12">
-                      <AvatarFallback className={isInactive ? "bg-muted text-muted-foreground font-semibold" : "bg-primary/10 text-primary font-semibold"}>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-9 h-9">
+                      <AvatarFallback className={isInactive ? "bg-muted text-muted-foreground font-semibold text-sm" : "bg-primary/10 text-primary font-semibold text-sm"}>
                         {getInitials(member.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className={`font-semibold ${isInactive ? "text-muted-foreground" : ""}`}>{member.name}</p>
-                      <p className="text-sm text-muted-foreground">{member.roles.join(", ")}</p>
+                      <p className={`font-semibold text-sm ${isInactive ? "text-muted-foreground" : ""}`}>{member.name}</p>
+                      <p className="text-xs text-muted-foreground">{member.roles.join(", ")}</p>
                     </div>
                   </div>
 
-                  <div className="hidden md:flex items-center gap-8">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
+                  <div className="hidden md:flex items-center gap-6">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <Phone className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="font-medium">{screenedCounts[member.id] || 0}</span>
                       <span className="text-muted-foreground">screened</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="font-medium">{formatDuration(callSeconds[member.id] || 0)}</span>
                       <span className="text-muted-foreground">call time</span>
                     </div>
@@ -260,10 +260,10 @@ export default function StaffMembers() {
                       const count = complianceCounts[member.id] || 0;
                       const met = count >= 3;
                       return (
-                        <div className={`flex items-center gap-1.5 text-sm px-2.5 py-1 rounded-full border ${met ? "bg-accent/10 text-accent border-accent/20" : "bg-destructive/10 text-destructive border-destructive/20"}`}>
+                        <div className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${met ? "bg-accent/10 text-accent border-accent/20" : "bg-destructive/10 text-destructive border-destructive/20"}`}>
                           {met ? <ShieldCheck className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
                           <span className="font-semibold">{count}/3</span>
-                          <span className="text-xs opacity-75">assessments</span>
+                          <span className="text-[11px] opacity-75">assessments</span>
                         </div>
                       );
                     })()}
@@ -279,7 +279,7 @@ export default function StaffMembers() {
                     </Badge>
                   </div>
 
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </div>
               </CardContent>
             </Card>
