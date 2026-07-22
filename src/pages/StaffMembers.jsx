@@ -73,13 +73,15 @@ export default function StaffMembers() {
     });
   }, [staffList]);
 
-  const filtered = staffList.filter((s) => {
-    if (!s.name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterStatus !== "all" && s.status !== filterStatus) return false;
-    if (filterRoles.length > 0 && !filterRoles.some((r) => (s.roles || []).includes(r))) return false;
-    if (filterOutstanding && (complianceCounts[s.id] || 0) >= 3) return false;
-    return true;
-  });
+  const filtered = staffList
+    .filter((s) => {
+      if (!s.name.toLowerCase().includes(search.toLowerCase())) return false;
+      if (filterStatus !== "all" && s.status !== filterStatus) return false;
+      if (filterRoles.length > 0 && !filterRoles.some((r) => (s.roles || []).includes(r))) return false;
+      if (filterOutstanding && (complianceCounts[s.id] || 0) >= 3) return false;
+      return true;
+    })
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
   const activeFilterCount = filterRoles.length + (filterStatus !== "all" ? 1 : 0) + (filterOutstanding ? 1 : 0);
 
@@ -231,26 +233,26 @@ export default function StaffMembers() {
           <Link key={member.id} to={`/staff/${member.id}`}>
             <Card className={`border-border/50 hover:shadow-md transition-shadow duration-200 cursor-pointer ${isInactive ? "opacity-50" : ""}`}>
               <CardContent className="p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-9 h-9">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <Avatar className="w-9 h-9 shrink-0">
                       <AvatarFallback className={isInactive ? "bg-muted text-muted-foreground font-semibold text-sm" : "bg-primary/10 text-primary font-semibold text-sm"}>
                         {getInitials(member.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className={`font-semibold text-sm ${isInactive ? "text-muted-foreground" : ""}`}>{member.name}</p>
-                      <p className="text-xs text-muted-foreground">{member.roles.join(", ")}</p>
+                    <div className="min-w-0">
+                      <p className={`font-semibold text-sm truncate ${isInactive ? "text-muted-foreground" : ""}`}>{member.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{member.roles.join(", ")}</p>
                     </div>
                   </div>
 
-                  <div className="hidden md:flex items-center gap-6">
-                    <div className="flex items-center gap-1.5 text-xs w-24">
+                  <div className="hidden md:flex items-center gap-6 shrink-0">
+                    <div className="flex items-center gap-1.5 text-xs w-24 justify-end">
                       <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span className="font-medium">{screenedCounts[member.id] || 0}</span>
                       <span className="text-muted-foreground">screened</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs w-24">
+                    <div className="flex items-center gap-1.5 text-xs w-24 justify-end">
                       <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span className="font-medium">{formatDuration(callSeconds[member.id] || 0)}</span>
                       <span className="text-muted-foreground">call time</span>
@@ -277,9 +279,10 @@ export default function StaffMembers() {
                     >
                       {member.status === "active" ? "Active" : member.status === "inactive" ? "Inactive" : "Review"}
                     </Badge>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </div>
 
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 md:hidden" />
                 </div>
               </CardContent>
             </Card>
