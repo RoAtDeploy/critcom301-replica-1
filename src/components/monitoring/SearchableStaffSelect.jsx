@@ -16,9 +16,7 @@ export default function SearchableStaffSelect({ staffMembers, value, onChange, p
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return sorted;
-    return sorted.filter((s) =>
-      `${s.name || ""} ${s.email || ""} ${s.lastName || ""}`.toLowerCase().includes(q)
-    );
+    return sorted.filter((s) => (s.name || "").toLowerCase().includes(q));
   }, [sorted, query]);
 
   const selectedObj = value !== "unknown" ? staffMembers.find((s) => s.id === value) : null;
