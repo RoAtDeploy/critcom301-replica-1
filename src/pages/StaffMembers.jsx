@@ -245,13 +245,13 @@ export default function StaffMembers() {
                   </div>
 
                   <div className="hidden md:flex items-center gap-6">
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                    <div className="flex items-center gap-1.5 text-xs w-24">
+                      <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span className="font-medium">{screenedCounts[member.id] || 0}</span>
                       <span className="text-muted-foreground">screened</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                    <div className="flex items-center gap-1.5 text-xs w-24">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <span className="font-medium">{formatDuration(callSeconds[member.id] || 0)}</span>
                       <span className="text-muted-foreground">call time</span>
                     </div>
@@ -260,8 +260,8 @@ export default function StaffMembers() {
                       const count = complianceCounts[member.id] || 0;
                       const met = count >= 3;
                       return (
-                        <div className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${met ? "bg-accent/10 text-accent border-accent/20" : "bg-destructive/10 text-destructive border-destructive/20"}`}>
-                          {met ? <ShieldCheck className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                        <div className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border w-28 justify-center ${met ? "bg-accent/10 text-accent border-accent/20" : "bg-destructive/10 text-destructive border-destructive/20"}`}>
+                          {met ? <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> : <AlertTriangle className="w-3.5 h-3.5 shrink-0" />}
                           <span className="font-semibold">{count}/3</span>
                           <span className="text-[11px] opacity-75">assessments</span>
                         </div>
@@ -269,11 +269,11 @@ export default function StaffMembers() {
                     })()}
                     <Badge
                       variant="secondary"
-                      className={
+                      className={`w-16 justify-center ${
                         member.status === "active" ? "bg-accent/10 text-accent border-accent/20" :
                         member.status === "inactive" ? "bg-muted text-muted-foreground border-border" :
                         "bg-chart-3/10 text-chart-3 border-chart-3/20"
-                      }
+                      }`}
                     >
                       {member.status === "active" ? "Active" : member.status === "inactive" ? "Inactive" : "Review"}
                     </Badge>
