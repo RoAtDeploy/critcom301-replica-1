@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
 
   const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
   await resend.emails.send({
-    from: 'CritCom301 <onboarding@resend.dev>',
+    from: 'CritCom301 <notifications@critcom301.com>',
     to: staffEmail,
     subject,
     html: body,
