@@ -81,6 +81,10 @@
       "type": "object",
       "description": "AI-generated quality assessment"
     },
+    "general_feedback": {
+      "type": "string",
+      "description": "Assessor's general feedback on the call, spanning all aspects"
+    },
     "action_items": {
       "type": "array",
       "description": "Reviewer-assigned action items per assessment aspect",

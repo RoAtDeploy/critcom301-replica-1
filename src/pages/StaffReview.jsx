@@ -161,6 +161,22 @@ export default function StaffReview() {
           </div>
         )}
 
+        {/* General Assessor Feedback */}
+        {report.general_feedback && (
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                General Feedback
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">Overall comments from your assessor about this call.</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{report.general_feedback}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Audio Player */}
         {report.audio_url && (
           <Card className="border-border/50">

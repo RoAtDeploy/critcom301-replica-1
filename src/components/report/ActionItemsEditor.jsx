@@ -162,6 +162,7 @@ function AspectActionRow({ item, actionTemplates, resources, onChange }) {
 export default function ActionItemsEditor({ report, onReportUpdate, actionTemplates = [] }) {
   const [saving, setSaving] = useState(false);
   const [resources, setResources] = useState([]);
+  const [generalFeedback, setGeneralFeedback] = useState(report.general_feedback || "");
 
   useEffect(() => {
     base44.entities.Resource.list().then(setResources).catch(() => {});
@@ -213,7 +214,7 @@ export default function ActionItemsEditor({ report, onReportUpdate, actionTempla
 
   const handleSave = async () => {
     setSaving(true);
-    const saved = await base44.entities.Report.update(report.id, { action_items: items });
+    const saved = await base44.entities.Report.update(report.id, { action_items: items, general_feedback: generalFeedback });
     onReportUpdate(saved);
     setSaving(false);
   };
@@ -228,6 +229,19 @@ export default function ActionItemsEditor({ report, onReportUpdate, actionTempla
 
   return (
     <div className="space-y-2">
+      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+        <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+          <MessageSquare className="w-3.5 h-3.5 text-primary" />
+          General Call Feedback (optional)
+        </p>
+        <p className="text-xs text-muted-foreground">Overall feedback on the staff member's communication during this call, spanning all aspects.</p>
+        <Textarea
+          placeholder="Add general comments about the call…"
+          className="h-20 resize-none text-sm bg-background"
+          value={generalFeedback}
+          onChange={(e) => setGeneralFeedback(e.target.value)}
+        />
+      </div>
       {items.map((item, i) => (
         <AspectActionRow
           key={item.aspect_id}

@@ -167,10 +167,19 @@ export default function ExportReportPDF({ report }) {
       }
 
       // ── Action Items ──────────────────────────────────────────────────
-      if (report.action_items?.length > 0) {
+      if (report.action_items?.length > 0 || report.general_feedback) {
         y = checkPageBreak(doc, y, 16);
         y = sectionHeader(doc, "Actions & Feedback", y, pageW);
-        for (const item of report.action_items) {
+        if (report.general_feedback) {
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "bold");
+          doc.text("General Call Feedback:", margin, y);
+          y += 4;
+          doc.setFont("helvetica", "normal");
+          y = addWrappedText(doc, report.general_feedback, margin, y, contentW, 4.5);
+          y += 4;
+        }
+        for (const item of (report.action_items || [])) {
           y = checkPageBreak(doc, y, 20);
           const gradeColor = GRADE_COLORS[item.aspect_grade] || [240, 240, 240];
           doc.setFillColor(...gradeColor);
