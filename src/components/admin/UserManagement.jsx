@@ -203,16 +203,17 @@ export default function UserManagement() {
                   />
                   {!user.is_pending && (
                     <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
+                      size="sm"
+                      variant={user.disabled ? "default" : "outline"}
+                      className={`h-8 shrink-0 ${user.disabled ? "" : "text-destructive hover:text-destructive hover:border-destructive/40"}`}
                       disabled={user.id === currentUser?.id}
-                      title={user.id === currentUser?.id ? "You can't disable your own access" : (user.disabled ? "Enable access" : "Disable access")}
+                      title={user.id === currentUser?.id ? "You can't disable your own access" : (user.disabled ? "Re-enable this user's access" : "Disable this user's access")}
                       onClick={() => handleToggleAccess(user)}
                     >
                       {user.disabled
-                        ? <Power className="w-3.5 h-3.5 text-accent" />
-                        : <Ban className="w-3.5 h-3.5 text-muted-foreground" />}
+                        ? <Power className="w-3.5 h-3.5" />
+                        : <Ban className="w-3.5 h-3.5" />}
+                      {user.disabled ? "Enable" : "Disable"}
                     </Button>
                   )}
                 </div>
