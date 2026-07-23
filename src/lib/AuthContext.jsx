@@ -100,6 +100,14 @@ export const AuthProvider = ({ children }) => {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
+      if (currentUser?.disabled) {
+        setUser(currentUser);
+        setIsAuthenticated(false);
+        setAuthError({ type: 'disabled', message: 'Your access has been disabled by an administrator.' });
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        return;
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);

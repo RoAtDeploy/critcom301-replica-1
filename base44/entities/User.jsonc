@@ -30,6 +30,11 @@
     },
     "lastName": {
       "type": "string"
+    },
+    "disabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, the user is blocked from accessing the app until an admin re-enables them."
     }
   },
   "required": []

@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Trash2, Shield, User, Mail, Loader2 } from "lucide-react";
+import { UserPlus, Trash2, Shield, User, Mail, Loader2, Ban, Power } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
+import { useAuth } from "@/lib/AuthContext";
 import UserTypeSelect from "@/components/admin/UserTypeSelect";
 
 const derivePrimaryRole = (rolesArr) => {
@@ -20,6 +21,7 @@ const normaliseRoles = (user) => {
 
 export default function UserManagement() {
   const { refreshLineManagers } = useAdmin();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", roles: ["assessor"] });
@@ -99,6 +101,13 @@ export default function UserManagement() {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, roles, role: primaryRole } : u));
   };
 
+  const handleToggleAccess = async (u) => {
+    if (u.is_pending || u.id === currentUser?.id) return;
+    const nextDisabled = !u.disabled;
+    await base44.entities.User.update(u.id, { disabled: nextDisabled });
+    setUsers(prev => prev.map(x => x.id === u.id ? { ...x, disabled: nextDisabled } : x));
+  };
+
   const typeBadges = (user) => {
     const types = normaliseRoles(user);
     return types.map(t => {
@@ -169,17 +178,18 @@ export default function UserManagement() {
         ) : (
           <ul className="divide-y divide-border">
             {users.map(user => (
-              <li key={user.id} className={`flex items-center gap-3 px-5 py-3 ${user.is_pending ? "bg-muted/30" : ""}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${user.is_pending ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
+              <li key={user.id} className={`flex items-center gap-3 px-5 py-3 ${user.is_pending ? "bg-muted/30" : ""} ${user.disabled ? "opacity-60" : ""}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${user.is_pending ? "bg-muted text-muted-foreground" : user.disabled ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
                   <span className="text-xs font-bold">
                     {(user.full_name || user.email || "?")[0].toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${user.is_pending ? "text-muted-foreground" : ""}`}>{user.full_name || "—"}</p>
+                  <p className={`text-sm font-medium truncate ${user.is_pending || user.disabled ? "text-muted-foreground" : ""}`}>{user.full_name || "—"}</p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                     <Mail className="w-3 h-3 shrink-0" />{user.email}
                     {user.is_pending && <span className="ml-1 text-xs font-medium text-chart-3">Pending</span>}
+                    {user.disabled && <span className="ml-1 text-xs font-medium text-destructive">Disabled</span>}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -191,6 +201,20 @@ export default function UserManagement() {
                     onChange={(roles) => handleRolesChange(user.id, roles)}
                     compact
                   />
+                  {!user.is_pending && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      disabled={user.id === currentUser?.id}
+                      title={user.id === currentUser?.id ? "You can't disable your own access" : (user.disabled ? "Enable access" : "Disable access")}
+                      onClick={() => handleToggleAccess(user)}
+                    >
+                      {user.disabled
+                        ? <Power className="w-3.5 h-3.5 text-accent" />
+                        : <Ban className="w-3.5 h-3.5 text-muted-foreground" />}
+                    </Button>
+                  )}
                 </div>
               </li>
             ))}
@@ -203,6 +227,7 @@ export default function UserManagement() {
         <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Admin</span> — Full access: settings, AI calibration, user management, all reports.</p>
         <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Assessor</span> — Can create and manage reports and staff; no access to admin settings or user management.</p>
         <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Line managers</span> are managed separately in General Settings and do not need app access. If a line manager needs to log in, invite them here as an Admin or Assessor as well.</p>
+        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Disabling access</span> — Admins can disable a user's access; the user stays registered but is blocked until re-enabled. You can't disable your own access.</p>
       </div>
     </div>
   );
