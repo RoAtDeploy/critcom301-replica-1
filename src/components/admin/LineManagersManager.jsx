@@ -45,8 +45,30 @@ export default function LineManagersManager() {
   };
 
   const remove = async (id) => {
+    const lm = records.find((r) => r.id === id);
     await base44.entities.LineManager.delete(id);
     setRecords((prev) => prev.filter((r) => r.id !== id));
+
+    // Cascade: remove this line manager from all staff records (by email or name)
+    if (lm) {
+      const staff = await base44.entities.StaffMember.list().catch(() => []);
+      const updates = staff
+        .map((s) => {
+          const current = Array.isArray(s.lineManagers) ? s.lineManagers : [];
+          const next = current.filter((m) => {
+            const emailMatch = lm.email && m.email && m.email.toLowerCase() === lm.email.toLowerCase();
+            const nameMatch = lm.name && m.name === lm.name;
+            return !(emailMatch || nameMatch);
+          });
+          const legacyChanged = s.lineManager && s.lineManager === lm.name;
+          if (next.length === current.length && !legacyChanged) return null;
+          const update = { id: s.id, lineManagers: next };
+          if (legacyChanged) update.lineManager = "";
+          return update;
+        })
+        .filter(Boolean);
+      if (updates.length) await base44.entities.StaffMember.bulkUpdate(updates);
+    }
   };
 
   return (
