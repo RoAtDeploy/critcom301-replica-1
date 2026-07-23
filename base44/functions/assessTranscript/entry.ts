@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { transcript, reportId, staffChannel, staffName, otherRole } = await req.json();
+    const { transcript, reportId, staffChannel, staffName, otherRole, staffRole } = await req.json();
 
     // Fetch industry definitions and assessment rules concurrently
     const [definitions, assessmentRules] = await Promise.all([
@@ -147,13 +147,13 @@ Deno.serve(async (req) => {
         : JSON.stringify(transcript);
 
     const staffContext = staffName
-      ? `The staff member being assessed is ${staffName}${staffChannel ? ` (speaker: ${staffChannel})` : ''}. Lines labelled [STAFF] are their contributions. Lines labelled [OTHER] are ${otherRole || 'the other party'} — do NOT assess these except where the interaction is relevant.`
+      ? `The staff member being assessed is ${staffName}${staffRole ? `, whose role on site is ${staffRole}` : ''}${staffChannel ? ` (speaker: ${staffChannel})` : ''}. Lines labelled [STAFF] are their contributions. Lines labelled [OTHER] are ${otherRole || 'the other party'} — do NOT assess these except where the interaction is relevant.`
       : '';
 
     const summaryPrompt = `You are reviewing a railway staff call. Write a single sentence (max 2 sentences) summarising the context of this call for a reviewer. Include who is speaking (staff member name and their role on site) and who they are speaking to (the other party's role). Do not evaluate quality — just describe the call context concisely.
 
 Staff member: ${staffName || 'Unknown'}
-Their role: (infer from transcript if possible)
+Their role: ${staffRole || '(infer from transcript if possible)'}
 Other party role: ${otherRole || 'Unknown'}
 
 TRANSCRIPT:

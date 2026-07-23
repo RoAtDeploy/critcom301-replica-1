@@ -138,6 +138,7 @@ export default function GenerateReport() {
       reportId: saved.id,
       staffChannel,
       staffName: selectedStaff?.name,
+      staffRole: selectedRole,
       otherRole,
     });
 
