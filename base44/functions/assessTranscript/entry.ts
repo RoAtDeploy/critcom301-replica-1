@@ -156,6 +156,11 @@ Staff member: ${staffName || 'Unknown'}
 Their role: ${staffRole || '(infer from transcript if possible)'}
 Other party role: ${otherRole || 'Unknown'}
 
+CRITICAL RULE ABOUT ROLES:
+- The staff member's role on site is given above ("Their role"). This value is authoritative — it was assigned by the assessor reviewing this call. You MUST use this exact role for the staff member in your summary.
+- Do NOT infer, guess, or substitute the staff member's role from anything in the transcript. If the transcript mentions other railway roles (e.g. PICOP, COSS, Signaller), those refer to the other party or to the subject of the conversation — NOT to the staff member being assessed — unless they exactly match the role given above.
+- Only fall back to inferring the staff member's role if the role above is empty or literally "(infer from transcript if possible)".
+
 TRANSCRIPT:
 ${transcriptText}`;
 
