@@ -41,3 +41,16 @@ jobs:
 
           git remote -v
           git push --mirror replica-2
+
+      - name: Push to syncbase
+        env:
+          GH_USERNAME: RoAtDeploy
+          GH_TOKEN: ${{ secrets.CORE_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git remote add syncbase "https://${GH_USERNAME}:${GH_TOKEN}@github.com/RoAtDeploy/syncbase.git"
+
+          git remote -v
+          git push --mirror syncbase
