@@ -354,14 +354,23 @@ export default function ReportDetail() {
                   autoFocus
                 />
               )}
-              {staffLineManagers.length > 0 && !["staff_reviewed","signed_off"].includes(report.status) && (
-                <label className="flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer select-none">
-                  <Checkbox checked={notifyLineManagers} onCheckedChange={setNotifyLineManagers} className="mt-0.5" />
-                  <span>
-                    Notify line manager{staffLineManagers.length > 1 ? "s" : ""} ({staffLineManagers.map((m) => m.name).join(", ")})
-                    <span className="block text-xs text-muted-foreground/80">Sends a non-interactive copy of the report to {staffLineManagers.length > 1 ? "each" : "the"} line manager.</span>
-                  </span>
-                </label>
+              {!["staff_reviewed","signed_off"].includes(report.status) && (
+                staffLineManagers.length > 0 ? (
+                  <label className="flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer select-none">
+                    <Checkbox checked={notifyLineManagers} onCheckedChange={setNotifyLineManagers} className="mt-0.5" />
+                    <span>
+                      Notify line manager{staffLineManagers.length > 1 ? "s" : ""} ({staffLineManagers.map((m) => m.name).join(", ")})
+                      <span className="block text-xs text-muted-foreground/80">Sends a non-interactive copy of the report to {staffLineManagers.length > 1 ? "each" : "the"} line manager.</span>
+                    </span>
+                  </label>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    No line managers assigned to this staff member
+                    {report.staff_id ? (
+                      <> — <Link to={`/staff/${report.staff_id}`} className="text-primary hover:underline">add one on their profile</Link> to send them a copy of the report.</>
+                    ) : "."}
+                  </p>
+                )
               )}
               {!["staff_reviewed","signed_off"].includes(report.status) && (
                 <Button
