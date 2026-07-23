@@ -326,7 +326,11 @@ export default function StaffDetail() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Avg Grade</p>
-                  <p className={`font-semibold mt-0.5 ${gradeColor(member.avgScore)}`}>{scoreToGrade(member.avgScore)}</p>
+                  {member.avgScore ? (
+                    <p className={`font-semibold mt-0.5 ${gradeColor(member.avgScore)}`}>{scoreToGrade(member.avgScore)}</p>
+                  ) : (
+                    <p className="font-medium mt-0.5 text-sm text-muted-foreground">n/a</p>
+                  )}
                 </div>
               </div>
             </div>
