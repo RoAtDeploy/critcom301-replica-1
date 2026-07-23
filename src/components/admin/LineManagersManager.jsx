@@ -63,40 +63,42 @@ export default function LineManagersManager() {
 
       <div className="space-y-2">
         {records.map((r) => (
-          <div key={r.id} className="flex items-center gap-2 group">
+          <div key={r.id} className="flex items-start gap-2 group rounded-md bg-muted/40 border border-border/60 px-3 py-2">
             {editingId === r.id ? (
-              <>
+              <div className="flex flex-col gap-2 w-full">
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="h-8 text-sm flex-1"
+                  className="h-8 text-sm"
                   autoFocus
                 />
                 <Input
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="h-8 text-sm flex-1"
+                  className="h-8 text-sm"
                 />
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-accent" onClick={saveEdit}>
-                  <Check className="w-3.5 h-3.5" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingId(null)}>
-                  <X className="w-3.5 h-3.5" />
-                </Button>
-              </>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="default" className="text-accent" onClick={saveEdit}>
+                    <Check className="w-3.5 h-3.5 mr-1" /> Save
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                    <X className="w-3.5 h-3.5 mr-1" /> Cancel
+                  </Button>
+                </div>
+              </div>
             ) : (
               <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/40 border border-border/60 text-sm">
-                  <span className="font-medium truncate">{r.name}</span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{r.name}</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate mt-0.5">
                     <Mail className="w-3 h-3 shrink-0" />
                     {r.email}
-                  </span>
+                  </p>
                 </div>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => startEdit(r)}
                 >
                   <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
@@ -104,7 +106,7 @@ export default function LineManagersManager() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => remove(r.id)}
                 >
                   <Trash2 className="w-3.5 h-3.5 text-destructive" />
@@ -118,12 +120,12 @@ export default function LineManagersManager() {
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col gap-2 pt-1">
         <Input
           placeholder="Name…"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="h-9 text-sm sm:flex-1"
+          className="h-9 text-sm"
           onKeyDown={(e) => { if (e.key === "Enter" && email.trim()) handleAdd(); }}
         />
         <Input
@@ -131,11 +133,11 @@ export default function LineManagersManager() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="h-9 text-sm sm:flex-1"
+          className="h-9 text-sm"
           onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) handleAdd(); }}
         />
-        <Button size="sm" onClick={handleAdd} disabled={!name.trim() || !email.trim()} className="shrink-0">
-          <Plus className="w-4 h-4 mr-1" /> Add
+        <Button size="sm" onClick={handleAdd} disabled={!name.trim() || !email.trim()} className="self-start">
+          <Plus className="w-4 h-4 mr-1" /> Add Line Manager
         </Button>
       </div>
     </div>
