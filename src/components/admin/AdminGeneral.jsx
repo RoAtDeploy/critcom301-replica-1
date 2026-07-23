@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Building2, Users, Briefcase, Phone, ListChecks, ImagePlus, Trash2, Loader2 } from "lucide-react";
+import { Building2, Briefcase, Phone, ListChecks, ImagePlus, Trash2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import OptionList from "@/components/admin/OptionList";
+import LineManagersManager from "@/components/admin/LineManagersManager";
 import { base44 } from "@/api/base44Client";
 
 const containerVariants = {
@@ -110,11 +111,11 @@ export default function AdminGeneral() {
 
         <Card className="border-border/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Line Manager Options</CardTitle>
-            <CardDescription>Line managers available when adding a staff member.</CardDescription>
+            <CardTitle className="text-base">Line Managers</CardTitle>
+            <CardDescription>Add line managers with email addresses, available when assigning to staff and notifying on reports.</CardDescription>
           </CardHeader>
           <CardContent>
-            <OptionList type="lineManagers" label="Line Manager Options" icon={Users} color="orange" />
+            <LineManagersManager />
           </CardContent>
         </Card>
 

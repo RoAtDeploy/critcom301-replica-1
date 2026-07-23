@@ -16,6 +16,27 @@ const DEFAULTS = {
   ],
 };
 
+function buildLineManagerData(lmUsers, lmPending, lmRecords) {
+  const map = new Map();
+  lmUsers.forEach((u) => {
+    const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : (u.full_name || u.email);
+    if (u.email) map.set(u.email.toLowerCase(), { name, email: u.email });
+  });
+  lmPending.forEach((u) => {
+    if (u.email && !map.has(u.email.toLowerCase())) {
+      const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email;
+      map.set(u.email.toLowerCase(), { name, email: u.email });
+    }
+  });
+  (lmRecords || []).forEach((r) => {
+    if (r.email && !map.has(r.email.toLowerCase())) {
+      map.set(r.email.toLowerCase(), { name: r.name || r.email, email: r.email });
+    }
+  });
+  const options = Array.from(map.values()).filter((o) => o.name && o.email);
+  return { names: options.map((o) => o.name), options };
+}
+
 const AdminContext = createContext(null);
 
 export function AdminProvider({ children }) {
@@ -37,38 +58,28 @@ export function AdminProvider({ children }) {
   }, []);
 
   const refreshLineManagers = useCallback(async () => {
-    const [users, pendingUsers] = await Promise.all([
+    const [users, pendingUsers, lmRecords] = await Promise.all([
       base44.entities.User.list(),
       base44.entities.PendingUser.list(),
+      base44.entities.LineManager.list(),
     ]);
     const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
     const lmPending = pendingUsers.filter((u) => u.role === "line_manager" || u.role === "assessor");
     setLineManagerUsers(lmUsers);
-    
-    // Deduplicate by email, preferring User records over PendingUser
-    const emailMap = new Map();
-    lmUsers.forEach((u) => {
-      const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : (u.full_name || u.email);
-      emailMap.set(u.email, name);
-    });
-    lmPending.forEach((u) => {
-      if (!emailMap.has(u.email)) {
-        const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email;
-        emailMap.set(u.email, name);
-      }
-    });
-    setLineManagers(Array.from(emailMap.values()).filter(Boolean));
-    setLineManagerOptions(Array.from(emailMap.entries()).map(([email, name]) => ({ name, email })).filter((o) => o.name && o.email));
+    const lmData = buildLineManagerData(lmUsers, lmPending, lmRecords);
+    setLineManagers(lmData.names);
+    setLineManagerOptions(lmData.options);
   }, []);
 
   // Load everything from DB on mount
   useEffect(() => {
     const loadData = async () => {
-      const [staff, configs, users, pendingUsers] = await Promise.all([
+      const [staff, configs, users, pendingUsers, lmRecords] = await Promise.all([
         base44.entities.StaffMember.list("-created_date"),
         base44.entities.AdminConfig.list(),
         base44.entities.User.list(),
         base44.entities.PendingUser.list(),
+        base44.entities.LineManager.list(),
       ]);
       setStaffList(staff);
 
@@ -86,21 +97,9 @@ export function AdminProvider({ children }) {
       const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
       const lmPending = pendingUsers.filter((u) => u.role === "line_manager" || u.role === "assessor");
       setLineManagerUsers(lmUsers);
-
-      // Deduplicate by email, preferring User records over PendingUser
-      const emailMap = new Map();
-      lmUsers.forEach((u) => {
-        const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : (u.full_name || u.email);
-        emailMap.set(u.email, name);
-      });
-      lmPending.forEach((u) => {
-        if (!emailMap.has(u.email)) {
-          const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email;
-          emailMap.set(u.email, name);
-        }
-      });
-      setLineManagers(Array.from(emailMap.values()).filter(Boolean));
-    setLineManagerOptions(Array.from(emailMap.entries()).map(([email, name]) => ({ name, email })).filter((o) => o.name && o.email));
+      const lmData = buildLineManagerData(lmUsers, lmPending, lmRecords);
+      setLineManagers(lmData.names);
+      setLineManagerOptions(lmData.options);
 
       setStaffLoading(false);
     };
@@ -113,9 +112,13 @@ export function AdminProvider({ children }) {
     const unsubscribePending = base44.entities.PendingUser.subscribe(() => {
       loadData();
     });
+    const unsubscribeLineManagers = base44.entities.LineManager.subscribe(() => {
+      loadData();
+    });
     return () => {
       unsubscribeUsers();
       unsubscribePending();
+      unsubscribeLineManagers();
     };
   }, []);
 
