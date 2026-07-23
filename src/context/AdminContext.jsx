@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 const DEFAULTS = {
   roles: ["Sales Rep", "Senior Sales Rep", "Customer Support", "Team Lead", "Manager"],
   departments: ["Sales", "Customer Support", "Retention", "Onboarding", "Operations"],
-  lineManagers: ["Alice Thompson", "Bob Harris", "Carol Davies", "David Singh"],
+  lineManagers: [],
   callTypes: ["Closing Worksite", "Worksite Set-up", "Emergency Call"],
   actionTemplates: [
     "1:1 coaching session with line manager",
@@ -16,34 +16,10 @@ const DEFAULTS = {
   ],
 };
 
-function buildLineManagerData(lmUsers, lmPending, lmRecords) {
-  const map = new Map();
-  lmUsers.forEach((u) => {
-    const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : (u.full_name || u.email);
-    if (u.email) map.set(u.email.toLowerCase(), { name, email: u.email });
-  });
-  lmPending.forEach((u) => {
-    if (u.email && !map.has(u.email.toLowerCase())) {
-      const name = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email;
-      map.set(u.email.toLowerCase(), { name, email: u.email });
-    }
-  });
-  (lmRecords || []).forEach((r) => {
-    if (r.email && !map.has(r.email.toLowerCase())) {
-      map.set(r.email.toLowerCase(), { name: r.name || r.email, email: r.email });
-    }
-  });
-  const options = Array.from(map.values()).filter((o) => o.name && o.email);
-  return { names: options.map((o) => o.name), options };
-}
-
-function isLineManagerCandidate(u) {
-  return (
-    (u.roles || []).includes("line_manager") ||
-    (u.roles || []).includes("assessor") ||
-    u.role === "line_manager" ||
-    u.role === "assessor"
-  );
+function lineManagerOptionsFromRecords(records) {
+  return (records || [])
+    .filter((r) => r.name && r.email)
+    .map((r) => ({ name: r.name, email: r.email }));
 }
 
 const AdminContext = createContext(null);
@@ -52,8 +28,7 @@ export function AdminProvider({ children }) {
   const [roles, setRoles] = useState(DEFAULTS.roles);
   const [departments, setDepartments] = useState(DEFAULTS.departments);
   const [lineManagers, setLineManagers] = useState(DEFAULTS.lineManagers);
-  const [lineManagerUsers, setLineManagerUsers] = useState([]); // actual User records with line_manager or assessor role
-  const [lineManagerOptions, setLineManagerOptions] = useState([]); // [{ name, email }] for staff assignment
+  const [lineManagerOptions, setLineManagerOptions] = useState([]); // [{ name, email }] from the LineManager entity
   const [callTypes, setCallTypes] = useState(DEFAULTS.callTypes);
   const [actionTemplates, setActionTemplates] = useState(DEFAULTS.actionTemplates);
   const [staffList, setStaffList] = useState([]);
@@ -67,27 +42,18 @@ export function AdminProvider({ children }) {
   }, []);
 
   const refreshLineManagers = useCallback(async () => {
-    const [users, pendingUsers, lmRecords] = await Promise.all([
-      base44.entities.User.list(),
-      base44.entities.PendingUser.list(),
-      base44.entities.LineManager.list(),
-    ]);
-    const lmUsers = users.filter(isLineManagerCandidate);
-    const lmPending = pendingUsers.filter(isLineManagerCandidate);
-    setLineManagerUsers(lmUsers);
-    const lmData = buildLineManagerData(lmUsers, lmPending, lmRecords);
-    setLineManagers(lmData.names);
-    setLineManagerOptions(lmData.options);
+    const lmRecords = await base44.entities.LineManager.list().catch(() => []);
+    const options = lineManagerOptionsFromRecords(lmRecords);
+    setLineManagers(options.map((o) => o.name));
+    setLineManagerOptions(options);
   }, []);
 
   // Load everything from DB on mount
   useEffect(() => {
     const loadData = async () => {
-      const [staff, configs, users, pendingUsers, lmRecords] = await Promise.all([
+      const [staff, configs, lmRecords] = await Promise.all([
         base44.entities.StaffMember.list("-created_date"),
         base44.entities.AdminConfig.list(),
-        base44.entities.User.list(),
-        base44.entities.PendingUser.list(),
         base44.entities.LineManager.list(),
       ]);
       setStaffList(staff);
@@ -102,31 +68,20 @@ export function AdminProvider({ children }) {
       if (ctConfig?.values?.length) setCallTypes(ctConfig.values);
       if (atConfig?.values?.length) setActionTemplates(atConfig.values);
 
-      // Line managers come from users with role 'line_manager' OR 'assessor' (dual role)
-      const lmUsers = users.filter(isLineManagerCandidate);
-      const lmPending = pendingUsers.filter(isLineManagerCandidate);
-      setLineManagerUsers(lmUsers);
-      const lmData = buildLineManagerData(lmUsers, lmPending, lmRecords);
-      setLineManagers(lmData.names);
-      setLineManagerOptions(lmData.options);
+      // Line managers are managed solely in General Settings (LineManager entity)
+      const lmOptions = lineManagerOptionsFromRecords(lmRecords);
+      setLineManagers(lmOptions.map((o) => o.name));
+      setLineManagerOptions(lmOptions);
 
       setStaffLoading(false);
     };
     loadData();
 
-    // Subscribe to User and PendingUser changes to auto-refresh line managers
-    const unsubscribeUsers = base44.entities.User.subscribe(() => {
-      loadData();
-    });
-    const unsubscribePending = base44.entities.PendingUser.subscribe(() => {
-      loadData();
-    });
+    // Subscribe to LineManager changes to auto-refresh line manager options
     const unsubscribeLineManagers = base44.entities.LineManager.subscribe(() => {
       loadData();
     });
     return () => {
-      unsubscribeUsers();
-      unsubscribePending();
       unsubscribeLineManagers();
     };
   }, []);
@@ -237,7 +192,7 @@ export function AdminProvider({ children }) {
 
   return (
     <AdminContext.Provider value={{
-      departments, lineManagers, lineManagerUsers, lineManagerOptions, roles, callTypes, actionTemplates,
+      departments, lineManagers, lineManagerOptions, roles, callTypes, actionTemplates,
       staffList, staffLoading,
       addStaff, updateStaff, refreshStaff, refreshLineManagers,
       addItem, removeItem, editItem,

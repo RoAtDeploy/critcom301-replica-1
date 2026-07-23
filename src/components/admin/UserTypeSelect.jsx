@@ -4,7 +4,6 @@ import { Check, ChevronDown } from "lucide-react";
 
 export const USER_TYPES = [
   { value: "admin", label: "Admin", className: "bg-primary/10 text-primary border-primary/20" },
-  { value: "line_manager", label: "Line Manager", className: "bg-chart-3/10 text-chart-3 border-chart-3/20" },
   { value: "assessor", label: "Assessor", className: "bg-muted text-muted-foreground border-border" },
 ];
 

@@ -6,11 +6,10 @@
       "type": "string",
       "enum": [
         "admin",
-        "assessor",
-        "line_manager"
+        "assessor"
       ],
       "default": "assessor",
-      "description": "Primary role used by platform security (derived from roles). Admin grants full access."
+      "description": "Primary role used by platform security. Admin grants full access."
     },
     "roles": {
       "type": "array",
@@ -19,8 +18,7 @@
         "type": "string",
         "enum": [
           "admin",
-          "assessor",
-          "line_manager"
+          "assessor"
         ]
       },
       "default": [

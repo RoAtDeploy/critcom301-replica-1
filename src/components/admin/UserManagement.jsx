@@ -7,13 +7,16 @@ import { useAdmin } from "@/context/AdminContext";
 import UserTypeSelect from "@/components/admin/UserTypeSelect";
 
 const derivePrimaryRole = (rolesArr) => {
-  if (!rolesArr || rolesArr.length === 0) return "assessor";
-  if (rolesArr.includes("admin")) return "admin";
-  return rolesArr[0];
+  const cleaned = (rolesArr || []).map((r) => (r === "line_manager" ? "assessor" : r)).filter(Boolean);
+  if (cleaned.length === 0) return "assessor";
+  if (cleaned.includes("admin")) return "admin";
+  return cleaned[0];
 };
 
-const normaliseRoles = (user) =>
-  user.roles && user.roles.length ? user.roles : user.role ? [user.role] : ["assessor"];
+const normaliseRoles = (user) => {
+  const raw = user.roles && user.roles.length ? user.roles : user.role ? [user.role] : ["assessor"];
+  return [...new Set(raw.map((r) => (r === "line_manager" ? "assessor" : r)))];
+};
 
 export default function UserManagement() {
   const { refreshLineManagers } = useAdmin();
@@ -198,9 +201,8 @@ export default function UserManagement() {
       <div className="p-4 rounded-xl border border-border bg-muted/30 space-y-1">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> Role Permissions</p>
         <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Admin</span> — Full access: settings, AI calibration, user management, all reports.</p>
-        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Assessor</span> — Can create and manage reports and staff; no access to admin settings or user management. Also available as a line manager.</p>
-        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Line Manager</span> — Appears in the line manager dropdown when assigning staff. Assessors can also serve as line managers.</p>
-        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Multiple types</span> — A user can hold more than one type (e.g. Assessor + Line Manager). Select all that apply.</p>
+        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Assessor</span> — Can create and manage reports and staff; no access to admin settings or user management.</p>
+        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Line managers</span> are managed separately in General Settings and do not need app access. If a line manager needs to log in, invite them here as an Admin or Assessor as well.</p>
       </div>
     </div>
   );

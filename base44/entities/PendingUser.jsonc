@@ -16,7 +16,6 @@
       "type": "string",
       "enum": [
         "assessor",
-        "line_manager",
         "admin"
       ],
       "default": "assessor",
@@ -29,8 +28,7 @@
         "type": "string",
         "enum": [
           "admin",
-          "assessor",
-          "line_manager"
+          "assessor"
         ]
       },
       "default": [
