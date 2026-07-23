@@ -4,12 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Trash2, Shield, User, Mail, Loader2 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
+import UserTypeSelect from "@/components/admin/UserTypeSelect";
+
+const derivePrimaryRole = (rolesArr) => {
+  if (!rolesArr || rolesArr.length === 0) return "assessor";
+  if (rolesArr.includes("admin")) return "admin";
+  return rolesArr[0];
+};
+
+const normaliseRoles = (user) =>
+  user.roles && user.roles.length ? user.roles : user.role ? [user.role] : ["assessor"];
 
 export default function UserManagement() {
   const { refreshLineManagers } = useAdmin();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", role: "assessor" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", roles: ["assessor"] });
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -41,11 +51,13 @@ export default function UserManagement() {
     setInviting(true);
     try {
       // Create pending user placeholder in database
+      const roles = form.roles.length ? form.roles : ["assessor"];
       const pendingUser = await base44.entities.PendingUser.create({
         email: form.email.trim(),
         firstName: form.firstName,
         lastName: form.lastName,
-        role: form.role,
+        roles,
+        role: derivePrimaryRole(roles),
         status: "pending"
       });
       
@@ -54,12 +66,13 @@ export default function UserManagement() {
         id: pendingUser.id,
         email: pendingUser.email,
         full_name: form.firstName && form.lastName ? `${form.firstName} ${form.lastName}` : form.email.trim(),
-        role: form.role,
+        roles,
+        role: derivePrimaryRole(roles),
         is_pending: true
       }]);
       
       setSuccess(`${form.email.trim()} added as pending. Ready to invite when needed.`);
-      setForm({ firstName: "", lastName: "", email: "", role: "assessor" });
+      setForm({ firstName: "", lastName: "", email: "", roles: ["assessor"] });
       
       // Refresh line managers in AdminContext so dropdown updates
       await refreshLineManagers();
@@ -69,24 +82,27 @@ export default function UserManagement() {
     setInviting(false);
   };
 
-  const handleRoleChange = async (userId, newRole) => {
+  const handleRolesChange = async (userId, newRoles) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
+    const roles = newRoles.length ? newRoles : ["assessor"];
+    const primaryRole = derivePrimaryRole(roles);
     
-    // Update pending user
     if (user.is_pending) {
-      await base44.entities.PendingUser.update(userId, { role: newRole });
+      await base44.entities.PendingUser.update(userId, { roles, role: primaryRole });
     } else {
-      // Update app user
-      await base44.entities.User.update(userId, { role: newRole });
+      await base44.entities.User.update(userId, { roles, role: primaryRole });
     }
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, roles, role: primaryRole } : u));
   };
 
-  const roleBadge = (role) => {
-    if (role === "admin") return <Badge className="bg-primary/10 text-primary border-primary/20">Admin</Badge>;
-    if (role === "line_manager") return <Badge className="bg-chart-3/10 text-chart-3 border-chart-3/20">Line Manager</Badge>;
-    return <Badge variant="secondary">Assessor</Badge>;
+  const typeBadges = (user) => {
+    const types = normaliseRoles(user);
+    return types.map(t => {
+      if (t === "admin") return <Badge key={t} className="bg-primary/10 text-primary border-primary/20">Admin</Badge>;
+      if (t === "line_manager") return <Badge key={t} className="bg-chart-3/10 text-chart-3 border-chart-3/20">Line Manager</Badge>;
+      return <Badge key={t} variant="secondary">Assessor</Badge>;
+    });
   };
 
   return (
@@ -121,15 +137,7 @@ export default function UserManagement() {
             onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
             onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
           />
-          <select
-            value={form.role}
-            onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="assessor">Assessor</option>
-            <option value="line_manager">Line Manager</option>
-            <option value="admin">Admin</option>
-          </select>
+          <UserTypeSelect value={form.roles} onChange={(roles) => setForm(f => ({ ...f, roles }))} />
         </div>
         <div className="flex items-center gap-3">
           <Button onClick={handleAdd} disabled={inviting || !form.email.trim()} className="gap-2 shrink-0">
@@ -172,16 +180,14 @@ export default function UserManagement() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {roleBadge(user.role)}
-                  <select
-                    value={user.role || "assessor"}
-                    onChange={e => handleRoleChange(user.id, e.target.value)}
-                    className="h-7 rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    <option value="assessor">Assessor</option>
-                    <option value="line_manager">Line Manager</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <div className="flex flex-wrap gap-1 justify-end max-w-[200px]">
+                    {typeBadges(user)}
+                  </div>
+                  <UserTypeSelect
+                    value={normaliseRoles(user)}
+                    onChange={(roles) => handleRolesChange(user.id, roles)}
+                    compact
+                  />
                 </div>
               </li>
             ))}
@@ -194,6 +200,7 @@ export default function UserManagement() {
         <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Admin</span> — Full access: settings, AI calibration, user management, all reports.</p>
         <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Assessor</span> — Can create and manage reports and staff; no access to admin settings or user management. Also available as a line manager.</p>
         <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Line Manager</span> — Appears in the line manager dropdown when assigning staff. Assessors can also serve as line managers.</p>
+        <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Multiple types</span> — A user can hold more than one type (e.g. Assessor + Line Manager). Select all that apply.</p>
       </div>
     </div>
   );

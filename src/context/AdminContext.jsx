@@ -37,6 +37,15 @@ function buildLineManagerData(lmUsers, lmPending, lmRecords) {
   return { names: options.map((o) => o.name), options };
 }
 
+function isLineManagerCandidate(u) {
+  return (
+    (u.roles || []).includes("line_manager") ||
+    (u.roles || []).includes("assessor") ||
+    u.role === "line_manager" ||
+    u.role === "assessor"
+  );
+}
+
 const AdminContext = createContext(null);
 
 export function AdminProvider({ children }) {
@@ -63,8 +72,8 @@ export function AdminProvider({ children }) {
       base44.entities.PendingUser.list(),
       base44.entities.LineManager.list(),
     ]);
-    const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
-    const lmPending = pendingUsers.filter((u) => u.role === "line_manager" || u.role === "assessor");
+    const lmUsers = users.filter(isLineManagerCandidate);
+    const lmPending = pendingUsers.filter(isLineManagerCandidate);
     setLineManagerUsers(lmUsers);
     const lmData = buildLineManagerData(lmUsers, lmPending, lmRecords);
     setLineManagers(lmData.names);
@@ -94,8 +103,8 @@ export function AdminProvider({ children }) {
       if (atConfig?.values?.length) setActionTemplates(atConfig.values);
 
       // Line managers come from users with role 'line_manager' OR 'assessor' (dual role)
-      const lmUsers = users.filter((u) => u.role === "line_manager" || u.role === "assessor");
-      const lmPending = pendingUsers.filter((u) => u.role === "line_manager" || u.role === "assessor");
+      const lmUsers = users.filter(isLineManagerCandidate);
+      const lmPending = pendingUsers.filter(isLineManagerCandidate);
       setLineManagerUsers(lmUsers);
       const lmData = buildLineManagerData(lmUsers, lmPending, lmRecords);
       setLineManagers(lmData.names);

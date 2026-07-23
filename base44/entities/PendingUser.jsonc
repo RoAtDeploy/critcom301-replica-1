@@ -19,7 +19,23 @@
         "line_manager",
         "admin"
       ],
-      "default": "assessor"
+      "default": "assessor",
+      "description": "Primary role (derived from roles)"
+    },
+    "roles": {
+      "type": "array",
+      "description": "All user types assigned to this pending user",
+      "items": {
+        "type": "string",
+        "enum": [
+          "admin",
+          "assessor",
+          "line_manager"
+        ]
+      },
+      "default": [
+        "assessor"
+      ]
     },
     "status": {
       "type": "string",

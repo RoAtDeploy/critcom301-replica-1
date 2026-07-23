@@ -9,7 +9,23 @@
         "assessor",
         "line_manager"
       ],
-      "default": "assessor"
+      "default": "assessor",
+      "description": "Primary role used by platform security (derived from roles). Admin grants full access."
+    },
+    "roles": {
+      "type": "array",
+      "description": "All user types assigned to this user",
+      "items": {
+        "type": "string",
+        "enum": [
+          "admin",
+          "assessor",
+          "line_manager"
+        ]
+      },
+      "default": [
+        "assessor"
+      ]
     },
     "firstName": {
       "type": "string"
