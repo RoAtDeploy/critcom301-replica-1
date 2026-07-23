@@ -18,6 +18,7 @@ import ReportDetail from '@/pages/ReportDetail';
 import { AdminProvider } from '@/context/AdminContext';
 import MonitoringOnMass from '@/pages/MonitoringOnMass';
 import OpenAssessments from '@/pages/OpenAssessments';
+import MyAssessments from '@/pages/MyAssessments';
 import StaffReview from '@/pages/StaffReview';
 import UserGuide from '@/pages/UserGuide';
 import Resources from '@/pages/Resources';
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin" element={<Admin />} />
         <Route path="/monitoring" element={<MonitoringOnMass />} />
         <Route path="/open-assessments" element={<OpenAssessments />} />
+        <Route path="/my-assessments" element={<MyAssessments />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/user-guide" element={<UserGuide />} />
       </Route>

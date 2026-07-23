@@ -10,7 +10,8 @@ import {
   Radio,
   BookOpen,
   ClipboardList,
-  Library
+  Library,
+  ClipboardCheck
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ import { LogOut } from "lucide-react";
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { label: "Open Assessments", icon: ClipboardList, path: "/open-assessments" },
+  { label: "My Assessments", icon: ClipboardCheck, path: "/my-assessments" },
   { label: "Staff Members", icon: Users, path: "/staff" },
   { label: "Generate Report", icon: FileText, path: "/reports/new" },
   { label: "Monitoring on Mass", icon: Radio, path: "/monitoring" },
