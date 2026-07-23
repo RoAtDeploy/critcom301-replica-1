@@ -108,6 +108,13 @@ export default function UserManagement() {
     setUsers(prev => prev.map(x => x.id === u.id ? { ...x, disabled: nextDisabled } : x));
   };
 
+  const handleDeletePending = async (u) => {
+    if (!u.is_pending) return;
+    await base44.entities.PendingUser.delete(u.id);
+    setUsers(prev => prev.filter(x => x.id !== u.id));
+    await refreshLineManagers();
+  };
+
   const typeBadges = (user) => {
     const types = normaliseRoles(user);
     return types.map(t => {
@@ -214,6 +221,18 @@ export default function UserManagement() {
                         ? <Power className="w-3.5 h-3.5" />
                         : <Ban className="w-3.5 h-3.5" />}
                       {user.disabled ? "Enable" : "Disable"}
+                    </Button>
+                  )}
+                  {user.is_pending && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 shrink-0 text-destructive hover:text-destructive hover:border-destructive/40"
+                      title="Remove this pending user"
+                      onClick={() => handleDeletePending(user)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Remove
                     </Button>
                   )}
                 </div>
