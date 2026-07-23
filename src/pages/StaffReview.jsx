@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
-import { CheckCircle2, AlertTriangle, MessageSquare, ShieldCheck, Sparkles, User, Calendar, Phone, Loader2, PenLine } from "lucide-react";
+import { CheckCircle2, AlertTriangle, MessageSquare, ShieldCheck, Sparkles, User, Calendar, Phone, Loader2, PenLine, FileText, Headphones, ExternalLink } from "lucide-react";
 import SignaturePad from "@/components/report/SignaturePad";
 
 const GRADE_CONFIG = {
@@ -207,6 +207,12 @@ export default function StaffReview() {
                     {item.reviewer_comment && (
                       <p className="text-sm text-foreground/75 leading-relaxed pl-8">{item.reviewer_comment}</p>
                     )}
+                    {item.resource_url && (
+                      <a href={item.resource_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline pl-8">
+                        {item.resource_type === "audio" ? <Headphones className="w-4 h-4" /> : item.resource_type === "web_link" ? <ExternalLink className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                        {item.resource_title || "View resource"}
+                      </a>
+                    )}
                   </div>
                 );
               })}
@@ -250,6 +256,12 @@ export default function StaffReview() {
                         <p className="text-xs font-semibold text-orange-700 mb-0.5">Required action</p>
                         <p className="text-sm text-orange-800">{item.action}</p>
                       </div>
+                    )}
+                    {item.resource_url && (
+                      <a href={item.resource_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                        {item.resource_type === "audio" ? <Headphones className="w-4 h-4" /> : item.resource_type === "web_link" ? <ExternalLink className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                        {item.resource_title || "View resource"}
+                      </a>
                     )}
                     <div className="flex items-start gap-3">
                       <Checkbox

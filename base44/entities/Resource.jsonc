@@ -1,0 +1,45 @@
+{
+  "name": "Resource",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Name of the resource"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "document",
+        "audio",
+        "web_link"
+      ],
+      "description": "Type of resource"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL of uploaded file (for document/audio types)"
+    },
+    "link_url": {
+      "type": "string",
+      "description": "Web link URL (for web_link type)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Context or summary of the resource"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Safety",
+        "Performance",
+        "Communication",
+        "General"
+      ],
+      "default": "General"
+    }
+  },
+  "required": [
+    "title",
+    "type"
+  ]
+}

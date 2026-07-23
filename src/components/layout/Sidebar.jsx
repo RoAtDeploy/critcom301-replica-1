@@ -9,7 +9,8 @@ import {
   Settings2,
   Radio,
   BookOpen,
-  ClipboardList
+  ClipboardList,
+  Library
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ const navItems = [
   { label: "Staff Members", icon: Users, path: "/staff" },
   { label: "Generate Report", icon: FileText, path: "/reports/new" },
   { label: "Monitoring on Mass", icon: Radio, path: "/monitoring" },
+  { label: "Resources", icon: Library, path: "/resources" },
 ];
 
 export default function Sidebar() {

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle2, MessageSquare, AlertTriangle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { CheckCircle2, MessageSquare, AlertTriangle, ChevronDown, ChevronUp, Sparkles, Paperclip } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const GRADE_CONFIG = {
@@ -14,7 +14,7 @@ const GRADE_CONFIG = {
   "n/a": { color: "bg-slate-100 text-slate-500 border-slate-300", label: "N/A" },
 };
 
-function AspectActionRow({ item, actionTemplates, onChange }) {
+function AspectActionRow({ item, actionTemplates, resources, onChange }) {
   const [open, setOpen] = useState(false);
   const grade = item.aspect_grade;
   const isCritical = grade === "C" || grade === "D";
@@ -112,6 +112,39 @@ function AspectActionRow({ item, actionTemplates, onChange }) {
               onChange={(e) => onChange({ ...item, reviewer_comment: e.target.value })}
             />
           </div>
+
+          {resources.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-1.5 flex items-center gap-1">
+                <Paperclip className="w-3 h-3" />
+                Attach Resource (optional)
+              </p>
+              <Select
+                value={item.resource_id || "__none__"}
+                onValueChange={(val) => {
+                  if (val === "__none__") {
+                    onChange({ ...item, resource_id: null, resource_title: null, resource_type: null, resource_url: null });
+                  } else {
+                    const res = resources.find(r => r.id === val);
+                    if (res) {
+                      const url = res.type === "web_link" ? res.link_url : res.file_url;
+                      onChange({ ...item, resource_id: res.id, resource_title: res.title, resource_type: res.type, resource_url: url });
+                    }
+                  }
+                }}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select a resource…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No resource</SelectItem>
+                  {resources.map(r => (
+                    <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -120,6 +153,11 @@ function AspectActionRow({ item, actionTemplates, onChange }) {
 
 export default function ActionItemsEditor({ report, onReportUpdate, actionTemplates = [] }) {
   const [saving, setSaving] = useState(false);
+  const [resources, setResources] = useState([]);
+
+  useEffect(() => {
+    base44.entities.Resource.list().then(setResources).catch(() => {});
+  }, []);
 
   const raw = report.quality_assessment;
   const assessment = raw?.response ?? raw;
@@ -187,6 +225,7 @@ export default function ActionItemsEditor({ report, onReportUpdate, actionTempla
           key={item.aspect_id}
           item={item}
           actionTemplates={actionTemplates}
+          resources={resources}
           onChange={(updated) => handleChange(i, updated)}
         />
       ))}

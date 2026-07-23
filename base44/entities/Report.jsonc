@@ -124,6 +124,22 @@
           },
           "staff_comment": {
             "type": "string"
+          },
+          "resource_id": {
+            "type": "string",
+            "description": "ID of the linked Resource record"
+          },
+          "resource_title": {
+            "type": "string",
+            "description": "Title of the linked resource (denormalized for display)"
+          },
+          "resource_type": {
+            "type": "string",
+            "description": "Type of the linked resource (document/audio/web_link)"
+          },
+          "resource_url": {
+            "type": "string",
+            "description": "URL to access the linked resource"
           }
         }
       }
