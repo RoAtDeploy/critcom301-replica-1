@@ -1,63 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
-import { ClipboardList, ArrowRight } from "lucide-react";
+import { ClipboardList, ArrowRight, Layers, AlertTriangle, FileSearch, Send, Clock, MessageSquare, CheckCircle2, X } from "lucide-react";
 import ActionDeadlineBadge from "@/components/report/ActionDeadlineBadge";
 import { getReportActionStatus } from "@/lib/actionDeadlines";
+import { useAdmin } from "@/context/AdminContext";
+import SearchableStaffSelect from "@/components/monitoring/SearchableStaffSelect";
+import { cn } from "@/lib/utils";
 
 const STAGES = [
-  { key: "all", label: "All", description: "Every report you have assessed" },
-  {
-    key: "overdue",
-    label: "Overdue Actions",
-    description: "Reports with overdue C or D grade actions",
-    color: "bg-red-100 text-red-700 border-red-200",
-  },
-  {
-    key: "draft",
-    label: "Awaiting Assessor Review",
-    description: "Assessment run but not yet confirmed by assessor",
-    color: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  {
-    key: "saved",
-    label: "Awaiting Send to Staff",
-    description: "Actions confirmed, ready to send to staff member",
-    color: "bg-amber-100 text-amber-700 border-amber-200",
-  },
-  {
-    key: "sent",
-    label: "Awaiting Staff Action",
-    description: "Sent to staff member, awaiting their response",
-    color: "bg-orange-100 text-orange-700 border-orange-200",
-  },
-  {
-    key: "staff_reviewed",
-    label: "Awaiting Assessor Sign-off",
-    description: "Staff has responded, awaiting assessor to sign off",
-    color: "bg-purple-100 text-purple-700 border-purple-200",
-  },
-  {
-    key: "signed_off",
-    label: "Signed Off",
-    description: "Completed assessments",
-    color: "bg-green-100 text-green-700 border-green-200",
-  },
+  { key: "all", label: "All", icon: Layers, tint: "text-slate-600" },
+  { key: "overdue", label: "Overdue Actions", icon: AlertTriangle, tint: "text-red-600", ring: "ring-red-200", chip: "bg-red-100 text-red-700" },
+  { key: "draft", label: "Awaiting Review", icon: FileSearch, tint: "text-blue-600", ring: "ring-blue-200", chip: "bg-blue-100 text-blue-700" },
+  { key: "saved", label: "Awaiting Send", icon: Send, tint: "text-amber-600", ring: "ring-amber-200", chip: "bg-amber-100 text-amber-700" },
+  { key: "sent", label: "Awaiting Staff", icon: Clock, tint: "text-orange-600", ring: "ring-orange-200", chip: "bg-orange-100 text-orange-700" },
+  { key: "staff_reviewed", label: "Awaiting Sign-off", icon: MessageSquare, tint: "text-purple-600", ring: "ring-purple-200", chip: "bg-purple-100 text-purple-700" },
+  { key: "signed_off", label: "Signed Off", icon: CheckCircle2, tint: "text-green-600", ring: "ring-green-200", chip: "bg-green-100 text-green-700" },
 ];
 
 const STAGE_MAP = {
-  draft: { label: "Awaiting Assessor Review", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  saved: { label: "Awaiting Send to Staff", color: "bg-amber-100 text-amber-700 border-amber-200" },
-  sent: { label: "Awaiting Staff Action", color: "bg-orange-100 text-orange-700 border-orange-200" },
-  staff_reviewed: { label: "Awaiting Assessor Sign-off", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  draft: { label: "Awaiting Review", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  saved: { label: "Awaiting Send", color: "bg-amber-100 text-amber-700 border-amber-200" },
+  sent: { label: "Awaiting Staff", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  staff_reviewed: { label: "Awaiting Sign-off", color: "bg-purple-100 text-purple-700 border-purple-200" },
   signed_off: { label: "Signed Off", color: "bg-green-100 text-green-700 border-green-200" },
 };
 
 export default function MyAssessments() {
+  const { staffList } = useAdmin();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [staffId, setStaffId] = useState(null);
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
@@ -80,19 +55,24 @@ export default function MyAssessments() {
     return s === "overdue_immediate" || s === "overdue_7day";
   };
 
+  const scoped = useMemo(
+    () => (staffId ? reports.filter((r) => r.staff_id === staffId) : reports),
+    [reports, staffId]
+  );
+
   const filtered =
     activeFilter === "all"
-      ? reports
+      ? scoped
       : activeFilter === "overdue"
-      ? reports.filter(isOverdue)
-      : reports.filter((r) => r.status === activeFilter);
+      ? scoped.filter(isOverdue)
+      : scoped.filter((r) => r.status === activeFilter);
 
   const countFor = (key) =>
     key === "all"
-      ? reports.length
+      ? scoped.length
       : key === "overdue"
-      ? reports.filter(isOverdue).length
-      : reports.filter((r) => r.status === key).length;
+      ? scoped.filter(isOverdue).length
+      : scoped.filter((r) => r.status === key).length;
 
   return (
     <motion.div
@@ -108,30 +88,57 @@ export default function MyAssessments() {
         </p>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2">
+      {/* Staff filter */}
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="space-y-1.5">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Staff Member</span>
+          <SearchableStaffSelect
+            staffMembers={staffList}
+            value={staffId}
+            onChange={setStaffId}
+            placeholder="All staff"
+            includeUnknown={false}
+            className="h-9 text-sm w-56"
+          />
+        </div>
+        {staffId && (
+          <button
+            onClick={() => setStaffId(null)}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+            Clear filter
+          </button>
+        )}
+      </div>
+
+      {/* Stage filter cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         {STAGES.map((stage) => {
           const count = countFor(stage.key);
           const isActive = activeFilter === stage.key;
+          const Icon = stage.icon;
           return (
             <button
               key={stage.key}
               onClick={() => setActiveFilter(stage.key)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+              className={cn(
+                "relative flex flex-col items-start gap-2 p-3.5 rounded-xl border text-left transition-all",
                 isActive
-                  ? "bg-primary text-primary-foreground border-primary shadow"
-                  : "bg-card border-border text-foreground hover:bg-muted"
-              }`}
+                  ? cn("border-transparent ring-2 bg-card shadow-sm", stage.ring || "ring-primary/30")
+                  : "border-border bg-card/60 hover:bg-card hover:border-primary/20"
+              )}
             >
-              <span>{stage.label}</span>
-              <span
-                className={`text-xs rounded-full px-1.5 py-0.5 font-bold ${
-                  isActive
-                    ? "bg-white/20 text-white"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {count}
+              <div className="flex items-center justify-between w-full">
+                <span className={cn("w-8 h-8 rounded-lg flex items-center justify-center", isActive ? stage.chip || "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+                  <Icon className="w-4 h-4" />
+                </span>
+                <span className={cn("text-lg font-bold tabular-nums", isActive ? stage.tint : "text-foreground")}>
+                  {count}
+                </span>
+              </div>
+              <span className={cn("text-xs font-medium leading-tight", isActive ? stage.tint : "text-foreground")}>
+                {stage.label}
               </span>
             </button>
           );
