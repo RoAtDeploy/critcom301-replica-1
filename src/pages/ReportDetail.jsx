@@ -9,6 +9,7 @@ import ReportStageTracker from "@/components/report/ReportStageTracker";
 import QualityAssessment from "@/components/report/QualityAssessment";
 import ActionItemsEditor from "@/components/report/ActionItemsEditor";
 import ExportReportPDF from "@/components/report/ExportReportPDF";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAdmin } from "@/context/AdminContext";
 import { motion } from "framer-motion";
 
@@ -25,6 +26,8 @@ export default function ReportDetail() {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [signingOff, setSigningOff] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [notifyLineManagers, setNotifyLineManagers] = useState(false);
+  const [staffLineManagers, setStaffLineManagers] = useState([]);
 
   const staffReviewUrl = `${window.location.origin}/staff-review/${id}`;
 
@@ -37,11 +40,14 @@ export default function ReportDetail() {
   useEffect(() => {
     base44.entities.Report.get(id).then(async (r) => {
       setReport(r);
-      // Pull email from staff profile if not already on the report
-      if (r.staff_id && !r.staff_email) {
+      // Pull email and line managers from staff profile
+      if (r.staff_id) {
         const staff = await base44.entities.StaffMember.get(r.staff_id).catch(() => null);
-        if (staff?.email) {
-          setReport({ ...r, staff_email: staff.email });
+        if (staff) {
+          setStaffLineManagers(staff.lineManagers || []);
+          if (!r.staff_email && staff.email) {
+            setReport({ ...r, staff_email: staff.email });
+          }
         }
       }
       setLoading(false);
@@ -95,10 +101,12 @@ export default function ReportDetail() {
     }
     if (!email) { setShowEmailInput(true); return; }
     setSendingEmail(true);
+    const lineManagerEmails = notifyLineManagers ? staffLineManagers.map((m) => m.email).filter(Boolean) : [];
     await base44.functions.invoke("sendStaffReviewEmail", {
       reportId: report.id,
       staffEmail: email,
       staffName: report.staff_name,
+      lineManagerEmails,
     });
     const updated = await base44.entities.Report.get(report.id);
     setReport(updated);
@@ -345,6 +353,15 @@ export default function ReportDetail() {
                   onKeyDown={e => { if (e.key === "Enter") handleSendToStaff(); }}
                   autoFocus
                 />
+              )}
+              {staffLineManagers.length > 0 && !["staff_reviewed","signed_off"].includes(report.status) && (
+                <label className="flex items-start gap-2.5 text-sm text-muted-foreground cursor-pointer select-none">
+                  <Checkbox checked={notifyLineManagers} onCheckedChange={setNotifyLineManagers} className="mt-0.5" />
+                  <span>
+                    Notify line manager{staffLineManagers.length > 1 ? "s" : ""} ({staffLineManagers.map((m) => m.name).join(", ")})
+                    <span className="block text-xs text-muted-foreground/80">Sends a non-interactive copy of the report to {staffLineManagers.length > 1 ? "each" : "the"} line manager.</span>
+                  </span>
+                </label>
               )}
               {!["staff_reviewed","signed_off"].includes(report.status) && (
                 <Button

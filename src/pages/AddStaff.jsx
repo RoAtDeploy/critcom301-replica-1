@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import { useAdmin } from "@/context/AdminContext";
 
 export default function AddStaff() {
-  const { roles, departments, lineManagers, addStaff } = useAdmin();
+  const { roles, departments, lineManagerOptions, addStaff } = useAdmin();
   const navigate = useNavigate();
 
   const [firstName, setFirstName] = useState("");
@@ -20,9 +20,20 @@ export default function AddStaff() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [department, setDepartment] = useState("");
-  const [lineManager, setLineManager] = useState("");
+  const [selectedLineManagers, setSelectedLineManagers] = useState([]);
+  const [managersOpen, setManagersOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [rolesOpen, setRolesOpen] = useState(false);
+
+  const toggleLineManager = (m) => {
+    setSelectedLineManagers((prev) =>
+      prev.some((s) => s.email === m.email) ? prev.filter((s) => s.email !== m.email) : [...prev, m]
+    );
+  };
+
+  const removeLineManager = (email) => {
+    setSelectedLineManagers((prev) => prev.filter((s) => s.email !== email));
+  };
 
   const toggleRole = (value) => {
     setSelectedRoles((prev) =>
@@ -45,7 +56,7 @@ export default function AddStaff() {
       phone,
       roles: selectedRoles,
       department,
-      lineManager,
+      lineManagers: selectedLineManagers,
     });
     navigate(`/staff/${newMember.id}`);
   };
@@ -203,22 +214,67 @@ export default function AddStaff() {
             </Select>
           </div>
 
-          {/* Line Manager — from admin context */}
+          {/* Line Managers — multi-select */}
           <div className="space-y-2">
             <Label>
-              Line Manager
+              Line Manager(s)
               <span className="ml-2 text-xs text-muted-foreground font-normal">(optional)</span>
             </Label>
-            <Select value={lineManager} onValueChange={setLineManager}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select line manager" />
-              </SelectTrigger>
-              <SelectContent>
-                {lineManagers.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
+            {selectedLineManagers.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {selectedLineManagers.map((m) => (
+                  <Badge key={m.email} variant="secondary" className="bg-primary/10 text-primary border-primary/20 gap-1 pr-1">
+                    {m.name}
+                    <button type="button" onClick={() => removeLineManager(m.email)} className="ml-1 hover:text-destructive transition-colors">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setManagersOpen((o) => !o)}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-md border border-input bg-background text-sm text-left hover:bg-muted/40 transition-colors"
+              >
+                <span className={selectedLineManagers.length === 0 ? "text-muted-foreground" : ""}>
+                  {selectedLineManagers.length === 0 ? "Select line manager(s)…" : `${selectedLineManagers.length} selected`}
+                </span>
+                <svg className={`w-4 h-4 text-muted-foreground transition-transform ${managersOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {managersOpen && (
+                <div className="absolute z-20 mt-1 w-full bg-popover border border-border rounded-md shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                  {lineManagerOptions.length === 0 ? (
+                    <p className="px-3 py-3 text-sm text-muted-foreground">No line managers available. Invite a user with the line manager role first.</p>
+                  ) : lineManagerOptions.map((m) => {
+                    const checked = selectedLineManagers.some((s) => s.email === m.email);
+                    return (
+                      <button
+                        key={m.email}
+                        type="button"
+                        onClick={() => toggleLineManager(m)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left hover:bg-muted transition-colors ${checked ? "bg-primary/5" : ""}`}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${checked ? "bg-primary border-primary" : "border-input"}`}>
+                          {checked && (
+                            <svg className="w-2.5 h-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{m.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

@@ -31,7 +31,23 @@
       "type": "string"
     },
     "lineManager": {
-      "type": "string"
+      "type": "string",
+      "description": "Legacy single line manager name (kept for backward compatibility)"
+    },
+    "lineManagers": {
+      "type": "array",
+      "description": "Assigned line managers with name and email",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      }
     },
     "calls": {
       "type": "number",

@@ -23,6 +23,7 @@ export function AdminProvider({ children }) {
   const [departments, setDepartments] = useState(DEFAULTS.departments);
   const [lineManagers, setLineManagers] = useState(DEFAULTS.lineManagers);
   const [lineManagerUsers, setLineManagerUsers] = useState([]); // actual User records with line_manager or assessor role
+  const [lineManagerOptions, setLineManagerOptions] = useState([]); // [{ name, email }] for staff assignment
   const [callTypes, setCallTypes] = useState(DEFAULTS.callTypes);
   const [actionTemplates, setActionTemplates] = useState(DEFAULTS.actionTemplates);
   const [staffList, setStaffList] = useState([]);
@@ -57,6 +58,7 @@ export function AdminProvider({ children }) {
       }
     });
     setLineManagers(Array.from(emailMap.values()).filter(Boolean));
+    setLineManagerOptions(Array.from(emailMap.entries()).map(([email, name]) => ({ name, email })).filter((o) => o.name && o.email));
   }, []);
 
   // Load everything from DB on mount
@@ -98,6 +100,7 @@ export function AdminProvider({ children }) {
         }
       });
       setLineManagers(Array.from(emailMap.values()).filter(Boolean));
+    setLineManagerOptions(Array.from(emailMap.entries()).map(([email, name]) => ({ name, email })).filter((o) => o.name && o.email));
 
       setStaffLoading(false);
     };
@@ -222,7 +225,7 @@ export function AdminProvider({ children }) {
 
   return (
     <AdminContext.Provider value={{
-      departments, lineManagers, lineManagerUsers, roles, callTypes, actionTemplates,
+      departments, lineManagers, lineManagerUsers, lineManagerOptions, roles, callTypes, actionTemplates,
       staffList, staffLoading,
       addStaff, updateStaff, refreshStaff, refreshLineManagers,
       addItem, removeItem, editItem,

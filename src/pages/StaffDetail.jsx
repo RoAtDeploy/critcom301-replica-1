@@ -42,7 +42,7 @@ const gradeBg = (score) => {
 export default function StaffDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { roles: adminRoles, departments, lineManagers, staffList, updateStaff } = useAdmin();
+  const { roles: adminRoles, departments, lineManagerOptions, staffList, updateStaff } = useAdmin();
 
   const original = staffList.find((s) => s.id === id);
 
@@ -53,6 +53,7 @@ export default function StaffDetail() {
       ...s,
       firstName: s.firstName || parts[0] || "",
       lastName: s.lastName || parts.slice(1).join(" ") || "",
+      lineManagers: s.lineManagers || [],
     };
   };
 
@@ -61,6 +62,7 @@ export default function StaffDetail() {
   const [form, setForm] = useState(normaliseForm(original));
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
+  const [managersOpen, setManagersOpen] = useState(false);
   const [reports, setReports] = useState([]);
   const [recordings, setRecordings] = useState([]);
   const [reportsOpen, setReportsOpen] = useState(true);
@@ -79,6 +81,15 @@ export default function StaffDetail() {
     setForm((f) => ({
       ...f,
       roles: f.roles.includes(role) ? f.roles.filter((r) => r !== role) : [...f.roles, role],
+    }));
+  };
+
+  const toggleFormLineManager = (m) => {
+    setForm((f) => ({
+      ...f,
+      lineManagers: f.lineManagers?.some((s) => s.email === m.email)
+        ? f.lineManagers.filter((s) => s.email !== m.email)
+        : [...(f.lineManagers || []), m],
     }));
   };
 
@@ -254,20 +265,51 @@ export default function StaffDetail() {
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Department <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
-                  <Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                    <SelectContent>{departments.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Line Manager <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
-                  <Select value={form.lineManager} onValueChange={(v) => setForm({ ...form, lineManager: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select line manager" /></SelectTrigger>
-                    <SelectContent>{lineManagers.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-                  </Select>
+              <div className="space-y-1.5">
+                <Label>Department <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
+                <Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>{departments.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              {/* Line Managers multi-select */}
+              <div className="space-y-1.5">
+                <Label>Line Manager(s) <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
+                {form.lineManagers?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {form.lineManagers.map((m) => (
+                      <Badge key={m.email} variant="secondary" className="bg-primary/10 text-primary border-primary/20 gap-1 pr-1">
+                        {m.name}
+                        <button type="button" onClick={() => setForm({ ...form, lineManagers: form.lineManagers.filter((s) => s.email !== m.email) })} className="ml-1 hover:text-destructive"><X className="w-3 h-3" /></button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <div className="relative">
+                  <button type="button" onClick={() => setManagersOpen((o) => !o)} className="w-full flex items-center justify-between px-3 py-2 rounded-md border border-input bg-background text-sm text-left hover:bg-muted/40 transition-colors">
+                    <span className="text-muted-foreground">{!form.lineManagers?.length ? "Select line manager(s)…" : `${form.lineManagers.length} selected`}</span>
+                    <svg className={`w-4 h-4 text-muted-foreground transition-transform ${managersOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  {managersOpen && (
+                    <div className="absolute z-20 mt-1 w-full bg-popover border border-border rounded-md shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+                      {lineManagerOptions.length === 0 ? (
+                        <p className="px-3 py-3 text-sm text-muted-foreground">No line managers available.</p>
+                      ) : lineManagerOptions.map((m) => {
+                        const checked = form.lineManagers?.some((s) => s.email === m.email);
+                        return (
+                          <button key={m.email} type="button" onClick={() => toggleFormLineManager(m)} className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left hover:bg-muted transition-colors ${checked ? "bg-primary/5" : ""}`}>
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${checked ? "bg-primary border-primary" : "border-input"}`}>
+                              {checked && <svg className="w-2.5 h-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{m.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -277,7 +319,7 @@ export default function StaffDetail() {
               <InfoRow icon={Mail} label="Email" value={member.email || "—"} />
               <InfoRow icon={Phone} label="Phone" value={member.phone ? `+44 ${member.phone}` : "—"} />
               <InfoRow icon={Building2} label="Department" value={member.department || "—"} />
-              <InfoRow icon={Users} label="Line Manager" value={member.lineManager || "—"} />
+              <InfoRow icon={Users} label="Line Manager(s)" value={(member.lineManagers?.length ? member.lineManagers.map((m) => m.name).join(", ") : member.lineManager) || "—"} />
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
                   <TrendingUp className="w-4 h-4 text-muted-foreground" />
