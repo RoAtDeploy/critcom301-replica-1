@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X, User } from "lucide-react";
 import TranscriptEditor from "@/components/report/TranscriptEditor";
+import SearchableStaffSelect from "@/components/monitoring/SearchableStaffSelect";
 
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -179,16 +180,14 @@ export default function GenerateReport() {
         <CardContent className="space-y-5">
           <div className="space-y-2">
             <Label>Staff Member</Label>
-            <Select value={selectedStaffId} onValueChange={(val) => { setSelectedStaffId(val); setSelectedRole(null); }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select staff member" />
-              </SelectTrigger>
-              <SelectContent>
-                {staffList.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableStaffSelect
+              staffMembers={staffList}
+              value={selectedStaffId}
+              onChange={(val) => { setSelectedStaffId(val); setSelectedRole(null); }}
+              placeholder="Select staff member"
+              includeUnknown={false}
+              className="h-9 text-sm w-full"
+            />
           </div>
 
           <div className="space-y-2">

@@ -4,7 +4,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Check, ChevronsUpDown, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function SearchableStaffSelect({ staffMembers, value, onChange, placeholder = "Select staff" }) {
+export default function SearchableStaffSelect({ staffMembers, value, onChange, placeholder = "Select staff", includeUnknown = true, className }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -19,8 +19,8 @@ export default function SearchableStaffSelect({ staffMembers, value, onChange, p
     return sorted.filter((s) => (s.name || "").toLowerCase().includes(q));
   }, [sorted, query]);
 
-  const selectedObj = value !== "unknown" ? staffMembers.find((s) => s.id === value) : null;
-  const displayLabel = value === "unknown" ? "Unknown / Unassigned" : selectedObj?.name || placeholder;
+  const selectedObj = includeUnknown && value === "unknown" ? null : staffMembers.find((s) => s.id === value);
+  const displayLabel = includeUnknown && value === "unknown" ? "Unknown / Unassigned" : selectedObj?.name || placeholder;
 
   const handleSelect = (val) => {
     onChange(val);
@@ -34,8 +34,9 @@ export default function SearchableStaffSelect({ staffMembers, value, onChange, p
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "h-8 text-xs w-44 inline-flex items-center justify-between gap-1 rounded-md border border-input bg-transparent px-2.5",
-            "hover:bg-accent/50 focus:outline-none focus:ring-1 focus:ring-ring"
+            "inline-flex items-center justify-between gap-1 rounded-md border border-input bg-transparent px-2.5",
+            "hover:bg-accent/50 focus:outline-none focus:ring-1 focus:ring-ring",
+            className || "h-8 text-xs w-44"
           )}
         >
           <span className="flex items-center gap-1.5 truncate">
@@ -53,10 +54,12 @@ export default function SearchableStaffSelect({ staffMembers, value, onChange, p
               <CommandEmpty>No staff found.</CommandEmpty>
             ) : (
               <CommandGroup>
-                <CommandItem value="unknown" onSelect={() => handleSelect("unknown")}>
-                  <Check className={cn("mr-1.5 h-3.5 w-3.5", value === "unknown" ? "opacity-100" : "opacity-0")} />
-                  Unknown / Unassigned
-                </CommandItem>
+                {includeUnknown && (
+                  <CommandItem value="unknown" onSelect={() => handleSelect("unknown")}>
+                    <Check className={cn("mr-1.5 h-3.5 w-3.5", value === "unknown" ? "opacity-100" : "opacity-0")} />
+                    Unknown / Unassigned
+                  </CommandItem>
+                )}
                 {filtered.map((s) => (
                   <CommandItem
                     key={s.id}
