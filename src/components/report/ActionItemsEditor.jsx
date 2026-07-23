@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle2, MessageSquare, AlertTriangle, ChevronDown, ChevronUp, Sparkles, Paperclip } from "lucide-react";
+import { CheckCircle2, MessageSquare, AlertTriangle, ChevronDown, ChevronUp, Sparkles, Paperclip, FileText, Headphones, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const GRADE_CONFIG = {
@@ -138,9 +138,17 @@ function AspectActionRow({ item, actionTemplates, resources, onChange }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">No resource</SelectItem>
-                  {resources.map(r => (
-                    <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>
-                  ))}
+                  {resources.map(r => {
+                    const Icon = r.type === "audio" ? Headphones : r.type === "web_link" ? ExternalLink : FileText;
+                    return (
+                      <SelectItem key={r.id} value={r.id}>
+                        <span className="flex items-center gap-2">
+                          <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          {r.title}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
