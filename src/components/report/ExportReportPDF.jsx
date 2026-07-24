@@ -3,12 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import jsPDF from "jspdf";
 
-const GRADE_COLORS = {
-  A: [209, 250, 229],
-  B: [254, 249, 195],
-  C: [255, 237, 213],
-  D: [254, 226, 226],
+// CritCom301 brand palette (mirrors the web app + email aesthetic)
+const BRAND = {
+  navy: [30, 34, 53],          // #1e2235 — header band
+  navyMuted: [139, 157, 195],  // #8b9dc3 — eyebrow text
+  primary: [79, 95, 219],      // #4f5fdb — indigo primary
+  primaryTint: [238, 242, 255],// light indigo
+  accent: [22, 163, 140],      // teal accent (signed-off)
+  accentTint: [224, 248, 240],
+  textDark: [30, 41, 59],      // #1e293b
+  textMuted: [100, 116, 139],  // #64748b
+  cardBg: [248, 249, 252],     // #f8f9fc
+  border: [232, 236, 244],     // #e8ecf4
+  pageBg: [244, 245, 247],     // #f4f5f7
 };
+
+const GRADE_BG = { A: [220, 252, 231], B: [254, 249, 195], C: [255, 237, 213], D: [254, 226, 226] };
+const GRADE_FG = { A: [22, 101, 52], B: [133, 77, 14], C: [154, 52, 18], D: [153, 27, 27] };
 
 function addWrappedText(doc, text, x, y, maxWidth, lineHeight = 5) {
   const lines = doc.splitTextToSize(String(text || ""), maxWidth);
@@ -17,15 +28,28 @@ function addWrappedText(doc, text, x, y, maxWidth, lineHeight = 5) {
 }
 
 function sectionHeader(doc, text, y, pageW) {
-  doc.setFillColor(50, 50, 120);
-  doc.rect(14, y - 4, pageW - 28, 7, "F");
+  doc.setFillColor(...BRAND.primary);
+  doc.roundedRect(14, y - 4, pageW - 28, 7.5, 1.5, 1.5, "F");
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setFont("helvetica", "bold");
-  doc.text(text.toUpperCase(), 16, y + 0.5);
-  doc.setTextColor(30, 30, 30);
+  doc.text(text.toUpperCase(), 16, y + 0.8);
+  doc.setTextColor(...BRAND.textDark);
   doc.setFont("helvetica", "normal");
-  return y + 8;
+  return y + 8.5;
+}
+
+function gradeBadge(doc, grade, x, y, w = 12, h = 6.5) {
+  const bg = GRADE_BG[grade] || [240, 240, 240];
+  const fg = GRADE_FG[grade] || [71, 85, 105];
+  doc.setFillColor(...bg);
+  doc.roundedRect(x, y, w, h, 1.5, 1.5, "F");
+  doc.setTextColor(...fg);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text(grade || "—", x + w / 2, y + h / 2 + 1.2, { align: "center" });
+  doc.setTextColor(...BRAND.textDark);
+  doc.setFont("helvetica", "normal");
 }
 
 function checkPageBreak(doc, y, needed = 20) {
@@ -50,19 +74,22 @@ export default function ExportReportPDF({ report }) {
       const contentW = pageW - margin * 2;
       let y = 20;
 
-      // ── Title ──────────────────────────────────────────────────────────
-      doc.setFillColor(238, 242, 255);
-      doc.rect(0, 0, pageW, 28, "F");
-      doc.setFontSize(13);
+      // ── Branded title band ─────────────────────────────────────────────
+      doc.setFillColor(...BRAND.navy);
+      doc.rect(0, 0, pageW, 30, "F");
+      doc.setFontSize(8.5);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 30, 80);
-      doc.text("Spoken Safety Critical Communications Monitoring Form", pageW / 2, 12, { align: "center" });
-      doc.setFontSize(9);
+      doc.setTextColor(...BRAND.navyMuted);
+      doc.text("CRITCOM301", pageW / 2, 10, { align: "center" });
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.text("Communication Monitoring Report", pageW / 2, 17.5, { align: "center" });
+      doc.setFontSize(8.5);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(80, 80, 120);
-      doc.text(`${report.staff_name || "Unknown"} · ${report.call_date ? new Date(report.call_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "No date"}`, pageW / 2, 20, { align: "center" });
-      doc.setTextColor(30, 30, 30);
-      y = 36;
+      doc.setTextColor(...BRAND.navyMuted);
+      doc.text(`${report.staff_name || "Unknown"} · ${report.call_date ? new Date(report.call_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "No date"}`, pageW / 2, 25, { align: "center" });
+      doc.setTextColor(...BRAND.textDark);
+      y = 38;
 
       // ── Call Details ──────────────────────────────────────────────────
       y = sectionHeader(doc, "Call Details", y, pageW);
@@ -135,19 +162,14 @@ export default function ExportReportPDF({ report }) {
           y = checkPageBreak(doc, y, 24);
           const override = aspect.override || null;
           const grade = override?.grade || aspect.grade;
-          const gradeColor = GRADE_COLORS[grade] || [240, 240, 240];
-
-          // Aspect row background
-          doc.setFillColor(...gradeColor);
-          doc.roundedRect(margin, y - 3, contentW, 8, 1, 1, "F");
+          doc.setFillColor(...BRAND.cardBg);
+          doc.roundedRect(margin, y - 3, contentW, 8.5, 1.5, 1.5, "F");
           doc.setFontSize(8);
           doc.setFont("helvetica", "bold");
-          doc.text(`${aspect.aspect_name || aspect.name || "Aspect"}`, margin + 2, y + 1.5);
-          doc.setFillColor(gradeColor[0] - 30, gradeColor[1] - 30, gradeColor[2] - 30);
-          doc.roundedRect(pageW - margin - 12, y - 2, 12, 6, 1, 1, "F");
-          doc.setTextColor(30, 30, 30);
-          doc.text(grade || "—", pageW - margin - 6, y + 1.5, { align: "center" });
-          y += 9;
+          doc.setTextColor(...BRAND.textDark);
+          doc.text(`${aspect.aspect_name || aspect.name || "Aspect"}`, margin + 2.5, y + 1.8);
+          gradeBadge(doc, grade, pageW - margin - 13, y - 2.2);
+          y += 9.5;
 
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7.5);
@@ -181,16 +203,14 @@ export default function ExportReportPDF({ report }) {
         }
         for (const item of (report.action_items || [])) {
           y = checkPageBreak(doc, y, 20);
-          const gradeColor = GRADE_COLORS[item.aspect_grade] || [240, 240, 240];
-          doc.setFillColor(...gradeColor);
-          doc.roundedRect(margin, y - 3, contentW, 8, 1, 1, "F");
+          doc.setFillColor(...BRAND.cardBg);
+          doc.roundedRect(margin, y - 3, contentW, 8.5, 1.5, 1.5, "F");
           doc.setFontSize(8);
           doc.setFont("helvetica", "bold");
-          doc.text(`${item.aspect_name}`, margin + 2, y + 1.5);
-          doc.setFillColor(gradeColor[0] - 30, gradeColor[1] - 30, gradeColor[2] - 30);
-          doc.roundedRect(pageW - margin - 12, y - 2, 12, 6, 1, 1, "F");
-          doc.text(item.aspect_grade || "—", pageW - margin - 6, y + 1.5, { align: "center" });
-          y += 9;
+          doc.setTextColor(...BRAND.textDark);
+          doc.text(`${item.aspect_name}`, margin + 2.5, y + 1.8);
+          gradeBadge(doc, item.aspect_grade, pageW - margin - 13, y - 2.2);
+          y += 9.5;
 
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7.5);
@@ -251,15 +271,15 @@ export default function ExportReportPDF({ report }) {
       // ── Sign-Off ──────────────────────────────────────────────────────
       y = checkPageBreak(doc, y, 28);
       y = sectionHeader(doc, "Assessor Sign-Off", y, pageW);
-      doc.setFillColor(220, 252, 231);
+      doc.setFillColor(...BRAND.accentTint);
       doc.roundedRect(margin, y - 2, contentW, 22, 2, 2, "F");
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(21, 128, 61);
+      doc.setTextColor(...BRAND.accent);
       doc.text("Report Finalised", margin + 4, y + 5);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
-      doc.setTextColor(30, 30, 30);
+      doc.setTextColor(...BRAND.textDark);
       doc.text(`Signed off by: ${report.signed_off_by || "Assessor"}`, margin + 4, y + 12);
       if (report.signed_off_at) {
         const signOffDate = new Date(report.signed_off_at).toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -272,7 +292,7 @@ export default function ExportReportPDF({ report }) {
       for (let p = 1; p <= totalPages; p++) {
         doc.setPage(p);
         doc.setFontSize(7);
-        doc.setTextColor(160, 160, 160);
+        doc.setTextColor(...BRAND.navyMuted);
         doc.text("CritCom301 — Safety-Critical Communications Monitoring", margin, pageH - 8);
         doc.text(`Page ${p} of ${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
       }
