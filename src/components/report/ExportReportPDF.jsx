@@ -76,7 +76,7 @@ function drawCritComLogo(doc, x, y, size = 14) {
   doc.ellipse(cx, cy, rx, ry, "S");
   doc.setLineWidth(0.2);
   doc.setFillColor(255, 255, 255);
-  doc.rect(x + 0.4, cy, size - 0.8, (y + size) - cy - 0.4, "F");
+  doc.rect(cx - rx - lw, cy, (rx + lw) * 2, ry + lw, "F");
 
   // Ear cups (orange) hanging down from the arch endpoints
   const cupW = size * 0.18;
