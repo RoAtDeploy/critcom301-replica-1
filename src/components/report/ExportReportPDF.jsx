@@ -90,9 +90,9 @@ function drawCritComLogo(doc, x, y, size = 14) {
 
   // Wordmark: "CritCom" white + "301" orange, baseline aligned with the icon
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(size * 0.62);
+  doc.setFontSize(size * 0.82);
   const textX = x + size + 3;
-  const baseY = y + size * 0.72;
+  const baseY = y + size * 0.66;
   doc.setTextColor(255, 255, 255);
   doc.text("CritCom", textX, baseY);
   const critW = doc.getTextWidth("CritCom");
