@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { Resend } from 'npm:resend@4.0.0';
+import { getAppUrl } from '../../shared/appUrl.js';
 
 Deno.serve(async (req) => {
   try {
@@ -36,8 +37,7 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: true, reason: 'No assessor email found for this report' });
     }
 
-    const appUrl = req.headers.get('origin') || 'https://app.base44.com';
-    const reportUrl = `${appUrl}/reports/${report.id}`;
+    const reportUrl = `${getAppUrl()}/reports/${report.id}`;
     const assessorName = (assessor.full_name || 'Assessor').split(' ')[0];
     const staffName = report.staff_name || 'a staff member';
     const callDate = report.call_date

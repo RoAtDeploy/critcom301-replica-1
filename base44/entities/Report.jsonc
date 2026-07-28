@@ -152,6 +152,10 @@
       "type": "string",
       "description": "Base64 PNG of the staff member's signature"
     },
+    "review_token": {
+      "type": "string",
+      "description": "Signed token authorising the staff member to review this report via the public staff-review link"
+    },
     "staff_reviewed_at": {
       "type": "string",
       "description": "ISO timestamp when staff submitted their review"

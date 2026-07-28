@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,8 @@ function WorkflowStep({ number, label, active, done }) {
 
 export default function StaffReview() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("t");
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
@@ -41,7 +43,7 @@ export default function StaffReview() {
   const [signature, setSignature] = useState(null);
 
   useEffect(() => {
-    base44.functions.invoke("staffReviewReport", { reportId: id, action: "get" }).then((res) => {
+    base44.functions.invoke("staffReviewReport", { reportId: id, action: "get", token }).then((res) => {
       const r = res.data.report;
       setReport(r);
       setItems((r.action_items || []).map(ai => ({ ...ai })));
@@ -58,7 +60,7 @@ export default function StaffReview() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await base44.functions.invoke("staffReviewReport", { reportId: id, action: "submit", items, signature });
+    await base44.functions.invoke("staffReviewReport", { reportId: id, action: "submit", items, signature, token });
     setSubmitted(true);
     setSubmitting(false);
   };

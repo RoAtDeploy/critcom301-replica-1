@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { Resend } from 'npm:resend@4.0.0';
+import { getAppUrl } from '../../shared/appUrl.js';
+import { mintReviewToken } from '../../shared/reviewToken.js';
 
 const GRADE_BG = { A: '#dcfce7', B: '#fef9c3', C: '#ffedd5', D: '#fee2e2' };
 const GRADE_FG = { A: '#166534', B: '#854d0e', C: '#9a3412', D: '#991b1b' };
@@ -158,8 +160,8 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'reportId and staffEmail are required' }, { status: 400 });
   }
 
-  const appUrl = req.headers.get('origin') || 'https://app.base44.com';
-  const reviewUrl = `${appUrl}/staff-review/${reportId}`;
+  const token = await mintReviewToken(reportId);
+  const reviewUrl = `${getAppUrl()}/staff-review/${reportId}?t=${token}`;
   const firstName = (staffName || 'Team Member').split(' ')[0];
 
   const subject = `Your Communication Monitoring Report – Action Required`;
@@ -280,6 +282,7 @@ Deno.serve(async (req) => {
     status: 'sent',
     staff_email: staffEmail,
     sent_at: new Date().toISOString(),
+    review_token: token,
   });
 
   return Response.json({ success: true });

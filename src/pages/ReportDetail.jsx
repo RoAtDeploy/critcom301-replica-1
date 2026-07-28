@@ -29,7 +29,7 @@ export default function ReportDetail() {
   const [notifyLineManagers, setNotifyLineManagers] = useState(false);
   const [staffLineManagers, setStaffLineManagers] = useState([]);
 
-  const staffReviewUrl = `${window.location.origin}/staff-review/${id}`;
+  const staffReviewUrl = `${window.location.origin}/staff-review/${id}${report?.review_token ? `?t=${report.review_token}` : ""}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(staffReviewUrl);
@@ -325,7 +325,7 @@ export default function ReportDetail() {
                         </span>
                       )}
                     </span>
-                    <a href={`/staff-review/${report.id}`} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-foreground underline">
+                    <a href={`/staff-review/${report.id}${report.review_token ? `?t=${report.review_token}` : ""}`} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-foreground underline">
                       <ExternalLink className="w-3 h-3" /> Preview staff view
                     </a>
                   </div>
