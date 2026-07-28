@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import jsPDF from "jspdf";
+import { base44 } from "@/api/base44Client";
 
 // CritCom301 brand palette (mirrors the web app + email aesthetic)
 const BRAND = {
@@ -52,6 +53,85 @@ function gradeBadge(doc, grade, x, y, w = 12, h = 6.5) {
   doc.setFont("helvetica", "normal");
 }
 
+const ORANGE = [245, 130, 32]; // #f58220 — CritCom301 accent
+
+// Draws the CritCom301 logo: white rounded square + orange headphone icon, with
+// "CritCom" (white) + "301" (orange) wordmark to the right. (x, y) is the top-left
+// of the icon square; the wordmark follows at a fixed gap.
+function drawCritComLogo(doc, x, y, size = 14) {
+  const navy = BRAND.navy;
+  // Icon tile
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(x, y, size, size, 2.2, 2.2, "F");
+
+  // Headphone geometry inside the tile
+  const pad = size * 0.26;
+  const cupW = size * 0.18;
+  const cupH = size * 0.30;
+  const cupTop = y + size - pad - cupH;
+  const leftCx = x + pad + cupW / 2;
+  const rightCx = x + size - pad - cupW / 2;
+
+  // Ear cups (orange)
+  doc.setFillColor(...ORANGE);
+  doc.roundedRect(x + pad, cupTop, cupW, cupH, 0.8, 0.8, "F");
+  doc.roundedRect(x + size - pad - cupW, cupTop, cupW, cupH, 0.8, 0.8, "F");
+
+  // Headband arc (stroked bezier between the two cup tops)
+  doc.setDrawColor(...ORANGE);
+  doc.setLineWidth(size * 0.11);
+  const archY = y + pad * 0.55;
+  const seg = [
+    rightCx - leftCx, 0,            // end delta
+    leftCx - leftCx, archY - cupTop, // c1 delta
+    rightCx - leftCx, archY - cupTop, // c2 delta
+  ];
+  doc.lines([seg], leftCx, cupTop, [1, 1], "S", false);
+  doc.setLineWidth(0.2);
+
+  // Wordmark: "CritCom" white + "301" orange, baseline aligned with the icon
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(size * 0.62);
+  const textX = x + size + 3;
+  const baseY = y + size * 0.72;
+  doc.setTextColor(255, 255, 255);
+  doc.text("CritCom", textX, baseY);
+  const critW = doc.getTextWidth("CritCom");
+  doc.setTextColor(...ORANGE);
+  doc.text("301", textX + critW, baseY);
+  doc.setTextColor(...BRAND.textDark);
+  doc.setFont("helvetica", "normal");
+}
+
+// Loads the organisation logo (uploaded via Admin → General) as a data URL with
+// its natural dimensions, so it can be embedded on the navy header band.
+async function loadOrgLogo() {
+  try {
+    const records = await base44.entities.AdminConfig.filter({ key: "logo" });
+    const url = records?.[0]?.values?.[0];
+    if (!url) return null;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const dataUrl = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+    const dims = await new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight, type: blob.type || "PNG" });
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    });
+    if (!dims) return null;
+    return { dataUrl, ...dims };
+  } catch {
+    return null;
+  }
+}
+
 function checkPageBreak(doc, y, needed = 20) {
   const pageH = doc.internal.pageSize.getHeight();
   if (y + needed > pageH - 15) {
@@ -74,22 +154,51 @@ export default function ExportReportPDF({ report }) {
       const contentW = pageW - margin * 2;
       let y = 20;
 
-      // ── Branded title band ─────────────────────────────────────────────
+      // ── Organisation logo (preloaded before drawing the band) ─────────
+      const orgLogo = await loadOrgLogo();
+
+      // ── Branded header band ───────────────────────────────────────────
+      const bandH = 30;
       doc.setFillColor(...BRAND.navy);
-      doc.rect(0, 0, pageW, 30, "F");
-      doc.setFontSize(8.5);
+      doc.rect(0, 0, pageW, bandH, "F");
+
+      // CritCom301 logo — left aligned, vertically centred in the band
+      const logoSize = 18;
+      drawCritComLogo(doc, margin, (bandH - logoSize) / 2, logoSize);
+
+      // Organisation logo — placed on the right inside a white rounded chip
+      if (orgLogo) {
+        const maxW = 44;
+        const maxH = 18;
+        const scale = Math.min(maxW / orgLogo.w, maxH / orgLogo.h);
+        const drawW = orgLogo.w * scale;
+        const drawH = orgLogo.h * scale;
+        const padChip = 3;
+        const chipW = drawW + padChip * 2;
+        const chipH = drawH + padChip * 2;
+        const chipX = pageW - margin - chipW;
+        const chipY = (bandH - chipH) / 2;
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(chipX, chipY, chipW, chipH, 1.5, 1.5, "F");
+        try {
+          doc.addImage(orgLogo.dataUrl, orgLogo.type, chipX + padChip, chipY + padChip, drawW, drawH);
+        } catch (_) { /* ignore broken image */ }
+      }
+
+      // Subtitle just below the band
+      doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...BRAND.navyMuted);
-      doc.text("CRITCOM301", pageW / 2, 10, { align: "center" });
-      doc.setFontSize(13);
-      doc.setTextColor(255, 255, 255);
-      doc.text("Communication Monitoring Report", pageW / 2, 17.5, { align: "center" });
+      doc.setTextColor(...BRAND.textDark);
+      doc.text("Communication Monitoring Report", margin, bandH + 6);
       doc.setFontSize(8.5);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(...BRAND.navyMuted);
-      doc.text(`${report.staff_name || "Unknown"} · ${report.call_date ? new Date(report.call_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "No date"}`, pageW / 2, 25, { align: "center" });
+      doc.setTextColor(...BRAND.textMuted);
+      doc.text(
+        `${report.staff_name || "Unknown"} · ${report.call_date ? new Date(report.call_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "No date"}`,
+        margin, bandH + 11
+      );
       doc.setTextColor(...BRAND.textDark);
-      y = 38;
+      y = bandH + 16;
 
       // ── Call Details ──────────────────────────────────────────────────
       y = sectionHeader(doc, "Call Details", y, pageW);
