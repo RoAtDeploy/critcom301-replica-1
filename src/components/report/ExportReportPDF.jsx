@@ -64,30 +64,29 @@ function drawCritComLogo(doc, x, y, size = 14) {
   doc.setFillColor(255, 255, 255);
   doc.roundedRect(x, y, size, size, 2.2, 2.2, "F");
 
-  // Headphone geometry inside the tile
-  const pad = size * 0.26;
+  // Headband arc — a stroked orange ellipse with the lower half masked away by
+  // the white tile, so only a clean rounded arch remains.
+  const cx = x + size / 2;
+  const rx = size * 0.30;
+  const ry = size * 0.27;
+  const cy = y + size * 0.47;
+  const lw = size * 0.13;
+  doc.setDrawColor(...ORANGE);
+  doc.setLineWidth(lw);
+  doc.ellipse(cx, cy, rx, ry, "S");
+  doc.setLineWidth(0.2);
+  doc.setFillColor(255, 255, 255);
+  doc.rect(x + 0.4, cy, size - 0.8, (y + size) - cy - 0.4, "F");
+
+  // Ear cups (orange) hanging down from the arch endpoints
   const cupW = size * 0.18;
   const cupH = size * 0.30;
-  const cupTop = y + size - pad - cupH;
-  const leftCx = x + pad + cupW / 2;
-  const rightCx = x + size - pad - cupW / 2;
-
-  // Ear cups (orange)
+  const cupTop = cy - cupW * 0.05;
+  const leftX = cx - rx - cupW / 2;
+  const rightX = cx + rx - cupW / 2;
   doc.setFillColor(...ORANGE);
-  doc.roundedRect(x + pad, cupTop, cupW, cupH, 0.8, 0.8, "F");
-  doc.roundedRect(x + size - pad - cupW, cupTop, cupW, cupH, 0.8, 0.8, "F");
-
-  // Headband arc (stroked bezier between the two cup tops)
-  doc.setDrawColor(...ORANGE);
-  doc.setLineWidth(size * 0.11);
-  const archY = y + pad * 0.55;
-  const seg = [
-    rightCx - leftCx, 0,            // end delta
-    leftCx - leftCx, archY - cupTop, // c1 delta
-    rightCx - leftCx, archY - cupTop, // c2 delta
-  ];
-  doc.lines([seg], leftCx, cupTop, [1, 1], "S", false);
-  doc.setLineWidth(0.2);
+  doc.roundedRect(leftX, cupTop, cupW, cupH, 1.0, 1.0, "F");
+  doc.roundedRect(rightX, cupTop, cupW, cupH, 1.0, 1.0, "F");
 
   // Wordmark: "CritCom" white + "301" orange, baseline aligned with the icon
   doc.setFont("helvetica", "bold");
