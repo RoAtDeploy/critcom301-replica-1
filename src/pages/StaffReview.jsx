@@ -41,6 +41,7 @@ export default function StaffReview() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [signature, setSignature] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     base44.functions.invoke("staffReviewReport", { reportId: id, action: "get", token }).then((res) => {
@@ -51,6 +52,9 @@ export default function StaffReview() {
       if (r.status === "staff_reviewed" || r.status === "signed_off") {
         setSubmitted(true);
       }
+    }).catch(() => {
+      setError(true);
+      setLoading(false);
     });
   }, [id]);
 
@@ -69,6 +73,16 @@ export default function StaffReview() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-2 px-6 text-center">
+        <AlertTriangle className="w-8 h-8 text-orange-500" />
+        <p className="font-semibold">This review link is invalid or has expired.</p>
+        <p className="text-sm text-muted-foreground">Please contact your line manager for a new link.</p>
       </div>
     );
   }

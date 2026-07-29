@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'reportId and staffEmail are required' }, { status: 400 });
   }
 
-  const token = await mintReviewToken(reportId);
+  const token = mintReviewToken();
   const reviewUrl = `${getAppUrl()}/staff-review/${reportId}?t=${token}`;
   const firstName = (staffName || 'Team Member').split(' ')[0];
 

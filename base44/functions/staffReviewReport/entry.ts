@@ -9,11 +9,23 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'reportId is required' }, { status: 400 });
   }
 
+  // Fetch the report up front — needed to verify the stored review token and
+  // to serve the 'get' action.
+  let report;
+  try {
+    report = await base44.asServiceRole.entities.Report.get(reportId);
+  } catch {
+    return Response.json({ error: 'Report not found' }, { status: 404 });
+  }
+  if (!report) {
+    return Response.json({ error: 'Report not found' }, { status: 404 });
+  }
+
   // Authorization: either a valid per-report review token (the staff member
   // following their secure email link) or an authenticated assessor/admin
   // (e.g. previewing the staff view). A bare report id is never sufficient.
   let authorized = false;
-  if (await verifyReviewToken(reportId, token)) {
+  if (verifyReviewToken(report.review_token, token)) {
     authorized = true;
   } else {
     try {
@@ -27,7 +39,6 @@ Deno.serve(async (req) => {
 
   // GET report
   if (action === 'get') {
-    const report = await base44.asServiceRole.entities.Report.get(reportId);
     return Response.json({ report });
   }
 
