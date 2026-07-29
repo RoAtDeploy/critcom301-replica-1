@@ -44,7 +44,13 @@ export default function ReportDetail() {
       if (r.staff_id) {
         const staff = await base44.entities.StaffMember.get(r.staff_id).catch(() => null);
         if (staff) {
-          setStaffLineManagers(staff.lineManagers || []);
+          let managers = Array.isArray(staff.lineManagers) ? [...staff.lineManagers] : [];
+          if (staff.lineManager && !managers.some((m) => m.name === staff.lineManager)) {
+            const found = await base44.entities.LineManager.filter({ name: staff.lineManager }).catch(() => []);
+            const lm = found[0];
+            if (lm && lm.email) managers = [...managers, { name: lm.name, email: lm.email }];
+          }
+          setStaffLineManagers(managers);
           if (!r.staff_email && staff.email) {
             setReport({ ...r, staff_email: staff.email });
           }
