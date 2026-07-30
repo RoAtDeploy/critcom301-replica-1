@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X, User } from "lucide-react";
 import TranscriptEditor from "@/components/report/TranscriptEditor";
+import ChannelAttributionToggle from "@/components/report/ChannelAttributionToggle";
+import { attributeSpeakersByChannel } from "@/lib/channelAttribution";
 import SearchableStaffSelect from "@/components/monitoring/SearchableStaffSelect";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -36,6 +38,9 @@ export default function GenerateReport() {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
   const [loadingRecording, setLoadingRecording] = useState(false);
+  const [useChannelAttribution, setUseChannelAttribution] = useState(false);
+  const [attributing, setAttributing] = useState(false);
+  const [attributionError, setAttributionError] = useState(null);
 
   // Pre-fill from a Recording entity if recordingId is provided
   useEffect(() => {
@@ -69,6 +74,8 @@ export default function GenerateReport() {
       setLabelledSegments([]);
       setStaffChannel(null);
       setOtherRole(null);
+      setUseChannelAttribution(false);
+      setAttributionError(null);
     }
   };
 
@@ -93,12 +100,35 @@ export default function GenerateReport() {
   const handleTranscribe = async () => {
     if (!audioFile) return;
     setTranscribing(true);
+    setUseChannelAttribution(false);
+    setAttributionError(null);
     const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
     setAudioUrl(file_url);
     const res = await base44.functions.invoke('transcribeAudio', { file_url });
     setTranscription(res.data);
     setLabelledSegments(autoLabelSegments(res.data.segments || []));
     setTranscribing(false);
+  };
+
+  const handleToggleAttribution = async (enabled) => {
+    setUseChannelAttribution(enabled);
+    setAttributionError(null);
+    if (!enabled) {
+      setLabelledSegments(autoLabelSegments(transcription?.segments || []));
+      return;
+    }
+    if (!audioUrl || !transcription?.segments?.length) return;
+    setAttributing(true);
+    try {
+      const attributed = await attributeSpeakersByChannel(audioUrl, transcription.segments);
+      setLabelledSegments(attributed);
+    } catch (err) {
+      setUseChannelAttribution(false);
+      setAttributionError(err.message || "Channel detection failed");
+      setLabelledSegments(autoLabelSegments(transcription?.segments || []));
+    } finally {
+      setAttributing(false);
+    }
   };
 
   const handleGenerateReport = async () => {
@@ -283,6 +313,13 @@ export default function GenerateReport() {
                       Transcription complete • {Math.round(transcription.duration)}s duration
                     </div>
 
+                    <ChannelAttributionToggle
+                      enabled={useChannelAttribution}
+                      onToggle={handleToggleAttribution}
+                      loading={attributing}
+                      error={attributionError}
+                    />
+
                     {/* Transcript editor */}
                     <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
                       <div className="flex items-center gap-2">
@@ -381,8 +418,14 @@ export default function GenerateReport() {
               <div className="flex items-center gap-2 text-sm text-accent font-medium">
                 <CheckCircle2 className="w-4 h-4" />
                 Transcription loaded • {Math.round(transcription.duration)}s
-              </div>
-              <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
+                </div>
+                <ChannelAttributionToggle
+                enabled={useChannelAttribution}
+                onToggle={handleToggleAttribution}
+                loading={attributing}
+                error={attributionError}
+                />
+                <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-primary" />
                   <p className="text-sm font-semibold">Review & correct transcript</p>
