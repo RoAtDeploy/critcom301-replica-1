@@ -73,6 +73,7 @@ export default function ReportDetail() {
       reportId: report.id,
       staffChannel: report.staff_channel,
       staffName: report.staff_name,
+      staffRole: report.role,
       otherRole: report.other_role,
     });
     const updated = await base44.entities.Report.get(report.id);
