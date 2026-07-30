@@ -37,7 +37,6 @@ export default function GenerateReport() {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
   const [loadingRecording, setLoadingRecording] = useState(false);
-  const [useAiDiarization, setUseAiDiarization] = useState(false);
   const [diarizing, setDiarizing] = useState(false);
   const [diarizationError, setDiarizationError] = useState(null);
 
@@ -73,7 +72,6 @@ export default function GenerateReport() {
       setLabelledSegments([]);
       setStaffChannel(null);
       setOtherRole(null);
-      setUseAiDiarization(false);
       setDiarizationError(null);
     }
   };
@@ -99,7 +97,6 @@ export default function GenerateReport() {
   const handleTranscribe = async () => {
     if (!audioFile) return;
     setTranscribing(true);
-    setUseAiDiarization(false);
     setDiarizationError(null);
     const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
     setAudioUrl(file_url);
@@ -109,27 +106,20 @@ export default function GenerateReport() {
     setTranscribing(false);
   };
 
-  const handleToggleDiarization = async (enabled) => {
-    setUseAiDiarization(enabled);
+  const handleRunDiarization = async () => {
     setDiarizationError(null);
-    if (!enabled) {
-      setLabelledSegments(autoLabelSegments(transcription?.segments || []));
-      return;
-    }
-    if (!transcription?.segments?.length) return;
+    if (!labelledSegments.length) return;
     setDiarizing(true);
     try {
       const res = await base44.functions.invoke("diarizeTranscript", {
-        segments: transcription.segments,
+        segments: labelledSegments,
       });
       const data = res.data || res;
       if (data.segments) {
         setLabelledSegments(data.segments);
       }
     } catch (err) {
-      setUseAiDiarization(false);
       setDiarizationError(err.message || "AI diarization failed");
-      setLabelledSegments(autoLabelSegments(transcription?.segments || []));
     } finally {
       setDiarizing(false);
     }
@@ -317,13 +307,6 @@ export default function GenerateReport() {
                       Transcription complete • {Math.round(transcription.duration)}s duration
                     </div>
 
-                    <AiDiarizationToggle
-                      enabled={useAiDiarization}
-                      onToggle={handleToggleDiarization}
-                      loading={diarizing}
-                      error={diarizationError}
-                    />
-
                     {/* Transcript editor */}
                     <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
                       <div className="flex items-center gap-2">
@@ -346,6 +329,12 @@ export default function GenerateReport() {
                         }}
                       />
                     </div>
+
+                    <AiDiarizationToggle
+                      onRun={handleRunDiarization}
+                      loading={diarizing}
+                      error={diarizationError}
+                    />
 
                     {/* Speaker assignment */}
                     <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
@@ -423,12 +412,6 @@ export default function GenerateReport() {
                 <CheckCircle2 className="w-4 h-4" />
                 Transcription loaded • {Math.round(transcription.duration)}s
                 </div>
-                <AiDiarizationToggle
-                 enabled={useAiDiarization}
-                 onToggle={handleToggleDiarization}
-                 loading={diarizing}
-                 error={diarizationError}
-                />
                 <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-primary" />
@@ -446,6 +429,11 @@ export default function GenerateReport() {
                   }}
                 />
               </div>
+                <AiDiarizationToggle
+                 onRun={handleRunDiarization}
+                 loading={diarizing}
+                 error={diarizationError}
+                />
               <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
                 <p className="text-sm font-semibold">Assign speakers</p>
                 <p className="text-xs text-muted-foreground">Select which speaker is the staff member.</p>
