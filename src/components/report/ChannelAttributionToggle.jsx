@@ -8,7 +8,7 @@ export default function ChannelAttributionToggle({ enabled, onToggle, loading, e
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">Auto-detect speakers from stereo channels</p>
         <p className={`text-xs ${error ? "text-destructive" : "text-muted-foreground"}`}>
-          {error || "Uses left/right audio channels to identify who is speaking"}
+          {error || "Transcribes one channel separately and matches text to identify each speaker"}
         </p>
       </div>
       {loading ? (
