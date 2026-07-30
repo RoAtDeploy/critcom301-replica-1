@@ -6,6 +6,9 @@ import { base44 } from "@/api/base44Client";
  * transcript. Segments whose text appears in the isolated channel transcript
  * are labelled S1 (left channel); all others are S2 (right channel).
  *
+ * Uses transcribeChannelAudio (raw Whisper) to avoid LLM resegmentation
+ * modifying the text between the two passes.
+ *
  * @param {string} audioUrl   — URL of the uploaded stereo audio file
  * @param {Array}  segments   — master transcript segments { start, end, text, ... }
  * @returns {Promise<Array>}  — segments with `speaker` set to "S1" or "S2"
@@ -51,23 +54,37 @@ export async function attributeSpeakersByChannel(audioUrl, segments) {
   const file = new File([wavBlob], "left-channel.wav", { type: "audio/wav" });
   const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-  // 4. Transcribe the isolated left channel
-  const res = await base44.functions.invoke("transcribeAudio", { file_url });
+  // 4. Transcribe the isolated left channel (raw Whisper, no LLM processing)
+  const res = await base44.functions.invoke("transcribeChannelAudio", { file_url });
   const channelData = res.data || res;
   const channelFullText = normalizeText(
     (channelData.text || "") + " " +
     (channelData.segments || []).map((s) => s.text || "").join(" ")
   );
 
+  console.log("[ChannelAttribution] Channel transcript (first 500 chars):", channelFullText.substring(0, 500));
+  console.log("[ChannelAttribution] Channel segments:", (channelData.segments || []).length);
+  console.log("[ChannelAttribution] Master segments to match:", segments.length);
+
   if (!channelFullText) {
     throw new Error("Channel transcription returned no text");
   }
 
   // 5. Match each master segment's text against the channel transcript
-  return segments.map((seg) => {
-    const isInChannel = isTextInChannel(seg.text, channelFullText);
+  const result = segments.map((seg) => {
+    const normSeg = normalizeText(seg.text);
+    const isInChannel = isTextInChannel(normSeg, channelFullText);
+    if (!isInChannel) {
+      console.log("[ChannelAttribution] No match:", normSeg.substring(0, 120));
+    }
     return { ...seg, speaker: isInChannel ? "S1" : "S2" };
   });
+
+  const s1Count = result.filter((s) => s.speaker === "S1").length;
+  const s2Count = result.filter((s) => s.speaker === "S2").length;
+  console.log(`[ChannelAttribution] Result: ${s1Count} matched left channel (S1), ${s2Count} assigned right (S2)`);
+
+  return result;
 }
 
 // --- Text matching helpers ---
@@ -86,12 +103,11 @@ function normalizeText(text) {
  * - Fallback: word-overlap for longer segments where Whisper may vary slightly.
  */
 function isTextInChannel(segmentText, channelFullText) {
-  const normSeg = normalizeText(segmentText);
-  if (!normSeg) return false;
+  if (!segmentText) return false;
 
-  if (channelFullText.includes(normSeg)) return true;
+  if (channelFullText.includes(segmentText)) return true;
 
-  const segWords = normSeg.split(" ");
+  const segWords = segmentText.split(" ");
   if (segWords.length < 4) return false; // short segments: substring match is definitive
 
   const channelWords = channelFullText.split(" ");
