@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Upload, FileAudio, Sparkles, Loader2, CheckCircle2, X, User } from "lucide-react";
 import TranscriptEditor from "@/components/report/TranscriptEditor";
 import ChannelAttributionToggle from "@/components/report/ChannelAttributionToggle";
+import AiDiarizationToggle from "@/components/report/AiDiarizationToggle";
 import { attributeSpeakersByChannel } from "@/lib/channelAttribution";
 import SearchableStaffSelect from "@/components/monitoring/SearchableStaffSelect";
 
@@ -41,6 +42,9 @@ export default function GenerateReport() {
   const [useChannelAttribution, setUseChannelAttribution] = useState(false);
   const [attributing, setAttributing] = useState(false);
   const [attributionError, setAttributionError] = useState(null);
+  const [useAiDiarization, setUseAiDiarization] = useState(false);
+  const [diarizing, setDiarizing] = useState(false);
+  const [diarizationError, setDiarizationError] = useState(null);
 
   // Pre-fill from a Recording entity if recordingId is provided
   useEffect(() => {
@@ -76,6 +80,8 @@ export default function GenerateReport() {
       setOtherRole(null);
       setUseChannelAttribution(false);
       setAttributionError(null);
+      setUseAiDiarization(false);
+      setDiarizationError(null);
     }
   };
 
@@ -102,6 +108,8 @@ export default function GenerateReport() {
     setTranscribing(true);
     setUseChannelAttribution(false);
     setAttributionError(null);
+    setUseAiDiarization(false);
+    setDiarizationError(null);
     const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
     setAudioUrl(file_url);
     const res = await base44.functions.invoke('transcribeAudio', { file_url });
@@ -113,6 +121,7 @@ export default function GenerateReport() {
   const handleToggleAttribution = async (enabled) => {
     setUseChannelAttribution(enabled);
     setAttributionError(null);
+    if (enabled) setUseAiDiarization(false);
     if (!enabled) {
       setLabelledSegments(autoLabelSegments(transcription?.segments || []));
       return;
@@ -128,6 +137,33 @@ export default function GenerateReport() {
       setLabelledSegments(autoLabelSegments(transcription?.segments || []));
     } finally {
       setAttributing(false);
+    }
+  };
+
+  const handleToggleDiarization = async (enabled) => {
+    setUseAiDiarization(enabled);
+    setDiarizationError(null);
+    if (enabled) setUseChannelAttribution(false);
+    if (!enabled) {
+      setLabelledSegments(autoLabelSegments(transcription?.segments || []));
+      return;
+    }
+    if (!transcription?.segments?.length) return;
+    setDiarizing(true);
+    try {
+      const res = await base44.functions.invoke("diarizeTranscript", {
+        segments: transcription.segments,
+      });
+      const data = res.data || res;
+      if (data.segments) {
+        setLabelledSegments(data.segments);
+      }
+    } catch (err) {
+      setUseAiDiarization(false);
+      setDiarizationError(err.message || "AI diarization failed");
+      setLabelledSegments(autoLabelSegments(transcription?.segments || []));
+    } finally {
+      setDiarizing(false);
     }
   };
 
@@ -320,6 +356,13 @@ export default function GenerateReport() {
                       error={attributionError}
                     />
 
+                    <AiDiarizationToggle
+                      enabled={useAiDiarization}
+                      onToggle={handleToggleDiarization}
+                      loading={diarizing}
+                      error={diarizationError}
+                    />
+
                     {/* Transcript editor */}
                     <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
                       <div className="flex items-center gap-2">
@@ -420,10 +463,16 @@ export default function GenerateReport() {
                 Transcription loaded • {Math.round(transcription.duration)}s
                 </div>
                 <ChannelAttributionToggle
-                enabled={useChannelAttribution}
-                onToggle={handleToggleAttribution}
-                loading={attributing}
-                error={attributionError}
+                 enabled={useChannelAttribution}
+                 onToggle={handleToggleAttribution}
+                 loading={attributing}
+                 error={attributionError}
+                />
+                <AiDiarizationToggle
+                 enabled={useAiDiarization}
+                 onToggle={handleToggleDiarization}
+                 loading={diarizing}
+                 error={diarizationError}
                 />
                 <div className="border rounded-xl p-4 space-y-3 bg-muted/20">
                 <div className="flex items-center gap-2">
