@@ -34,7 +34,8 @@ export async function attributeSpeakersByChannel(audioUrl, segments) {
   const rightChannel = audioBuffer.getChannelData(1);
   const sampleRate = audioBuffer.sampleRate;
 
-  const attributed = segments.map((seg) => {
+  // First pass: compute RMS energy per channel for each segment
+  const energies = segments.map((seg) => {
     const startSec = seg.start ?? 0;
     const endSec = seg.end ?? startSec + 1;
 
@@ -55,10 +56,41 @@ export async function attributeSpeakersByChannel(audioUrl, segments) {
       count++;
     }
 
-    const leftRMS = count > 0 ? Math.sqrt(leftSum / count) : 0;
-    const rightRMS = count > 0 ? Math.sqrt(rightSum / count) : 0;
+    return {
+      seg,
+      leftRMS: count > 0 ? Math.sqrt(leftSum / count) : 0,
+      rightRMS: count > 0 ? Math.sqrt(rightSum / count) : 0,
+    };
+  });
 
-    return { ...seg, channel: leftRMS >= rightRMS ? "left" : "right" };
+  // Auto-calibrate threshold: 10% of the loudest moment across the whole call
+  const maxRMS = Math.max(
+    ...energies.map((e) => e.leftRMS),
+    ...energies.map((e) => e.rightRMS),
+    0.001
+  );
+  const threshold = maxRMS * 0.1;
+
+  // Second pass: assign channels definitively — audio is on one channel or the other
+  let lastChannel = null;
+  const attributed = energies.map(({ seg, leftRMS, rightRMS }) => {
+    const leftActive = leftRMS > threshold;
+    const rightActive = rightRMS > threshold;
+
+    let channel;
+    if (leftActive && !rightActive) {
+      channel = "left";
+    } else if (rightActive && !leftActive) {
+      channel = "right";
+    } else if (leftActive && rightActive) {
+      channel = leftRMS >= rightRMS ? "left" : "right";
+    } else {
+      // Silence/pause — keep the previous speaker for continuity
+      channel = lastChannel || "left";
+    }
+
+    lastChannel = channel;
+    return { ...seg, channel };
   });
 
   // Assign S1 to whichever channel speaks first; S2 to the other.
