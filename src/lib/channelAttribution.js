@@ -2,12 +2,13 @@ import { base44 } from "@/api/base44Client";
 
 /**
  * Attribute speaker labels (S1/S2) to transcript segments by transcribing
- * one stereo channel in isolation and matching its text against the master
- * transcript. Segments whose text appears in the isolated channel transcript
- * are labelled S1 (left channel); all others are S2 (right channel).
+ * BOTH stereo channels in isolation and comparing text overlap.
+ *
+ * Each master segment is assigned to whichever channel transcript has
+ * higher word overlap — S1 for the left channel, S2 for the right.
  *
  * Uses transcribeChannelAudio (raw Whisper) to avoid LLM resegmentation
- * modifying the text between the two passes.
+ * modifying the text between passes.
  *
  * @param {string} audioUrl   — URL of the uploaded stereo audio file
  * @param {Array}  segments   — master transcript segments { start, end, text, ... }
@@ -37,57 +38,77 @@ export async function attributeSpeakersByChannel(audioUrl, segments) {
     throw new Error("Audio is mono — stereo channels required for speaker detection");
   }
 
-  // 2. Extract left channel, downsample to 16 kHz mono for Whisper
-  const leftData = audioBuffer.getChannelData(0);
-  const targetRate = 16000;
-  const ratio = audioBuffer.sampleRate / targetRate;
-  const newLength = Math.floor(leftData.length / ratio);
-  const monoBuffer = audioContext.createBuffer(1, newLength, targetRate);
-  const monoData = monoBuffer.getChannelData(0);
-  for (let i = 0; i < newLength; i++) {
-    monoData[i] = leftData[Math.floor(i * ratio)];
-  }
+  // 2. Extract both channels as 16 kHz mono WAV (needs audioContext alive)
+  const leftWav = extractChannelAsWav(audioBuffer, audioContext, 0);
+  const rightWav = extractChannelAsWav(audioBuffer, audioContext, 1);
   audioContext.close();
 
-  // 3. Encode as WAV and upload
-  const wavBlob = audioBufferToWav(monoBuffer);
-  const file = new File([wavBlob], "left-channel.wav", { type: "audio/wav" });
-  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+  // 3. Upload and transcribe both channels in parallel
+  const [leftUrl, rightUrl] = await Promise.all([
+    uploadWav(leftWav, "left-channel.wav"),
+    uploadWav(rightWav, "right-channel.wav"),
+  ]);
 
-  // 4. Transcribe the isolated left channel (raw Whisper, no LLM processing)
-  const res = await base44.functions.invoke("transcribeChannelAudio", { file_url });
-  const channelData = res.data || res;
-  const channelFullText = normalizeText(
-    (channelData.text || "") + " " +
-    (channelData.segments || []).map((s) => s.text || "").join(" ")
+  const [leftRes, rightRes] = await Promise.all([
+    base44.functions.invoke("transcribeChannelAudio", { file_url: leftUrl }),
+    base44.functions.invoke("transcribeChannelAudio", { file_url: rightUrl }),
+  ]);
+
+  const leftText = normalizeText(
+    ((leftRes.data || leftRes).text || "") + " " +
+    ((leftRes.data || leftRes).segments || []).map((s) => s.text || "").join(" ")
+  );
+  const rightText = normalizeText(
+    ((rightRes.data || rightRes).text || "") + " " +
+    ((rightRes.data || rightRes).segments || []).map((s) => s.text || "").join(" ")
   );
 
-  console.log("[ChannelAttribution] Channel transcript (first 500 chars):", channelFullText.substring(0, 500));
-  console.log("[ChannelAttribution] Channel segments:", (channelData.segments || []).length);
-  console.log("[ChannelAttribution] Master segments to match:", segments.length);
+  console.log("[ChannelAttribution] Left text length:", leftText.length, "first 300:", leftText.substring(0, 300));
+  console.log("[ChannelAttribution] Right text length:", rightText.length, "first 300:", rightText.substring(0, 300));
+  console.log("[ChannelAttribution] Master segments:", segments.length);
 
-  if (!channelFullText) {
-    throw new Error("Channel transcription returned no text");
+  if (!leftText && !rightText) {
+    throw new Error("Both channel transcriptions returned no text");
   }
 
-  // 5. Match each master segment's text against the channel transcript
+  // 4. Assign each segment to whichever channel has higher text overlap
   const result = segments.map((seg) => {
     const normSeg = normalizeText(seg.text);
-    const isInChannel = isTextInChannel(normSeg, channelFullText);
-    if (!isInChannel) {
-      console.log("[ChannelAttribution] No match:", normSeg.substring(0, 120));
-    }
-    return { ...seg, speaker: isInChannel ? "S1" : "S2" };
+    const leftScore = wordOverlap(normSeg, leftText);
+    const rightScore = wordOverlap(normSeg, rightText);
+    const speaker = leftScore >= rightScore ? "S1" : "S2";
+    console.log(`[ChannelAttribution] L:${leftScore.toFixed(2)} R:${rightScore.toFixed(2)} → ${speaker} | "${normSeg.substring(0, 80)}"`);
+    return { ...seg, speaker };
   });
 
   const s1Count = result.filter((s) => s.speaker === "S1").length;
-  const s2Count = result.filter((s) => s.speaker === "S2").length;
-  console.log(`[ChannelAttribution] Result: ${s1Count} matched left channel (S1), ${s2Count} assigned right (S2)`);
+  console.log(`[ChannelAttribution] Result: ${s1Count} S1, ${result.length - s1Count} S2`);
 
   return result;
 }
 
-// --- Text matching helpers ---
+// --- Channel extraction ---
+
+function extractChannelAsWav(audioBuffer, audioContext, channelIndex) {
+  const channelData = audioBuffer.getChannelData(channelIndex);
+  const targetRate = 16000;
+  const ratio = audioBuffer.sampleRate / targetRate;
+  const newLength = Math.floor(channelData.length / ratio);
+  const monoBuffer = audioContext.createBuffer(1, newLength, targetRate);
+  const monoData = monoBuffer.getChannelData(0);
+  for (let i = 0; i < newLength; i++) {
+    monoData[i] = channelData[Math.floor(i * ratio)];
+  }
+  return audioBufferToWav(monoBuffer);
+}
+
+async function uploadWav(wavBlob, filename) {
+  const file = new File([wavBlob], filename, { type: "audio/wav" });
+  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+  return file_url;
+}
+
+// --- Text matching ---
 
 function normalizeText(text) {
   return (text || "")
@@ -98,32 +119,24 @@ function normalizeText(text) {
 }
 
 /**
- * Determine whether a segment's text belongs to the isolated channel.
- * - Direct substring match first (handles most cases).
- * - Fallback: word-overlap for longer segments where Whisper may vary slightly.
+ * Score how well a segment's text matches a channel transcript.
+ * - 1.0 if the segment text is a direct substring (definitive match).
+ * - Otherwise, ratio of segment words found in the channel text (0–1).
  */
-function isTextInChannel(segmentText, channelFullText) {
-  if (!segmentText) return false;
+function wordOverlap(segmentText, channelFullText) {
+  if (!segmentText || !channelFullText) return 0;
 
-  if (channelFullText.includes(segmentText)) return true;
+  if (channelFullText.includes(segmentText)) return 1.0;
 
   const segWords = segmentText.split(" ");
-  if (segWords.length < 4) return false; // short segments: substring match is definitive
+  if (segWords.length === 0) return 0;
 
-  const channelWords = channelFullText.split(" ");
+  const channelWordSet = new Set(channelFullText.split(" "));
   let matchCount = 0;
-  let chIdx = 0;
   for (const word of segWords) {
-    while (chIdx < channelWords.length) {
-      if (channelWords[chIdx] === word) {
-        matchCount++;
-        chIdx++;
-        break;
-      }
-      chIdx++;
-    }
+    if (channelWordSet.has(word)) matchCount++;
   }
-  return matchCount / segWords.length > 0.6;
+  return matchCount / segWords.length;
 }
 
 // --- WAV encoder (16-bit PCM) ---
