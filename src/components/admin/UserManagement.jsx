@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Trash2, Shield, User, Mail, Loader2, Ban, Power } from "lucide-react";
+import { UserPlus, Trash2, Shield, User, Mail, Loader2, Ban, Power, Send } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
 import { useAuth } from "@/lib/AuthContext";
 import UserTypeSelect from "@/components/admin/UserTypeSelect";
@@ -26,6 +26,7 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", roles: ["assessor"] });
   const [inviting, setInviting] = useState(false);
+  const [resendingId, setResendingId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -112,6 +113,20 @@ export default function UserManagement() {
     const nextDisabled = !u.disabled;
     await base44.entities.User.update(u.id, { disabled: nextDisabled });
     setUsers(prev => prev.map(x => x.id === u.id ? { ...x, disabled: nextDisabled } : x));
+  };
+
+  const handleResendInvite = async (u) => {
+    setResendingId(u.id);
+    setError("");
+    try {
+      await base44.users.inviteUser(u.email, u.role || "assessor");
+      await base44.entities.PendingUser.update(u.id, { status: "invited" });
+      setUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: "invited" } : x));
+      setSuccess(`Invitation resent to ${u.email}.`);
+    } catch (err) {
+      setError(err.message || "Failed to resend invitation.");
+    }
+    setResendingId(null);
   };
 
   const handleDeletePending = async (u) => {
@@ -230,16 +245,31 @@ export default function UserManagement() {
                     </Button>
                   )}
                   {user.is_pending && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 shrink-0 text-destructive hover:text-destructive hover:border-destructive/40"
-                      title="Remove this pending user"
-                      onClick={() => handleDeletePending(user)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Remove
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 shrink-0"
+                        title="Resend invitation email"
+                        disabled={resendingId === user.id}
+                        onClick={() => handleResendInvite(user)}
+                      >
+                        {resendingId === user.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Send className="w-3.5 h-3.5" />}
+                        Resend
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 shrink-0 text-destructive hover:text-destructive hover:border-destructive/40"
+                        title="Remove this pending user"
+                        onClick={() => handleDeletePending(user)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Remove
+                      </Button>
+                    </>
                   )}
                 </div>
               </li>
