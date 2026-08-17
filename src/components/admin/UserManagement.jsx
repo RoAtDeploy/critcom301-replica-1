@@ -62,8 +62,13 @@ export default function UserManagement() {
       const roles = form.roles.length ? form.roles : ["assessor"];
       const primaryRole = derivePrimaryRole(roles);
 
-      // Trigger the platform invitation email — the user finalises their login via the link
+      // Register the user in the platform and send a branded invitation email via Resend
       await base44.users.inviteUser(form.email.trim(), platformRole(primaryRole));
+      await base44.functions.invoke('sendUserInvite', {
+        email: form.email.trim(),
+        firstName: form.firstName || form.email.trim().split('@')[0],
+        role: primaryRole,
+      });
 
       // Track locally as "invited" until they complete their first login
       const pendingUser = await base44.entities.PendingUser.create({
@@ -122,7 +127,11 @@ export default function UserManagement() {
     setResendingId(u.id);
     setError("");
     try {
-      await base44.users.inviteUser(u.email, platformRole(u.role || "assessor"));
+      await base44.functions.invoke('sendUserInvite', {
+        email: u.email,
+        firstName: u.firstName || (u.full_name || u.email).split(' ')[0],
+        role: u.role || "assessor",
+      });
       await base44.entities.PendingUser.update(u.id, { status: "invited" });
       setUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: "invited" } : x));
       setSuccess(`Invitation resent to ${u.email}.`);
