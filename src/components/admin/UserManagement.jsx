@@ -19,7 +19,7 @@ const platformRole = (appRole) => (appRole === "admin" ? "admin" : "user");
 
 const normaliseRoles = (user) => {
   const raw = user.roles && user.roles.length ? user.roles : user.role ? [user.role] : ["assessor"];
-  return [...new Set(raw.map((r) => (r === "line_manager" ? "assessor" : r)))];
+  return [...new Set(raw.map((r) => (r === "line_manager" || r === "user" ? "assessor" : r)))];
 };
 
 export default function UserManagement() {
@@ -39,9 +39,17 @@ export default function UserManagement() {
       base44.entities.User.list(),
       base44.entities.PendingUser.list()
     ]);
+    // A pending user whose email now matches a registered user has accepted their invite —
+    // remove the stale pending record so they don't appear twice.
+    const appEmails = new Set(appUsers.map(u => u.email?.toLowerCase()).filter(Boolean));
+    const stale = pendingUsers.filter(p => p.email && appEmails.has(p.email.toLowerCase()));
+    if (stale.length) {
+      await Promise.all(stale.map(s => base44.entities.PendingUser.delete(s.id).catch(() => {})));
+    }
+    const validPending = pendingUsers.filter(p => !p.email || !appEmails.has(p.email.toLowerCase()));
     const combined = [
       ...appUsers,
-      ...pendingUsers.map(p => ({
+      ...validPending.map(p => ({
         ...p,
         full_name: p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : p.email,
         is_pending: true
@@ -105,9 +113,9 @@ export default function UserManagement() {
   const handleRolesChange = async (userId, newRoles) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
-    const roles = newRoles.length ? newRoles : ["assessor"];
+    const roles = [...new Set((newRoles.length ? newRoles : ["assessor"]).map(r => r === "line_manager" || r === "user" ? "assessor" : r))];
     const primaryRole = derivePrimaryRole(roles);
-    
+
     if (user.is_pending) {
       await base44.entities.PendingUser.update(userId, { roles, role: primaryRole });
     } else {
