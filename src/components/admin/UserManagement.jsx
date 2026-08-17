@@ -55,28 +55,34 @@ export default function UserManagement() {
     setSuccess("");
     setInviting(true);
     try {
-      // Create pending user placeholder in database
       const roles = form.roles.length ? form.roles : ["assessor"];
+      const primaryRole = derivePrimaryRole(roles);
+
+      // Trigger the platform invitation email — the user finalises their login via the link
+      await base44.users.inviteUser(form.email.trim(), primaryRole);
+
+      // Track locally as "invited" until they complete their first login
       const pendingUser = await base44.entities.PendingUser.create({
         email: form.email.trim(),
         firstName: form.firstName,
         lastName: form.lastName,
         roles,
-        role: derivePrimaryRole(roles),
-        status: "pending"
+        role: primaryRole,
+        status: "invited"
       });
-      
+
       // Show in UI immediately
       setUsers(prev => [...prev, {
         id: pendingUser.id,
         email: pendingUser.email,
         full_name: form.firstName && form.lastName ? `${form.firstName} ${form.lastName}` : form.email.trim(),
         roles,
-        role: derivePrimaryRole(roles),
-        is_pending: true
+        role: primaryRole,
+        is_pending: true,
+        status: "invited"
       }]);
-      
-      setSuccess(`${form.email.trim()} added as pending. Ready to invite when needed.`);
+
+      setSuccess(`Invitation sent to ${form.email.trim()}.`);
       setForm({ firstName: "", lastName: "", email: "", roles: ["assessor"] });
       
       // Refresh line managers in AdminContext so dropdown updates
@@ -195,7 +201,7 @@ export default function UserManagement() {
                   <p className={`text-sm font-medium truncate ${user.is_pending || user.disabled ? "text-muted-foreground" : ""}`}>{user.full_name || "—"}</p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                     <Mail className="w-3 h-3 shrink-0" />{user.email}
-                    {user.is_pending && <span className="ml-1 text-xs font-medium text-chart-3">Pending</span>}
+                    {user.is_pending && <span className={`ml-1 text-xs font-medium ${user.status === "invited" ? "text-accent" : "text-chart-3"}`}>{user.status === "invited" ? "Invited" : "Pending"}</span>}
                     {user.disabled && <span className="ml-1 text-xs font-medium text-destructive">Disabled</span>}
                   </p>
                 </div>
