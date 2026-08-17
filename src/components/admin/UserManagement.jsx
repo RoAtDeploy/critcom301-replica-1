@@ -14,6 +14,9 @@ const derivePrimaryRole = (rolesArr) => {
   return cleaned[0];
 };
 
+// The platform inviteUser only accepts "user" or "admin"; map our custom roles accordingly
+const platformRole = (appRole) => (appRole === "admin" ? "admin" : "user");
+
 const normaliseRoles = (user) => {
   const raw = user.roles && user.roles.length ? user.roles : user.role ? [user.role] : ["assessor"];
   return [...new Set(raw.map((r) => (r === "line_manager" ? "assessor" : r)))];
@@ -60,7 +63,7 @@ export default function UserManagement() {
       const primaryRole = derivePrimaryRole(roles);
 
       // Trigger the platform invitation email — the user finalises their login via the link
-      await base44.users.inviteUser(form.email.trim(), primaryRole);
+      await base44.users.inviteUser(form.email.trim(), platformRole(primaryRole));
 
       // Track locally as "invited" until they complete their first login
       const pendingUser = await base44.entities.PendingUser.create({
@@ -119,7 +122,7 @@ export default function UserManagement() {
     setResendingId(u.id);
     setError("");
     try {
-      await base44.users.inviteUser(u.email, u.role || "assessor");
+      await base44.users.inviteUser(u.email, platformRole(u.role || "assessor"));
       await base44.entities.PendingUser.update(u.id, { status: "invited" });
       setUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: "invited" } : x));
       setSuccess(`Invitation resent to ${u.email}.`);
