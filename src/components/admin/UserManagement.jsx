@@ -72,6 +72,14 @@ export default function UserManagement() {
 
       // Register the user in the platform and send a branded invitation email via Resend
       await base44.users.inviteUser(form.email.trim(), platformRole(primaryRole));
+
+      // The platform creates invited users with role 'user'; promote them to the
+      // actual app role so RLS permits report creation/updates.
+      const [newUser] = await base44.entities.User.filter({ email: form.email.trim() });
+      if (newUser) {
+        await base44.entities.User.update(newUser.id, { role: primaryRole, roles });
+      }
+
       await base44.functions.invoke('sendUserInvite', {
         email: form.email.trim(),
         firstName: form.firstName || form.email.trim().split('@')[0],

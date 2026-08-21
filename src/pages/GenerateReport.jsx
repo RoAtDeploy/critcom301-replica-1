@@ -39,6 +39,7 @@ export default function GenerateReport() {
   const [loadingRecording, setLoadingRecording] = useState(false);
   const [diarizing, setDiarizing] = useState(false);
   const [diarizationError, setDiarizationError] = useState(null);
+  const [generateError, setGenerateError] = useState(null);
 
   // Pre-fill from a Recording entity if recordingId is provided
   useEffect(() => {
@@ -128,46 +129,51 @@ export default function GenerateReport() {
   const handleGenerateReport = async () => {
     if (!transcription) return;
     setGeneratingReport(true);
+    setGenerateError(null);
+    try {
+      // Build timestamped transcript from the user-corrected labelled segments
+      const timestampedTranscript = labelledSegments.map((seg) => ({
+        timestamp: seg.timestamp,
+        start: seg.start,
+        end: seg.end,
+        speaker: seg.speaker,
+        is_staff: seg.speaker === staffChannel,
+        text: seg.text,
+      }));
 
-    // Build timestamped transcript from the user-corrected labelled segments
-    const timestampedTranscript = labelledSegments.map((seg) => ({
-      timestamp: seg.timestamp,
-      start: seg.start,
-      end: seg.end,
-      speaker: seg.speaker,
-      is_staff: seg.speaker === staffChannel,
-      text: seg.text,
-    }));
+      // First create the report so we have an ID
+      const saved = await base44.entities.Report.create({
+        staff_id: selectedStaffId,
+        staff_name: selectedStaff?.name,
+        role: selectedRole,
+        call_date: callDate,
+        call_type: callType,
+        call_context: callContext,
+        transcription_text: transcription.text,
+        transcription_duration: transcription.duration,
+        transcription_language: transcription.language,
+        timestamped_transcript: timestampedTranscript,
+        other_role: otherRole,
+        staff_channel: staffChannel,
+        audio_url: audioUrl,
+      });
 
-    // First create the report so we have an ID
-    const saved = await base44.entities.Report.create({
-      staff_id: selectedStaffId,
-      staff_name: selectedStaff?.name,
-      role: selectedRole,
-      call_date: callDate,
-      call_type: callType,
-      call_context: callContext,
-      transcription_text: transcription.text,
-      transcription_duration: transcription.duration,
-      transcription_language: transcription.language,
-      timestamped_transcript: timestampedTranscript,
-      other_role: otherRole,
-      staff_channel: staffChannel,
-      audio_url: audioUrl,
-    });
+      // Then run the assessment — the function saves directly to the report
+      await base44.functions.invoke('assessTranscript', {
+        transcript: timestampedTranscript,
+        reportId: saved.id,
+        staffChannel,
+        staffName: selectedStaff?.name,
+        staffRole: selectedRole,
+        otherRole,
+      });
 
-    // Then run the assessment — the function saves directly to the report
-    await base44.functions.invoke('assessTranscript', {
-      transcript: timestampedTranscript,
-      reportId: saved.id,
-      staffChannel,
-      staffName: selectedStaff?.name,
-      staffRole: selectedRole,
-      otherRole,
-    });
-
-    setGeneratingReport(false);
-    navigate(`/reports/${saved.id}?assessed=1`);
+      navigate(`/reports/${saved.id}?assessed=1`);
+    } catch (err) {
+      setGenerateError(err.message || "Something went wrong generating the report. Please try again.");
+    } finally {
+      setGeneratingReport(false);
+    }
   };
 
   if (loadingRecording) {
@@ -496,6 +502,9 @@ export default function GenerateReport() {
             </Select>
           </div>
 
+          {generateError && (
+            <p className="text-sm text-destructive">{generateError}</p>
+          )}
           <div className="flex justify-end gap-3 pt-4">
             <Link to="/">
               <Button variant="outline">Cancel</Button>
