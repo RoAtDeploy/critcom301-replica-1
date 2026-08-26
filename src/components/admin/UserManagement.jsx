@@ -44,7 +44,14 @@ export default function UserManagement() {
     const appEmails = new Set(appUsers.map(u => u.email?.toLowerCase()).filter(Boolean));
     const stale = pendingUsers.filter(p => p.email && appEmails.has(p.email.toLowerCase()));
     if (stale.length) {
-      await Promise.all(stale.map(s => base44.entities.PendingUser.delete(s.id).catch(() => {})));
+      await Promise.all(stale.map(async (s) => {
+        // Sync role from PendingUser to the registered user before cleaning up
+        const appUser = appUsers.find(u => u.email?.toLowerCase() === s.email.toLowerCase());
+        if (appUser && s.role && s.role !== appUser.role) {
+          await base44.entities.User.update(appUser.id, { role: s.role, roles: s.roles || [s.role] }).catch(() => {});
+        }
+        await base44.entities.PendingUser.delete(s.id).catch(() => {});
+      }));
     }
     const validPending = pendingUsers.filter(p => !p.email || !appEmails.has(p.email.toLowerCase()));
     const combined = [
@@ -74,8 +81,14 @@ export default function UserManagement() {
       await base44.users.inviteUser(form.email.trim(), platformRole(primaryRole));
 
       // The platform creates invited users with role 'user'; promote them to the
-      // actual app role so RLS permits report creation/updates.
-      const [newUser] = await base44.entities.User.filter({ email: form.email.trim() });
+      // actual app role so RLS permits report creation/updates. Retry since the
+      // user record may not be immediately queryable after creation.
+      let newUser = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const [found] = await base44.entities.User.filter({ email: form.email.trim() });
+        if (found) { newUser = found; break; }
+        await new Promise(r => setTimeout(r, 600));
+      }
       if (newUser) {
         await base44.entities.User.update(newUser.id, { role: primaryRole, roles });
       }
