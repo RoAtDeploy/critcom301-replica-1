@@ -99,12 +99,18 @@ export default function GenerateReport() {
     if (!audioFile) return;
     setTranscribing(true);
     setDiarizationError(null);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
-    setAudioUrl(file_url);
-    const res = await base44.functions.invoke('transcribeAudio', { file_url });
-    setTranscription(res.data);
-    setLabelledSegments(autoLabelSegments(res.data.segments || []));
-    setTranscribing(false);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file: audioFile });
+      setAudioUrl(file_url);
+      const res = await base44.functions.invoke('transcribeAudio', { file_url });
+      const data = res.data || res;
+      setTranscription(data);
+      setLabelledSegments(autoLabelSegments(data.segments || []));
+    } catch (err) {
+      setDiarizationError(err.message || "Transcription failed. Please try again.");
+    } finally {
+      setTranscribing(false);
+    }
   };
 
   const handleRunDiarization = async () => {
