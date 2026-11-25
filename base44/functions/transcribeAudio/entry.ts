@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { removeHallucinatedRepetitions } from '../../shared/transcriptCleanup.js';
 
 Deno.serve(async (req) => {
   try {
@@ -46,7 +47,9 @@ Deno.serve(async (req) => {
       text: seg.text.trim(),
     }));
 
-    const merged = mergeFragmentedSegments(rawSegments);
+    // Strip Whisper's repeated filler hallucinations before merging, so the
+    // repeats are not folded into one long "Yeah. Yeah. Yeah." segment.
+    const merged = mergeFragmentedSegments(removeHallucinatedRepetitions(rawSegments));
     const segments = await resegmentSpeakers(base44, merged);
 
     return Response.json({

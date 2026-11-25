@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import OpenAI from 'npm:openai';
+import { removeHallucinatedRepetitions } from '../../shared/transcriptCleanup.js';
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY") });
 
@@ -92,12 +93,12 @@ Deno.serve(async (req) => {
     const text = whisperData.text;
     const language = whisperData.language;
     const duration = whisperData.duration;
-    const segments = (whisperData.segments || []).map(seg => ({
+    const segments = removeHallucinatedRepetitions((whisperData.segments || []).map(seg => ({
       timestamp: (() => { const m = Math.floor(seg.start / 60).toString().padStart(2,'0'); const s = Math.floor(seg.start % 60).toString().padStart(2,'0'); return `${m}:${s}`; })(),
       start: seg.start,
       end: seg.end,
       text: seg.text.trim(),
-    }));
+    })));
 
     if (!text) {
       return Response.json({ error: 'Transcription failed or returned empty' }, { status: 500 });
