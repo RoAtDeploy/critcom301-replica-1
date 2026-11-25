@@ -73,6 +73,9 @@ Deno.serve(async (req) => {
     form.append('file', audioBlob, 'audio.mp3');
     form.append('model', 'whisper-1');
     form.append('response_format', 'verbose_json');
+    // Calls are always English. Auto-detection is unreliable on short or noisy
+    // clips and frequently misidentifies English speech as Welsh.
+    form.append('language', 'en');
 
     const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',

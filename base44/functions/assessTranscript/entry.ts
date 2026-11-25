@@ -90,7 +90,11 @@ IMPORTANT:
 - Do not assess or grade the other party's performance.
 - For aspects 6, 7, 9, 10 the interaction between parties is relevant context, but the grade still reflects the staff member's behaviour only.
 - Be specific in your reasoning — quote or paraphrase the staff member's actual words from the transcript.
-- If the transcript is too short or a specific aspect clearly cannot be assessed, use n/a.
+- Judge each aspect independently on the evidence for that aspect alone. Do not infer good practice that is not evidenced, and do not let one aspect's grade influence another.
+- The transcript is machine-generated and may contain misheard words, missing punctuation or incorrectly rendered numbers. Interpret unclear wording from context and do not penalise the staff member for transcription artefacts.
+- If the transcript is too short or a specific aspect clearly cannot be assessed, use n/a rather than guessing.
+- Always return exactly ten aspects with ids "1" through "10". Never omit an aspect, merge two aspects, or return an id outside that range.
+- Apply the same evidence standard every time: the same transcript must always produce the same grades.
 
 RESPONSE FORMAT:
 Return a JSON object only. No other text.
@@ -106,6 +110,66 @@ Return a JSON object only. No other text.
   ]
 }
 `;
+
+const VALID_GRADES = ['A', 'B', 'C', 'D', 'n/a'];
+
+const DEFAULT_ASPECT_NAMES = {
+  '1': 'Opens communication with identification',
+  '2': 'States the purpose of the communication',
+  '3': 'Delivers the message in a structured, logical manner',
+  '4': 'Delivers the message accurately and concisely',
+  '5': 'Uses safety-critical communication protocols (Rule Book G1)',
+  '6': 'Listens actively and demonstrates understanding',
+  '7': 'Asks questions to clarify and confirm information',
+  '8': 'Agrees actions and next steps',
+  '9': 'Confirms understanding by repeating back or summarising',
+  '10': 'Challenges lack of repeat-back and mistakes',
+  '11': 'Completes relevant actions and supporting documentation',
+};
+
+// The model's JSON is advisory, not authoritative. Enforce exactly ten graded
+// aspects (1-10), valid grades only, and a single user-scored aspect 11. This
+// gives every report the same shape and makes re-runs safe.
+function normaliseAssessment(assessment) {
+  const raw = assessment?.response ?? assessment;
+  const incoming = Array.isArray(raw?.aspects) ? raw.aspects : [];
+
+  const byId = new Map();
+  for (const item of incoming) {
+    const id = String(item?.id ?? '').trim();
+    if (!/^(10|[1-9])$/.test(id) || byId.has(id)) continue;
+
+    byId.set(id, {
+      id,
+      name: typeof item?.name === 'string' && item.name.trim()
+        ? item.name.trim()
+        : DEFAULT_ASPECT_NAMES[id],
+      grade: VALID_GRADES.includes(item?.grade) ? item.grade : 'n/a',
+      reasoning: typeof item?.reasoning === 'string' ? item.reasoning.trim() : '',
+    });
+  }
+
+  const aspects = [];
+  for (let i = 1; i <= 10; i++) {
+    const id = String(i);
+    aspects.push(byId.get(id) || {
+      id,
+      name: DEFAULT_ASPECT_NAMES[id],
+      grade: 'n/a',
+      reasoning: 'The AI did not return a result for this aspect. Re-run the assessment to score it.',
+    });
+  }
+
+  aspects.push({
+    id: '11',
+    name: DEFAULT_ASPECT_NAMES['11'],
+    grade: null,
+    reasoning: '',
+    user_scored: true,
+  });
+
+  return { aspects, validCount: byId.size };
+}
 
 Deno.serve(async (req) => {
   try {
@@ -164,46 +228,51 @@ CRITICAL RULE ABOUT ROLES:
 TRANSCRIPT:
 ${transcriptText}`;
 
-    const [assessment, summaryResult] = await Promise.all([
-      base44.integrations.Core.InvokeLLM({
-        model: 'claude_sonnet_4_6',
-        prompt: `${ASSESSMENT_PROMPT}${definitionsText}${rulesText}\n\n${staffContext}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            aspects: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  id: { type: 'string' },
-                  name: { type: 'string' },
-                  grade: { type: 'string' },
-                  reasoning: { type: 'string' }
-                }
+    const runAssessment = () => base44.integrations.Core.InvokeLLM({
+      model: 'claude_sonnet_4_6',
+      prompt: `${ASSESSMENT_PROMPT}${definitionsText}${rulesText}\n\n${staffContext}\n\nTRANSCRIPT TO ASSESS:\n\n${transcriptText}`,
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          aspects: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                name: { type: 'string' },
+                grade: { type: 'string' },
+                reasoning: { type: 'string' }
               }
             }
           }
         }
-      }),
-      base44.integrations.Core.InvokeLLM({
-        prompt: summaryPrompt,
-      })
+      }
+    });
+
+    const [assessment, summaryResult] = await Promise.all([
+      runAssessment(),
+      // A failed summary must never discard an otherwise valid assessment
+      base44.integrations.Core.InvokeLLM({ prompt: summaryPrompt }).catch(() => ''),
     ]);
 
-    const normalized = assessment?.response ?? assessment;
-    const callSummary = typeof summaryResult === 'string' ? summaryResult.trim() : '';
+    let normalised = normaliseAssessment(assessment);
 
-    // Append the 11th aspect (user-scored) as a placeholder
-    if (normalized?.aspects) {
-      normalized.aspects.push({
-        id: '11',
-        name: 'Completes relevant actions and supporting documentation',
-        grade: null,
-        reasoning: '',
-        user_scored: true,
-      });
+    // One retry if the model returned nothing usable, so a single bad response
+    // does not leave the assessor with an empty or partial report.
+    if (normalised.validCount === 0) {
+      normalised = normaliseAssessment(await runAssessment());
     }
+
+    if (normalised.validCount === 0) {
+      return Response.json(
+        { error: 'The AI assessment could not produce a valid result. Please run the assessment again.' },
+        { status: 502 }
+      );
+    }
+
+    const normalized = { aspects: normalised.aspects };
+    const callSummary = typeof summaryResult === 'string' ? summaryResult.trim() : '';
 
     if (reportId) {
       await base44.asServiceRole.entities.Report.update(reportId, {
